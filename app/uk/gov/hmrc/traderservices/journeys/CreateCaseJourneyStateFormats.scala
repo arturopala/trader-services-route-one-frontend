@@ -24,7 +24,7 @@ import uk.gov.hmrc.traderservices.journeys.CreateCaseJourneyModel.State._
 import uk.gov.hmrc.play.fsm.JsonStateFormats
 
 object CreateCaseJourneyStateFormats
-    extends FileUploadJourneyStateFormats(CreateCaseJourneyModel) with JsonStateFormats[State] {
+    extends FileUploadJourneyStateFormatsMixin(CreateCaseJourneyModel) with JsonStateFormats[State] {
 
   val enterEntryDetailsFormat = Json.format[EnterEntryDetails]
   val chooseNewOrExistingCaseFormat = Json.format[ChooseNewOrExistingCase]

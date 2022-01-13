@@ -15,8 +15,8 @@ GET        /new/export/request-type                                 @uk.gov.hmrc
 POST       /new/export/request-type                                 @uk.gov.hmrc.traderservices.controllers.CreateCaseJourneyController.submitExportQuestionsRequestTypeAnswer
 GET        /new/export/route-type                                   @uk.gov.hmrc.traderservices.controllers.CreateCaseJourneyController.showAnswerExportQuestionsRouteType
 POST       /new/export/route-type                                   @uk.gov.hmrc.traderservices.controllers.CreateCaseJourneyController.submitExportQuestionsRouteTypeAnswer
-GET        /new/export/reason                                   @uk.gov.hmrc.traderservices.controllers.CreateCaseJourneyController.showAnswerExportQuestionsReason
-POST       /new/export/reason                                   @uk.gov.hmrc.traderservices.controllers.CreateCaseJourneyController.submitExportQuestionsReasonAnswer
+GET        /new/export/reason                                       @uk.gov.hmrc.traderservices.controllers.CreateCaseJourneyController.showAnswerExportQuestionsReason
+POST       /new/export/reason                                       @uk.gov.hmrc.traderservices.controllers.CreateCaseJourneyController.submitExportQuestionsReasonAnswer
 GET        /new/export/has-priority-goods                           @uk.gov.hmrc.traderservices.controllers.CreateCaseJourneyController.showAnswerExportQuestionsHasPriorityGoods
 POST       /new/export/has-priority-goods                           @uk.gov.hmrc.traderservices.controllers.CreateCaseJourneyController.submitExportQuestionsHasPriorityGoodsAnswer
 GET        /new/export/which-priority-goods                         @uk.gov.hmrc.traderservices.controllers.CreateCaseJourneyController.showAnswerExportQuestionsWhichPriorityGoods
@@ -36,8 +36,8 @@ GET        /new/import/request-type                                 @uk.gov.hmrc
 POST       /new/import/request-type                                 @uk.gov.hmrc.traderservices.controllers.CreateCaseJourneyController.submitImportQuestionsRequestTypeAnswer
 GET        /new/import/route-type                                   @uk.gov.hmrc.traderservices.controllers.CreateCaseJourneyController.showAnswerImportQuestionsRouteType
 POST       /new/import/route-type                                   @uk.gov.hmrc.traderservices.controllers.CreateCaseJourneyController.submitImportQuestionsRouteTypeAnswer
-GET        /new/import/reason                                   @uk.gov.hmrc.traderservices.controllers.CreateCaseJourneyController.showAnswerImportQuestionsReason
-POST       /new/import/reason                                   @uk.gov.hmrc.traderservices.controllers.CreateCaseJourneyController.submitImportQuestionsReasonAnswer
+GET        /new/import/reason                                       @uk.gov.hmrc.traderservices.controllers.CreateCaseJourneyController.showAnswerImportQuestionsReason
+POST       /new/import/reason                                       @uk.gov.hmrc.traderservices.controllers.CreateCaseJourneyController.submitImportQuestionsReasonAnswer
 GET        /new/import/has-priority-goods                           @uk.gov.hmrc.traderservices.controllers.CreateCaseJourneyController.showAnswerImportQuestionsHasPriorityGoods
 POST       /new/import/has-priority-goods                           @uk.gov.hmrc.traderservices.controllers.CreateCaseJourneyController.submitImportQuestionsHasPriorityGoodsAnswer
 GET        /new/import/which-priority-goods                         @uk.gov.hmrc.traderservices.controllers.CreateCaseJourneyController.showAnswerImportQuestionsWhichPriorityGoods
@@ -86,6 +86,7 @@ GET        /new/confirmation/receipt/pdf/:fileName                  @uk.gov.hmrc
 GET        /new/case-already-exists                                 @uk.gov.hmrc.traderservices.controllers.CreateCaseJourneyController.showCaseAlreadyExists
 GET        /new/case-already-submitted                              @uk.gov.hmrc.traderservices.controllers.CreateCaseJourneyController.showCaseAlreadySubmitted
 
+
 GET        /add                                                     @uk.gov.hmrc.traderservices.controllers.AmendCaseJourneyController.showStart
 GET        /add/case-reference-number                               @uk.gov.hmrc.traderservices.controllers.AmendCaseJourneyController.showEnterCaseReferenceNumber
 POST       /add/case-reference-number                               @uk.gov.hmrc.traderservices.controllers.AmendCaseJourneyController.submitCaseReferenceNumber
@@ -124,6 +125,35 @@ GET        /add/confirmation                                        @uk.gov.hmrc
 GET        /add/confirmation/receipt                                @uk.gov.hmrc.traderservices.controllers.AmendCaseJourneyController.downloadAmendCaseConfirmationReceipt
 GET        /add/confirmation/receipt/pdf/:fileName                  @uk.gov.hmrc.traderservices.controllers.AmendCaseJourneyController.downloadAmendCaseConfirmationReceiptAsPdf(fileName: String)
 GET        /add/case-already-submitted                              @uk.gov.hmrc.traderservices.controllers.AmendCaseJourneyController.showAmendCaseAlreadySubmitted
+
++ nocsrf
+PUT        /initialize                                              @uk.gov.hmrc.traderservices.controllers.FileUploadJourneyController.initialize
+GET        /finish                                                  @uk.gov.hmrc.traderservices.controllers.FileUploadJourneyController.finish
+
+GET        /upload-files                                            @uk.gov.hmrc.traderservices.controllers.FileUploadJourneyController.showUploadMultipleFiles
++ nocsrf
+POST       /upload-files/initialise/:uploadId                       @uk.gov.hmrc.traderservices.controllers.FileUploadJourneyController.initiateNextFileUpload(uploadId: String)
+
+GET        /file-upload                                             @uk.gov.hmrc.traderservices.controllers.FileUploadJourneyController.showFileUpload
+GET        /file-rejected                                           @uk.gov.hmrc.traderservices.controllers.FileUploadJourneyController.markFileUploadAsRejected
++ nocsrf
+POST       /file-rejected                                           @uk.gov.hmrc.traderservices.controllers.FileUploadJourneyController.markFileUploadAsRejectedAsync
+GET        /journey/:journeyId/file-posted                          @uk.gov.hmrc.traderservices.controllers.FileUploadJourneyController.asyncMarkFileUploadAsPosted(journeyId: String)
+OPTIONS    /journey/:journeyId/file-posted                          @uk.gov.hmrc.traderservices.controllers.FileUploadJourneyController.preflightUpload(journeyId: String)
+GET        /journey/:journeyId/file-rejected                        @uk.gov.hmrc.traderservices.controllers.FileUploadJourneyController.asyncMarkFileUploadAsRejected(journeyId: String)
+OPTIONS    /journey/:journeyId/file-rejected                        @uk.gov.hmrc.traderservices.controllers.FileUploadJourneyController.preflightUpload(journeyId: String)
+GET        /file-verification                                       @uk.gov.hmrc.traderservices.controllers.FileUploadJourneyController.showWaitingForFileVerification
+GET        /journey/:journeyId/file-verification                    @uk.gov.hmrc.traderservices.controllers.FileUploadJourneyController.asyncWaitingForFileVerification(journeyId: String)
+GET        /file-verification/:reference/status                     @uk.gov.hmrc.traderservices.controllers.FileUploadJourneyController.checkFileVerificationStatus(reference: String)
+GET        /file-uploaded                                           @uk.gov.hmrc.traderservices.controllers.FileUploadJourneyController.showFileUploaded
+POST       /file-uploaded                                           @uk.gov.hmrc.traderservices.controllers.FileUploadJourneyController.submitUploadAnotherFileChoice
+GET        /file-uploaded/:reference/remove                         @uk.gov.hmrc.traderservices.controllers.FileUploadJourneyController.removeFileUploadByReference(reference: String)
++ nocsrf
+POST       /file-uploaded/:reference/remove                         @uk.gov.hmrc.traderservices.controllers.FileUploadJourneyController.removeFileUploadByReferenceAsync(reference: String)
+GET        /file-uploaded/:reference/:fileName                      @uk.gov.hmrc.traderservices.controllers.FileUploadJourneyController.previewFileUploadByReference(reference: String, fileName: String)
++ nocsrf
+POST       /journey/:journeyId/callback-from-upscan/:nonce          @uk.gov.hmrc.traderservices.controllers.FileUploadJourneyController.callbackFromUpscan(journeyId: String, nonce: String)
+
 
 GET        /timedout                                                @uk.gov.hmrc.traderservices.controllers.SessionController.showTimeoutPage
 GET        /keep-alive                                              @uk.gov.hmrc.traderservices.controllers.SessionController.keepAlive

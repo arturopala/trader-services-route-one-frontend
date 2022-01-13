@@ -24,7 +24,7 @@ import uk.gov.hmrc.traderservices.journeys.AmendCaseJourneyModel.State._
 import uk.gov.hmrc.traderservices.models.AmendCaseModel
 
 object AmendCaseJourneyStateFormats
-    extends FileUploadJourneyStateFormats(AmendCaseJourneyModel) with JsonStateFormats[State] {
+    extends FileUploadJourneyStateFormatsMixin(AmendCaseJourneyModel) with JsonStateFormats[State] {
 
   val enterCaseReferenceNumberFormat = Json.format[EnterCaseReferenceNumber]
   val selectTypeOfAmendmentFormat = Json.format[SelectTypeOfAmendment]

@@ -31,28 +31,17 @@ import org.scalatest.BeforeAndAfterAll
 import org.scalatest.Informing
 import scala.io.AnsiColor
 
-/**
-  * Abstract base of FSM journey specifications.
+/** Abstract base of FSM journey specifications.
   *
   * @example
   *
-  *   given(State_A)
-  *     .when(transition)
-  *     .thenGoes(State_B)
+  * given(State_A) .when(transition) .thenGoes(State_B)
   *
-  *   given(State_A)
-  *     .when(transition)
-  *     .thenMatches {
-  *       case State_B(...) =>
-  *     }
+  * given(State_A) .when(transition) .thenMatches { case State_B(...) => }
   *
-  *   given(State_A)
-  *     .when(transition)
-  *     .thenNoChange
+  * given(State_A) .when(transition) .thenNoChange
   *
-  *   given(State_A)
-  *     .when(transition)
-  *     .thenFailsWith[SomeExceptionType]
+  * given(State_A) .when(transition) .thenFailsWith[SomeExceptionType]
   */
 trait JourneyModelSpec extends TestJourneyService[DummyContext] {
   self: Matchers with BeforeAndAfterAll with Informing =>

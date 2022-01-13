@@ -60,6 +60,8 @@
 
     <logger name="uk.gov.hmrc.traderservices" level="INFO"/>
 
+    <logger name="uk.gov.hmrc.traderservices.services" level="DEBUG"/>
+
     <logger name="uk.gov.hmrc.traderservices.repository" level="ERROR"/>
 
     <logger name="akka" level="ERROR"/>

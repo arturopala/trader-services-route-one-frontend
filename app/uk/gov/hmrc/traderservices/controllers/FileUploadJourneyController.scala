@@ -24,10 +24,9 @@ import play.api.mvc._
 import play.api.{Configuration, Environment}
 import play.mvc.Http.HeaderNames
 import uk.gov.hmrc.traderservices.connectors._
-import uk.gov.hmrc.traderservices.journeys.AmendCaseJourneyModel.State._
+import uk.gov.hmrc.traderservices.journeys.FileUploadJourneyModel.State._
 import uk.gov.hmrc.traderservices.models._
-import uk.gov.hmrc.traderservices.services.AmendCaseJourneyServiceWithHeaderCarrier
-import uk.gov.hmrc.traderservices.views.CommonUtilsHelper.DateTimeUtilities
+import uk.gov.hmrc.traderservices.services.FileUploadJourneyServiceWithHeaderCarrier
 import uk.gov.hmrc.traderservices.views.UploadFileViewContext
 import uk.gov.hmrc.traderservices.wiring.AppConfig
 
@@ -35,8 +34,8 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.Future
 
 @Singleton
-class AmendCaseJourneyController @Inject() (
-  amendCaseJourneyService: AmendCaseJourneyServiceWithHeaderCarrier,
+class FileUploadJourneyController @Inject() (
+  amendCaseJourneyService: FileUploadJourneyServiceWithHeaderCarrier,
   views: uk.gov.hmrc.traderservices.views.AmendCaseViews,
   traderServicesApiConnector: TraderServicesApiConnector,
   upscanInitiateConnector: UpscanInitiateConnector,
@@ -58,73 +57,24 @@ class AmendCaseJourneyController @Inject() (
       configuration
     ) with FileStream {
 
-  final val controller = routes.AmendCaseJourneyController
+  final val controller = routes.FileUploadJourneyController
 
-  import AmendCaseJourneyController._
-  import uk.gov.hmrc.traderservices.journeys.AmendCaseJourneyModel._
+  import FileUploadJourneyController._
+  import uk.gov.hmrc.traderservices.journeys.FileUploadJourneyModel._
 
   implicit val scheduler: Scheduler = actorSystem.scheduler
 
-  // GET /
-  final val showStart: Action[AnyContent] =
-    whenAuthorisedAsUser
-      .apply(Transitions.start)
-      .display
-      .andCleanBreadcrumbs()
+  // PUT /upload/initialize
+  final val initialize: Action[AnyContent] =
+    actions
+      .parseJsonWithFallback[FileUploadInitializationRequest](BadRequest)
+      .apply(Transitions.initialize)
 
-  // GET /add/case-reference-number
-  final val showEnterCaseReferenceNumber: Action[AnyContent] =
-    whenAuthorisedAsUser
-      .show[State.EnterCaseReferenceNumber]
-      .orApply(Transitions.enterCaseReferenceNumber)
-
-  // POST /add/case-reference-number
-  final val submitCaseReferenceNumber: Action[AnyContent] =
-    whenAuthorisedAsUser
-      .bindForm(EnterCaseReferenceNumberForm)
-      .apply(Transitions.submitedCaseReferenceNumber)
-
-  // GET /add/type-of-amendment
-  final val showSelectTypeOfAmendment: Action[AnyContent] =
-    whenAuthorisedAsUser
-      .show[State.SelectTypeOfAmendment]
-      .orApply(Transitions.backToSelectTypeOfAmendment)
-
-  // POST /add/type-of-amendment
-  final val submitTypeOfAmendment: Action[AnyContent] =
-    whenAuthorisedAsUser
-      .bindForm(TypeOfAmendmentForm)
-      .applyWithRequest(implicit request =>
-        Transitions.submitedTypeOfAmendment(preferUploadMultipleFiles)(upscanRequest)(
-          upscanInitiateConnector.initiate(_)
-        )
-      )
-
-  // GET /add/write-response
-  final val showEnterResponseText: Action[AnyContent] =
-    whenAuthorisedAsUser
-      .show[State.EnterResponseText]
-      .orApply(Transitions.backToEnterResponseText)
-
-  // POST /add/write-response
-  final val submitResponseText: Action[AnyContent] =
-    whenAuthorisedAsUser
-      .bindForm(ResponseTextForm)
-      .applyWithRequest(implicit request =>
-        Transitions.submitedResponseText(preferUploadMultipleFiles)(upscanRequest)(upscanInitiateConnector.initiate(_))
-      )
-
-  // GET 	/add/check-your-answers
-  final val showAmendCaseSummary: Action[AnyContent] =
-    whenAuthorisedAsUser
-      .show[State.AmendCaseSummary]
-      .orApply(Transitions.toAmendSummary)
-
-  // GET /new/export/missing-information
-  final val showAmendCaseMissingInformationError: Action[AnyContent] =
-    whenAuthorisedAsUser
-      .show[State.AmendCaseMissingInformationError]
-      .orApply(Transitions.backToAmendCaseMissingInformationError)
+  // GET /upload/finish
+  final val finish: Action[AnyContent] =
+    actions
+      .show[ContinueToHost]
+      .orApply(Transitions.finish)
 
   // ----------------------- FILES UPLOAD -----------------------
 
@@ -173,13 +123,13 @@ class AmendCaseJourneyController @Inject() (
       expectedContentType = Some(appConfig.fileFormats.approvedFileTypes)
     )
 
-  // GET /add/upload-files
+  // GET /upload-files
   final val showUploadMultipleFiles: Action[AnyContent] =
     whenAuthorisedAsUser
       .apply(FileUploadTransitions.toUploadMultipleFiles)
       .redirectOrDisplayIf[FileUploadState.UploadMultipleFiles]
 
-  // POST /add/upload-files/initialise/:uploadId
+  // POST /upload-files/initialise/:uploadId
   final def initiateNextFileUpload(uploadId: String): Action[AnyContent] =
     whenAuthorisedAsUser
       .applyWithRequest { implicit request =>
@@ -190,7 +140,7 @@ class AmendCaseJourneyController @Inject() (
       }
       .displayUsing(renderUploadRequestJson(uploadId))
 
-  // GET /add/file-upload
+  // GET /file-upload
   final val showFileUpload: Action[AnyContent] =
     whenAuthorisedAsUser
       .applyWithRequest { implicit request =>
@@ -199,7 +149,7 @@ class AmendCaseJourneyController @Inject() (
       }
       .redirectOrDisplayIf[FileUploadState.UploadFile]
 
-  // GET /add/file-rejected
+  // GET /file-rejected
   final val markFileUploadAsRejected: Action[AnyContent] =
     whenAuthorisedAsUser
       .bindForm(UpscanUploadErrorForm)
@@ -212,21 +162,21 @@ class AmendCaseJourneyController @Inject() (
       .apply(FileUploadTransitions.markUploadAsRejected)
       .displayUsing(acknowledgeFileUploadRedirect)
 
-  // GET /add/journey/:journeyId/file-rejected
+  // GET /journey/:journeyId/file-rejected
   final def asyncMarkFileUploadAsRejected(journeyId: String): Action[AnyContent] =
     actions
       .bindForm(UpscanUploadErrorForm)
       .apply(FileUploadTransitions.markUploadAsRejected)
       .displayUsing(acknowledgeFileUploadRedirect)
 
-  // GET /add/file-verification
+  // GET /file-verification
   final val showWaitingForFileVerification: Action[AnyContent] =
     whenAuthorisedAsUser
       .waitForStateThenRedirect[FileUploadState.FileUploaded](INITIAL_CALLBACK_WAIT_TIME_SECONDS)
       .orApplyOnTimeout(FileUploadTransitions.waitForFileVerification)
       .redirectOrDisplayIf[FileUploadState.WaitingForFileVerification]
 
-  // GET /add/journey/:journeyId/file-verification
+  // GET /journey/:journeyId/file-verification
   final def asyncWaitingForFileVerification(journeyId: String): Action[AnyContent] =
     actions
       .waitForStateAndDisplayUsing[FileUploadState.FileUploaded](
@@ -249,7 +199,7 @@ class AmendCaseJourneyController @Inject() (
       .apply(FileUploadTransitions.markUploadAsPosted)
       .displayUsing(acknowledgeFileUploadRedirect)
 
-  // POST /add/journey/:journeyId/callback-from-upscan/:nonce
+  // POST /journey/:journeyId/callback-from-upscan/:nonce
   final def callbackFromUpscan(journeyId: String, nonce: String): Action[AnyContent] =
     actions
       .parseJsonWithFallback[UpscanNotification](BadRequest)
@@ -261,23 +211,23 @@ class AmendCaseJourneyController @Inject() (
         InternalServerError
       }
 
-  // GET /add/file-uploaded
+  // GET /file-uploaded
   final val showFileUploaded: Action[AnyContent] =
     whenAuthorisedAsUser
       .show[FileUploadState.FileUploaded]
       .orApply(FileUploadTransitions.backToFileUploaded)
 
-  // POST /add/file-uploaded
+  // POST /file-uploaded
   final val submitUploadAnotherFileChoice: Action[AnyContent] =
     whenAuthorisedAsUser
       .bindForm[Boolean](UploadAnotherFileChoiceForm)
       .applyWithRequest { implicit request =>
         FileUploadTransitions.submitedUploadAnotherFileChoice(upscanRequest)(upscanInitiateConnector.initiate(_))(
-          Transitions.toAmendSummary
+          Transitions.finish
         )
       }
 
-  // GET /add/file-uploaded/:reference/remove
+  // GET /file-uploaded/:reference/remove
   final def removeFileUploadByReference(reference: String): Action[AnyContent] =
     whenAuthorisedAsUser
       .applyWithRequest { implicit request =>
@@ -286,7 +236,7 @@ class AmendCaseJourneyController @Inject() (
         )
       }
 
-  // POST /add/file-uploaded/:reference/remove
+  // POST /file-uploaded/:reference/remove
   final def removeFileUploadByReferenceAsync(reference: String): Action[AnyContent] =
     whenAuthorisedAsUser
       .applyWithRequest { implicit request =>
@@ -296,63 +246,26 @@ class AmendCaseJourneyController @Inject() (
       }
       .displayUsing(renderFileRemovalStatusJson(reference))
 
-  // GET /add/file-uploaded/:reference/:fileName
+  // GET /file-uploaded/:reference/:fileName
   final def previewFileUploadByReference(reference: String, fileName: String): Action[AnyContent] =
     whenAuthorisedAsUser.showCurrentState
       .displayAsyncUsing(streamFileFromUspcan(reference))
 
-  // GET /add/file-verification/:reference/status
+  // GET /file-verification/:reference/status
   final def checkFileVerificationStatus(reference: String): Action[AnyContent] =
     whenAuthorisedAsUser.showCurrentState
       .displayUsing(renderFileVerificationStatus(reference))
-
-  // ----------------------- CONFIRMATION -----------------------
-
-  // POST /add/amend-case
-  final def amendCase: Action[AnyContent] =
-    whenAuthorisedAsUserWithUidAndEori
-      .applyWithRequest { implicit request => uidAndEori =>
-        Transitions.amendCase(traderServicesApiConnector.updateCase(_))(uidAndEori)
-      }
-
-  // GET /add/confirmation
-  final def showAmendCaseConfirmation: Action[AnyContent] =
-    whenAuthorisedAsUser
-      .show[State.AmendCaseConfirmation]
-      .orRollback
-      .andCleanBreadcrumbs() // forget journey history
-
-  // GET /add/confirmation/receipt
-  final def downloadAmendCaseConfirmationReceipt: Action[AnyContent] =
-    whenAuthorisedAsUser.showCurrentState
-      .displayAsyncUsing(renderConfirmationReceiptHtml)
-
-  // GET /add/confirmation/receipt/pdf/:fileName
-  final def downloadAmendCaseConfirmationReceiptAsPdf(fileName: String): Action[AnyContent] =
-    whenAuthorisedAsUser.showCurrentState
-      .displayAsyncUsing(renderConfirmationReceiptPdf)
-
-  // GET /add/case-already-submitted
-  final val showAmendCaseAlreadySubmitted: Action[AnyContent] =
-    whenAuthorisedAsUser
-      .show[State.AmendCaseAlreadySubmitted.type]
-      .orRollback
 
   /** Function from the `State` to the `Call` (route), used by play-fsm internally to create redirects.
     */
   final override def getCallFor(state: State)(implicit request: Request[_]): Call =
     state match {
-      case Start =>
-        controller.showStart
+      case Initialized(config, fileUploads) =>
+        if (preferUploadMultipleFiles) controller.showUploadMultipleFiles
+        else controller.showFileUpload
 
-      case _: EnterCaseReferenceNumber =>
-        controller.showEnterCaseReferenceNumber
-
-      case _: SelectTypeOfAmendment =>
-        controller.showSelectTypeOfAmendment
-
-      case _: EnterResponseText =>
-        controller.showEnterResponseText
+      case ContinueToHost(config, fileUploads) =>
+        Call("GET", config.continueUrl)
 
       case _: FileUploadState.UploadMultipleFiles =>
         controller.showUploadMultipleFiles
@@ -366,21 +279,8 @@ class AmendCaseJourneyController @Inject() (
       case _: FileUploadState.FileUploaded =>
         controller.showFileUploaded
 
-      case _: AmendCaseSummary =>
-        controller.showAmendCaseSummary
-
-      case _: AmendCaseConfirmation =>
-        controller.showAmendCaseConfirmation
-
-      case _: AmendCaseMissingInformationError =>
-        controller.showAmendCaseMissingInformationError
-
-      case AmendCaseAlreadySubmitted =>
-        controller.showAmendCaseAlreadySubmitted
-
       case _ =>
         workInProgresDeadEndCall
-
     }
 
   import uk.gov.hmrc.play.fsm.OptionalFormOps._
@@ -391,37 +291,17 @@ class AmendCaseJourneyController @Inject() (
     request: Request[_]
   ): Result =
     state match {
-      case Start =>
-        Redirect(controller.showEnterCaseReferenceNumber)
+      case Uninitialized =>
+        Redirect("https://www.gov.uk")
 
-      case EnterCaseReferenceNumber(model) =>
-        Ok(
-          views.enterCaseReferenceNumberView(
-            formWithErrors.or(EnterCaseReferenceNumberForm, model.caseReferenceNumber),
-            controller.submitCaseReferenceNumber,
-            if (breadcrumbs.size == 1 && breadcrumbs.head == Start)
-              routes.CreateCaseJourneyController.showChooseNewOrExistingCase
-            else backLinkFor(breadcrumbs)
-          )
-        )
+      case Initialized(config, fileUploads) =>
+        if (preferUploadMultipleFiles)
+          Redirect(controller.showUploadMultipleFiles)
+        else
+          Redirect(controller.showFileUpload)
 
-      case SelectTypeOfAmendment(model) =>
-        Ok(
-          views.selectTypeOfAmendmentView(
-            formWithErrors.or(TypeOfAmendmentForm, model.typeOfAmendment),
-            controller.submitTypeOfAmendment,
-            backLinkFor(breadcrumbs)
-          )
-        )
-
-      case EnterResponseText(model) =>
-        Ok(
-          views.enterResponseTextView(
-            formWithErrors.or(ResponseTextForm, model.responseText),
-            controller.submitResponseText,
-            backLinkFor(breadcrumbs)
-          )
-        )
+      case ContinueToHost(config, fileUploads) =>
+        Redirect(config.continueUrl)
 
       case FileUploadState.UploadMultipleFiles(model, fileUploads) =>
         Ok(
@@ -434,7 +314,7 @@ class AmendCaseJourneyController @Inject() (
             previewFile = controller.previewFileUploadByReference,
             markFileRejected = controller.markFileUploadAsRejectedAsync,
             None,
-            continueAction = controller.showAmendCaseSummary,
+            continueAction = controller.finish,
             backLink = backLinkFor(breadcrumbs)
           )
         )
@@ -477,60 +357,14 @@ class AmendCaseJourneyController @Inject() (
           else
             views.fileUploadedSummaryView(
               fileUploads,
-              controller.showAmendCaseSummary,
+              controller.finish,
               controller.previewFileUploadByReference,
               controller.removeFileUploadByReference,
               backLinkFor(breadcrumbs)
             )
         )
 
-      case AmendCaseSummary(model) =>
-        Ok(
-          views.amendCaseSummaryView(
-            model,
-            controller.amendCase,
-            if (preferUploadMultipleFiles) controller.showUploadMultipleFiles
-            else controller.showFileUpload,
-            backLinkFor(breadcrumbs)
-          )
-        )
-
-      case AmendCaseMissingInformationError(model) =>
-        Ok(
-          views.missingInformationErrorView(
-            controller.showEnterCaseReferenceNumber,
-            backLinkFor(breadcrumbs)
-          )
-        )
-
-      case AmendCaseConfirmation(
-            uploadedFiles,
-            model,
-            TraderServicesResult(caseReferenceNumber, generatedAt, _)
-          ) =>
-        Ok(
-          views.amendCaseConfirmationView(
-            caseReferenceNumber,
-            uploadedFiles,
-            model.responseText,
-            generatedAt.asLondonClockTime.ddMMYYYYAtTimeFormat,
-            controller.downloadAmendCaseConfirmationReceipt,
-            controller.downloadAmendCaseConfirmationReceiptAsPdf(
-              s"Document_receipt_$caseReferenceNumber.pdf"
-            ),
-            routes.CreateCaseJourneyController.showStart
-          )
-        )
-
-      case AmendCaseAlreadySubmitted =>
-        Ok(
-          views.caseAlreadySubmittedView(
-            routes.CreateCaseJourneyController.showStart
-          )
-        )
-
       case _ => NotImplemented
-
     }
 
   private def renderUploadRequestJson(
@@ -622,72 +456,11 @@ class AmendCaseJourneyController @Inject() (
     }).withHeaders(HeaderNames.ACCESS_CONTROL_ALLOW_ORIGIN -> "*")
   }
 
-  private val renderConfirmationReceiptHtml =
-    AsyncRenderer.withRequest(implicit request => {
-      case AmendCaseConfirmation(
-            uploadedFiles,
-            model,
-            TraderServicesResult(caseReferenceNumber, generatedAt, _)
-          ) =>
-        printStylesheet.content.map(stylesheet =>
-          Ok(
-            views.amendCaseConfirmationReceiptView(
-              model.caseReferenceNumber.get,
-              uploadedFiles,
-              model.responseText,
-              generatedAt.asLondonClockTime.ddMMYYYYAtTimeFormat,
-              stylesheet
-            )
-          ).withHeaders(
-            HeaderNames.CONTENT_DISPOSITION -> s"""attachment; filename="Document_receipt_${model.caseReferenceNumber.get}.html""""
-          )
-        )
-
-      case _ => Future.successful(BadRequest)
-    })
-
-  private val renderConfirmationReceiptPdf =
-    AsyncRenderer.withRequest(implicit request => {
-      case AmendCaseConfirmation(
-            uploadedFiles,
-            model,
-            TraderServicesResult(caseReferenceNumber, generatedAt, _)
-          ) =>
-        printStylesheet.content
-          .map(stylesheet =>
-            views
-              .amendCaseConfirmationReceiptView(
-                model.caseReferenceNumber.get,
-                uploadedFiles,
-                model.responseText,
-                generatedAt.asLondonClockTime.ddMMYYYYAtTimeFormat,
-                stylesheet
-              )
-              .body
-          )
-          .flatMap(
-            pdfGeneratorConnector.convertHtmlToPdf(_, s"Document_receipt_${model.caseReferenceNumber.get}.pdf")
-          )
-
-      case _ => Future.successful(BadRequest)
-    })
 }
 
-object AmendCaseJourneyController {
+object FileUploadJourneyController {
 
   import FormFieldMappings._
-
-  val EnterCaseReferenceNumberForm = Form[String](
-    mapping("caseReferenceNumber" -> caseReferenceNumberMapping)(identity)(Some(_))
-  )
-
-  val TypeOfAmendmentForm = Form[TypeOfAmendment](
-    mapping("typeOfAmendment" -> typeOfAmendmentMapping)(identity)(Some(_))
-  )
-
-  val ResponseTextForm = Form[String](
-    mapping("responseText" -> responseTextMapping)(identity)(Some(_))
-  )
 
   val UploadAnotherFileChoiceForm = Form[Boolean](
     mapping("uploadAnotherFile" -> uploadAnotherFileMapping)(identity)(Option.apply)

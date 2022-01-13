@@ -13,4 +13,4 @@ addSbtPlugin("org.scoverage" % "sbt-scoverage" % "1.8.2")
 
 addSbtPlugin("org.scalameta" % "sbt-scalafmt" % "2.4.3")
 
-addSbtPlugin("org.irundaia.sbt" % "sbt-sassify" % "1.4.11")
+//addSbtPlugin("org.irundaia.sbt" % "sbt-sassify" % "1.4.11")

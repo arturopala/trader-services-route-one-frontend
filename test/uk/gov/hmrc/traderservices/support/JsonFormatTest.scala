@@ -45,6 +45,12 @@ abstract class JsonFormatTest[A: Format](info: Informer) extends Matchers {
     Json.stringify(Json.toJson(TestEntity(entity))) shouldBe json.filter(_ >= ' ')
   }
 
+  def validateCanReadAndWriteJson(entity: A): Assertion = {
+    val actualJson = Json.stringify(Json.toJson(entity))
+    actualJson should not be empty
+    Json.parse(actualJson).as[A] shouldBe entity
+  }
+
   val localPackagePrefix = "class uk.gov.hmrc.traderservices."
 
   def nameOf(entity: A): String = {
@@ -52,7 +58,6 @@ abstract class JsonFormatTest[A: Format](info: Informer) extends Matchers {
     val s1 = if (s.endsWith(".")) s.dropRight(1) else s
     if (s1.startsWith(localPackagePrefix)) s1.drop(localPackagePrefix.length)
     else s1
-
   }
 
 }

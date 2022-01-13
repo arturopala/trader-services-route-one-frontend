@@ -30,9 +30,7 @@ import play.api.libs.json.JsValue
 import scala.io.AnsiColor
 import uk.gov.hmrc.play.fsm.PlayFsmUtils
 
-/**
-  * Journey persistence service mixin,
-  * stores encrypted serialized state using [[JourneyCache]].
+/** Journey persistence service mixin, stores encrypted serialized state using [[JourneyCache]].
   */
 trait MongoDBCachedJourneyService[RequestContext] extends PersistentJourneyService[RequestContext] {
 

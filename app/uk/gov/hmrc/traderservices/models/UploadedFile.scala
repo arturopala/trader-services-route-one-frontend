@@ -28,7 +28,20 @@ case class UploadedFile(
   fileName: String,
   fileMimeType: String,
   fileSize: Option[Int]
-)
+) {
+  def toFileUpload: FileUpload =
+    FileUpload.Accepted(
+      nonce = Nonce.Any,
+      timestamp = Timestamp.Any,
+      reference = upscanReference,
+      checksum = checksum,
+      fileName = fileName,
+      fileMimeType = fileMimeType,
+      fileSize = fileSize,
+      url = downloadUrl,
+      uploadTimestamp = uploadTimestamp
+    )
+}
 
 object UploadedFile {
   implicit val formats: Format[UploadedFile] = Json.format[UploadedFile]

@@ -17,39 +17,39 @@ trait TraderServicesApiStubs {
 
   val requestBodyOfCreateCaseApi: String =
     s"""{
-       |"entryDetails":{},
-       |"questionsAnswers":{},
-       |"uploadedFiles":[{}],
-       |"eori":"GB123456789012345"
-       |}""".stripMargin
+      |"entryDetails":{},
+      |"questionsAnswers":{},
+      |"uploadedFiles":[{}],
+      |"eori":"GB123456789012345"
+      |}""".stripMargin
 
   def validRequestOfCreateCaseApiWithoutEori(): String =
     s"""{
-       |"entryDetails":{},
-       |"questionsAnswers":{},
-       |"uploadedFiles":[{}]
-       |}""".stripMargin
+      |"entryDetails":{},
+      |"questionsAnswers":{},
+      |"uploadedFiles":[{}]
+      |}""".stripMargin
 
   def caseApiSuccessResponseBody(caseReferenceNumber: String = "A1234567890"): String =
     s"""{
-       |  "correlationId": "",
-       |  "result": {
-       |      "caseId": "$caseReferenceNumber",
-       |      "generatedAt": "${generatedAt.toString}",
-       |      "fileTransferResults": [
-       |        {"upscanReference":"foo1","success":true,"httpStatus":201,"transferredAt":"2021-04-18T12:07:36"}
-       |      ]
-       |  } 
-       |}""".stripMargin
+      |  "correlationId": "",
+      |  "result": {
+      |      "caseId": "$caseReferenceNumber",
+      |      "generatedAt": "${generatedAt.toString}",
+      |      "fileTransferResults": [
+      |        {"upscanReference":"foo1","success":true,"httpStatus":201,"transferredAt":"2021-04-18T12:07:36"}
+      |      ]
+      |  } 
+      |}""".stripMargin
 
   def createCaseApiErrorResponseBody(errorCode: String, errorMessage: String): String =
     s"""{
-       |  "correlationId": "",
-       |  "error": {
-       |      "errorCode": "$errorCode",
-       |      "errorMessage": "$errorMessage"
-       |  } 
-       |}""".stripMargin
+      |  "correlationId": "",
+      |  "error": {
+      |      "errorCode": "$errorCode",
+      |      "errorMessage": "$errorMessage"
+      |  } 
+      |}""".stripMargin
 
   def givenCreateCaseApiRequestSucceeds(): StubMapping =
     givenCreateCaseApiStub(200, validRequestOfCreateCaseApi(), caseApiSuccessResponseBody())
@@ -97,11 +97,11 @@ trait TraderServicesApiStubs {
     description: String = "An example description."
   ): String =
     s"""{
-       |"caseReferenceNumber":"$caseReferenceNumber",
-       |"typeOfAmendment":"$typeOfAmendment",
-       |"responseText":"$description",
-       |"uploadedFiles":[]
-       |}""".stripMargin
+      |"caseReferenceNumber":"$caseReferenceNumber",
+      |"typeOfAmendment":"$typeOfAmendment",
+      |"responseText":"$description",
+      |"uploadedFiles":[]
+      |}""".stripMargin
 
   def givenUpdateCaseApiRequestSucceeds(
     caseReferenceNumber: String = "A1234567890",
@@ -157,6 +157,17 @@ trait TraderServicesApiStubs {
 
     url
   }
+
+  def givenSomePage(status: Int, url: String, content: String): Unit =
+    stubFor(
+      get(urlPathEqualTo(url))
+        .willReturn(
+          aResponse()
+            .withStatus(status)
+            .withHeader("Content-Type", "text/plain")
+            .withBody(content)
+        )
+    )
 
   def verifyCreateCaseRequestHappened(times: Int = 1) {
     verify(times, postRequestedFor(urlEqualTo("/create-case")))

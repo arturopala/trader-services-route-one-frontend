@@ -17,74 +17,39 @@
 package uk.gov.hmrc.traderservices.journeys
 
 import play.api.libs.json._
-import play.api.libs.functional.syntax._
-import uk.gov.hmrc.traderservices.models.UploadRequest
-import uk.gov.hmrc.traderservices.models.FileUploads
-import uk.gov.hmrc.traderservices.models.FileUploadError
-import uk.gov.hmrc.traderservices.models.FileUpload
+import uk.gov.hmrc.play.fsm.JsonStateFormats
+import uk.gov.hmrc.traderservices.journeys.FileUploadJourneyModel.FileUploadState._
+import uk.gov.hmrc.traderservices.journeys.FileUploadJourneyModel.State
+import uk.gov.hmrc.traderservices.journeys.FileUploadJourneyModel.State._
+import uk.gov.hmrc.traderservices.models.FileUploadSessionConfig
 
-abstract class FileUploadJourneyStateFormats[M <: FileUploadJourneyModelMixin](val model: M) {
+object FileUploadJourneyStateFormats
+    extends FileUploadJourneyStateFormatsMixin(FileUploadJourneyModel) with JsonStateFormats[State] {
 
-  import model.FileUploadState._
+  val initializedFormat = Json.format[Initialized]
+  val continueToHostFormat = Json.format[ContinueToHost]
 
-  val fileUploadHostDataFormat: Format[model.FileUploadHostData]
+  override val fileUploadHostDataFormat: Format[FileUploadSessionConfig] =
+    FileUploadSessionConfig.formats
 
-  lazy val uploadFileFormat = Format(
-    (
-      (__ \ "hostData").read[model.FileUploadHostData](fileUploadHostDataFormat) and
-        (__ \ "reference").read[String] and
-        (__ \ "uploadRequest").read[UploadRequest] and
-        (__ \ "fileUploads").read[FileUploads] and
-        (__ \ "maybeUploadError").readNullableWithDefault[FileUploadError](None)
-    )(UploadFile.apply _),
-    (
-      (__ \ "hostData").write[model.FileUploadHostData](fileUploadHostDataFormat) and
-        (__ \ "reference").write[String] and
-        (__ \ "uploadRequest").write[UploadRequest] and
-        (__ \ "fileUploads").write[FileUploads] and
-        (__ \ "maybeUploadError").writeNullable[FileUploadError]
-    )(unlift(UploadFile.unapply))
-  )
+  override val serializeStateProperties: PartialFunction[State, JsValue] = {
+    case s: Initialized                => initializedFormat.writes(s)
+    case s: ContinueToHost             => continueToHostFormat.writes(s)
+    case s: UploadFile                 => uploadFileFormat.writes(s)
+    case s: FileUploaded               => fileUploadedFormat.writes(s)
+    case s: WaitingForFileVerification => waitingForFileVerificationFormat.writes(s)
+    case s: UploadMultipleFiles        => uploadMultipleFilesFormat.writes(s)
+  }
 
-  lazy val waitingForFileVerificationFormat = Format(
-    (
-      (__ \ "hostData").read[model.FileUploadHostData](fileUploadHostDataFormat) and
-        (__ \ "reference").read[String] and
-        (__ \ "uploadRequest").read[UploadRequest] and
-        (__ \ "currentFileUpload").read[FileUpload] and
-        (__ \ "fileUploads").read[FileUploads]
-    )(WaitingForFileVerification.apply _),
-    (
-      (__ \ "hostData").write[model.FileUploadHostData](fileUploadHostDataFormat) and
-        (__ \ "reference").write[String] and
-        (__ \ "uploadRequest").write[UploadRequest] and
-        (__ \ "currentFileUpload").write[FileUpload] and
-        (__ \ "fileUploads").write[FileUploads]
-    )(unlift(WaitingForFileVerification.unapply))
-  )
-
-  lazy val fileUploadedFormat = Format(
-    (
-      (__ \ "hostData").read[model.FileUploadHostData](fileUploadHostDataFormat) and
-        (__ \ "fileUploads").read[FileUploads] and
-        (__ \ "acknowledged").read[Boolean]
-    )(FileUploaded.apply _),
-    (
-      (__ \ "hostData").write[model.FileUploadHostData](fileUploadHostDataFormat) and
-        (__ \ "fileUploads").write[FileUploads] and
-        (__ \ "acknowledged").write[Boolean]
-    )(unlift(FileUploaded.unapply))
-  )
-
-  lazy val uploadMultipleFilesFormat = Format(
-    (
-      (__ \ "hostData").read[model.FileUploadHostData](fileUploadHostDataFormat) and
-        (__ \ "fileUploads").read[FileUploads]
-    )(UploadMultipleFiles.apply _),
-    (
-      (__ \ "hostData").write[model.FileUploadHostData](fileUploadHostDataFormat) and
-        (__ \ "fileUploads").write[FileUploads]
-    )(unlift(UploadMultipleFiles.unapply))
-  )
-
+  override def deserializeState(stateName: String, properties: JsValue): JsResult[State] =
+    stateName match {
+      case "Uninitialized"              => JsSuccess(Uninitialized)
+      case "Initialized"                => initializedFormat.reads(properties)
+      case "ContinueToHost"             => continueToHostFormat.reads(properties)
+      case "UploadFile"                 => uploadFileFormat.reads(properties)
+      case "FileUploaded"               => fileUploadedFormat.reads(properties)
+      case "WaitingForFileVerification" => waitingForFileVerificationFormat.reads(properties)
+      case "UploadMultipleFiles"        => uploadMultipleFilesFormat.reads(properties)
+      case _                            => JsError(s"Unknown state name $stateName")
+    }
 }

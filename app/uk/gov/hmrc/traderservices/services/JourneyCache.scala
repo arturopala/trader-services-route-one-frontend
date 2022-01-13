@@ -34,9 +34,8 @@ import akka.actor.PoisonPill
 import java.util.UUID
 import akka.pattern.ExplicitAskSupport
 
-/**
-  * Generic short-term journey state store based on hmrc-mongo cache.
-  * Internally employs an actor to make writes and reads sequential per each journeyId.
+/** Generic short-term journey state store based on hmrc-mongo cache. Internally employs an actor to make writes and
+  * reads sequential per each journeyId.
   */
 trait JourneyCache[T, C] extends ExplicitAskSupport {
 
@@ -79,9 +78,8 @@ trait JourneyCache[T, C] extends ExplicitAskSupport {
             case Left(JsResultException(jsonErrors)) =>
               val error =
                 s"Encountered an issue with de-serialising JSON state from cache: ${jsonErrors
-                  .map {
-                    case (p, s) =>
-                      s"${if (p.toString().isEmpty()) "" else s"$p -> "}${s.map(_.message).mkString(", ")}"
+                  .map { case (p, s) =>
+                    s"${if (p.toString().isEmpty()) "" else s"$p -> "}${s.map(_.message).mkString(", ")}"
                   }
                   .mkString(", ")}. \nCheck if all your states have relevant entries declared in the *JourneyStateFormats.serializeStateProperties and *JourneyStateFormats.deserializeState functions."
               Logger(getClass).error(error)
@@ -272,8 +270,8 @@ trait JourneyCache[T, C] extends ExplicitAskSupport {
           cacheRepository
             .put[T](journeyId)(DataKey(journeyKey), entity.asInstanceOf[T])(format)
             .map(ci => Result(Right(()), replyTo))
-            .recover {
-              case e => Result(Left(e.getMessage), replyTo)
+            .recover { case e =>
+              Result(Left(e.getMessage), replyTo)
             }
             .pipeTo(context.self)
         else
@@ -284,8 +282,8 @@ trait JourneyCache[T, C] extends ExplicitAskSupport {
           cacheRepository
             .deleteEntity(journeyId)
             .map(ci => Result(Right(()), replyTo))
-            .recover {
-              case e => Result(Left(e.getMessage), replyTo)
+            .recover { case e =>
+              Result(Left(e.getMessage), replyTo)
             }
             .pipeTo(context.self)
         else

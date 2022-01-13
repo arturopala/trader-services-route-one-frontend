@@ -29,7 +29,7 @@ class StartPageController @Inject() (
   config: AppConfig
 ) extends FrontendController(controllerComponents) {
 
-  val showGovUkStart: Action[AnyContent] = Action.async { implicit request =>
+  val showGovUkStart: Action[AnyContent] = Action.async { _ =>
     Future.successful(Redirect(config.govukStartUrl))
   }
 }

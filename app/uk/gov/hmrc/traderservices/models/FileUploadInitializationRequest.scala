@@ -16,14 +16,18 @@
 
 package uk.gov.hmrc.traderservices.models
 
-sealed trait ExportFreightType
+import play.api.libs.json.Format
+import play.api.libs.json.Json
 
-object ExportFreightType extends EnumerationFormats[ExportFreightType] {
+final case class FileUploadInitializationRequest(
+  config: FileUploadSessionConfig,
+  existingFiles: Seq[UploadedFile]
+) {
+  def toFileUploads: FileUploads =
+    FileUploads(existingFiles.map(_.toFileUpload))
+}
 
-  case object Maritime extends ExportFreightType
-  case object Air extends ExportFreightType
-  // Road, Rail or Roll on Roll off
-  case object RORO extends ExportFreightType
-
-  val values = Set(Maritime, Air, RORO)
+object FileUploadInitializationRequest {
+  implicit val formats: Format[FileUploadInitializationRequest] =
+    Json.format[FileUploadInitializationRequest]
 }

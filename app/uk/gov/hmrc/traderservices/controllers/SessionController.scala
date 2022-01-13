@@ -33,7 +33,7 @@ class SessionController @Inject() (
     Future.successful(Ok(timedOutView()))
   }
 
-  val keepAlive: Action[AnyContent] = Action.async { implicit request =>
+  val keepAlive: Action[AnyContent] = Action.async { _ =>
     Future.successful(Ok("{}"))
   }
 }

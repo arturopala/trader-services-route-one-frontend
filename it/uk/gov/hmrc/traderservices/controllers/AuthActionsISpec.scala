@@ -77,15 +77,13 @@ trait AuthActionISpecSetup extends AppISpec {
     implicit val request = FakeRequest().withSession(SessionKeys.authToken -> "Bearer XYZ")
 
     def testAuthorizedWithEnrolment[A](serviceName: String, identifierKey: String): Result =
-      await(super.authorisedWithEnrolment(serviceName, identifierKey) {
-        case (uid, res) =>
-          Future.successful(Ok(uid.getOrElse("none") + "," + res.getOrElse("none")))
+      await(super.authorisedWithEnrolment(serviceName, identifierKey) { case (uid, res) =>
+        Future.successful(Ok(uid.getOrElse("none") + "," + res.getOrElse("none")))
       })
 
     def testAuhorizedWithoutEnrolment[A]: Result =
-      await(super.authorisedWithoutEnrolment {
-        case (uid, res) =>
-          Future.successful(Ok(uid.getOrElse("none") + "," + res.getOrElse("none")))
+      await(super.authorisedWithoutEnrolment { case (uid, res) =>
+        Future.successful(Ok(uid.getOrElse("none") + "," + res.getOrElse("none")))
       })
 
     override def toSubscriptionJourney(continueUrl: String): Result = Redirect("/subscription")

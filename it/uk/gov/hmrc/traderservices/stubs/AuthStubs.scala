@@ -27,13 +27,13 @@ trait AuthStubs {
         .withRequestBody(
           equalToJson(
             s"""
-               |{
-               |  "authorise": [
-               |    { "identifiers":[], "state":"Activated", "enrolment": "${enrolment.serviceName}" },
-               |    { "authProviders": ["GovernmentGateway"] }
-               |  ],
-               |  "retrieve":["optionalCredentials","authorisedEnrolments"]
-               |}
+              |{
+              |  "authorise": [
+              |    { "identifiers":[], "state":"Activated", "enrolment": "${enrolment.serviceName}" },
+              |    { "authProviders": ["GovernmentGateway"] }
+              |  ],
+              |  "retrieve":["optionalCredentials","authorisedEnrolments"]
+              |}
            """.stripMargin,
             true,
             true
@@ -43,13 +43,13 @@ trait AuthStubs {
           aResponse()
             .withStatus(200)
             .withBody(s"""
-                         |{
-                         |"optionalCredentials": {"providerId": "12345-credId", "providerType": "GovernmentGateway"},
-                         |"authorisedEnrolments": [
-                         |  { "key":"${enrolment.serviceName}", "identifiers": [
-                         |    {"key":"${enrolment.identifierName}", "value": "${enrolment.identifierValue}"}
-                         |  ]}
-                         |]}
+              |{
+              |"optionalCredentials": {"providerId": "12345-credId", "providerType": "GovernmentGateway"},
+              |"authorisedEnrolments": [
+              |  { "key":"${enrolment.serviceName}", "identifiers": [
+              |    {"key":"${enrolment.identifierName}", "value": "${enrolment.identifierValue}"}
+              |  ]}
+              |]}
           """.stripMargin)
         )
     )
@@ -73,12 +73,12 @@ trait AuthStubs {
         .withRequestBody(
           equalToJson(
             s"""
-               |{
-               |  "authorise": [
-               |    { "authProviders": ["GovernmentGateway"] }
-               |  ],
-               |  "retrieve":["optionalCredentials"]
-               |}
+              |{
+              |  "authorise": [
+              |    { "authProviders": ["GovernmentGateway"] }
+              |  ],
+              |  "retrieve":["optionalCredentials"]
+              |}
            """.stripMargin,
             true,
             true
