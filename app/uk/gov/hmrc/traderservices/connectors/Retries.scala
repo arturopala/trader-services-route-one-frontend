@@ -25,6 +25,7 @@ import play.api.Logger
 import scala.util.Try
 import scala.util.Success
 import scala.util.Failure
+import play.api.Configuration
 
 trait Retries {
 
@@ -40,20 +41,41 @@ trait Retries {
         .flatMap(result =>
           if (remainingIntervals.nonEmpty && shouldRetry(Success(result))) {
             val delay = remainingIntervals.head
-            Logger(getClass).warn(s"Retrying in $delay due to ${retryReason(result)}")
+            Logger(getClass)
+              .warn(
+                s"Will retry [${intervals.size - remainingIntervals.size + 1}] in $delay due to ${retryReason(result)}"
+              )
             after(delay, actorSystem.scheduler)(loop(remainingIntervals.tail)(mdcData)(block))
-          } else
+          } else {
             Future.successful(result)
+          }
         )
         .recoverWith { case e: Throwable =>
           if (remainingIntervals.nonEmpty && shouldRetry(Failure(e))) {
             val delay = remainingIntervals.head
-            Logger(getClass).warn(s"Retrying in $delay due to ${e.getClass.getName()}: ${e.getMessage()}")
+            Logger(getClass).warn(
+              s"Will retry [${intervals.size - remainingIntervals.size + 1}] in $delay due to ${e.getClass
+                .getName()}: ${e.getMessage()}"
+            )
             after(delay, actorSystem.scheduler)(loop(remainingIntervals.tail)(mdcData)(block))
-          } else
+          } else {
+            Logger(getClass).error(
+              s"After [${intervals.size + 1}] retries failing with ${e.getClass.getName()}: ${e.getMessage()}"
+            )
             Future.failed(e)
+          }
         }
     loop(intervals)(Mdc.mdcData)(block)
   }
+
+}
+
+object Retries {
+
+  def getConfIntervals(key: String, configuration: Configuration): Seq[FiniteDuration] =
+    configuration
+      .getOptional[Seq[String]](s"$key.retryIntervals")
+      .map(_.map(Duration.create).map(d => FiniteDuration(d.length, d.unit)))
+      .getOrElse(Seq.empty)
 
 }

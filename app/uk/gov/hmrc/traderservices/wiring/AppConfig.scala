@@ -24,6 +24,9 @@ import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 
 import javax.inject.Inject
 import scala.concurrent.duration.Duration
+import scala.concurrent.duration.FiniteDuration
+import uk.gov.hmrc.traderservices.connectors.Retries
+import play.api.Configuration
 
 object AppConfig {
   val vesselArrivalConstraintMonths = 6
@@ -90,9 +93,11 @@ trait AppConfig {
   val workingHourEnd: Int
   val requireOptionalTransportFeature: Boolean
 
+  val fileUploadResultPushRetryIntervals: Seq[FiniteDuration]
+
 }
 
-class AppConfigImpl @Inject() (config: ServicesConfig) extends AppConfig {
+class AppConfigImpl @Inject() (config: ServicesConfig, configuration: Configuration) extends AppConfig {
 
   override val appName: String = config.getString("appName")
 
@@ -157,4 +162,7 @@ class AppConfigImpl @Inject() (config: ServicesConfig) extends AppConfig {
   override val workingHourEnd: Int = config.getInt("features.workingHours.end")
 
   override val govukStartUrl: String = config.getString("govuk.start.url")
+
+  override val fileUploadResultPushRetryIntervals: Seq[FiniteDuration] =
+    Retries.getConfIntervals("fileUploadResultPush.retryIntervals", configuration)
 }

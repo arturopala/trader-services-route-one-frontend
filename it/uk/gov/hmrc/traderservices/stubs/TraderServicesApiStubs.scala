@@ -6,6 +6,8 @@ import play.mvc.Http.HeaderNames
 import uk.gov.hmrc.traderservices.support.WireMockSupport
 
 import java.time.LocalDateTime
+import uk.gov.hmrc.traderservices.connectors.FileUploadResultPushConnector
+import play.api.libs.json.Json
 
 trait TraderServicesApiStubs {
   me: WireMockSupport =>
@@ -158,9 +160,9 @@ trait TraderServicesApiStubs {
     url
   }
 
-  def givenSomePage(status: Int, url: String, content: String): Unit =
+  def givenSomePage(status: Int, path: String, content: String): Unit =
     stubFor(
-      get(urlPathEqualTo(url))
+      get(urlPathEqualTo(path))
         .willReturn(
           aResponse()
             .withStatus(status)
@@ -168,6 +170,17 @@ trait TraderServicesApiStubs {
             .withBody(content)
         )
     )
+
+  def givenHostPushEndpoint(path: String, request: FileUploadResultPushConnector.Request, status: Int): Unit =
+    stubFor(
+      put(urlPathEqualTo(path))
+        .withRequestBody(equalToJson(Json.stringify(Json.toJson(request))))
+        .willReturn(aResponse().withStatus(status))
+    )
+
+  def verifyHostPushEndpointHasHappened(path: String, times: Int = 1) {
+    verify(times, putRequestedFor(urlEqualTo(path)))
+  }
 
   def verifyCreateCaseRequestHappened(times: Int = 1) {
     verify(times, postRequestedFor(urlEqualTo("/create-case")))

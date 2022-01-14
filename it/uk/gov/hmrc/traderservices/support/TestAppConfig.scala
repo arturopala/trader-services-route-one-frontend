@@ -46,4 +46,8 @@ case class TestAppConfig(
   override val workingHourEnd: Int = 8
   override val workingHourStart: Int = 16
   override val govukStartUrl: String = wireMockBaseUrl + "/dummy-start-url"
+
+  override val fileUploadResultPushRetryIntervals: Seq[FiniteDuration] =
+    Seq(FiniteDuration(10, "ms"), FiniteDuration(20, "ms"))
+
 }
