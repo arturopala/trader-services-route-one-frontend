@@ -23,10 +23,8 @@ import sbt.internal.util.ConsoleLogger
 import scala.util.Properties
 import scala.sys.process.Process
 
-/**
-  * Runs `webpack` command in assets.
-  * Project's build has to define `entries` and `outputFileName` settings.
-  * Supports `skip` setting.
+/** Runs `webpack` command in assets. Project's build has to define `entries` and `outputFileName` settings. Supports
+  * `skip` setting.
   */
 object SbtWebpack extends AutoPlugin {
 
@@ -135,9 +133,7 @@ object SbtWebpack extends AutoPlugin {
     val globalHash = new String(
       Hash(
         Seq(
-          readAndClose(webpackConfigFileLocation),
-          state.value.currentCommand.map(_.commandLine).getOrElse(""),
-          sys.env.toList.sorted.toString
+          readAndClose(webpackConfigFileLocation)
         ).mkString("--")
       )
     )
@@ -153,14 +149,16 @@ object SbtWebpack extends AutoPlugin {
       )
     }
 
-    val results = incremental.syncIncremental((streams in Assets).value.cacheDirectory / "run", sources) {
+    val results = incremental.syncIncremental((streams in Assets).value.cacheDirectory / "webpack", sources) {
       modifiedSources =>
         val startInstant = System.currentTimeMillis
 
         if (!skip && modifiedSources.nonEmpty) {
           logger.info(s"""
-                         |[sbt-webpack] Detected ${modifiedSources.size} changed files:
-                         |[sbt-webpack] - ${modifiedSources.map(f => f.relativeTo(projectRoot).getOrElse(f).toString()).mkString("\n[sbt-webpack] - ")}
+            |[sbt-webpack] Detected ${modifiedSources.size} changed files:
+            |[sbt-webpack] - ${modifiedSources
+            .map(f => f.relativeTo(projectRoot).getOrElse(f).toString())
+            .mkString("\n[sbt-webpack] - ")}
            """.stripMargin.trim)
 
           val compiler = new Compiler(
@@ -178,7 +176,7 @@ object SbtWebpack extends AutoPlugin {
           )
 
           // Compile all modified sources at once
-          val result = compiler.compile()
+          val result: CompilationResult = compiler.compile()
 
           // Report compilation problems
           CompileProblems.report(
@@ -294,9 +292,8 @@ object SbtWebpack extends AutoPlugin {
     def compile(): CompilationResult = {
       import sbt._
 
-      val entriesEnvs = entries.zipWithIndex.flatMap {
-        case (file, index) =>
-          Seq("--env", s"""entry.$index=${file.getAbsolutePath()}""")
+      val entriesEnvs = entries.zipWithIndex.flatMap { case (file, index) =>
+        Seq("--env", s"""entry.$index=${file.getAbsolutePath()}""")
       }
 
       val cmd = Seq(
