@@ -1,4 +1,5 @@
 const path = require('path');
+const ESLintPlugin = require('eslint-webpack-plugin');
 
 module.exports = function (env) {
   return {
@@ -38,10 +39,33 @@ module.exports = function (env) {
         {
           test: /\.ts$/,
           exclude: /node_modules|legacy/,
-          loader: 'eslint-loader'
+          loader: ESLintPlugin.loader
         }
       ]
     },
-    output: env.output
+    output: env.output,
+    plugins: [new ESLintPlugin({ fix: false })],
+    stats: {
+      relatedAssets: true,
+      moduleAssets: true,
+      nestedModules: true,
+      runtimeModules: true,
+      dependentModules: true,
+      groupAssetsByPath: true,
+      groupModulesByPath: true,
+      children: true,
+      chunks: false,
+      modules: true,
+      outputPath: true,
+      providedExports: false,
+      reasons: false,
+      source: true,
+      chunkGroupChildren: true,
+      chunkRelations: true,
+      modulesSpace: 100,
+      assetsSpace: 100,
+      chunkModulesSpace: 100,
+      nestedModulesSpace: 100,
+    }
   }
 };

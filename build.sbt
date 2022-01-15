@@ -15,13 +15,12 @@ lazy val scoverageSettings = {
 }
 
 lazy val compileDeps = Seq(
-  "uk.gov.hmrc"                  %% "bootstrap-frontend-play-28" % "5.12.0",
-  "uk.gov.hmrc"                  %% "auth-client"                % "5.7.0-play-28",
-  "uk.gov.hmrc"                  %% "play-fsm"                   % "0.87.0-play-28",
-  "uk.gov.hmrc.mongo"            %% "hmrc-mongo-play-28"         % "0.53.0",
-  "uk.gov.hmrc"                  %% "json-encryption"            % "4.10.0-play-28",
-  "uk.gov.hmrc"                  %% "play-frontend-govuk"        % "1.0.0-play-28",
-  "uk.gov.hmrc"                  %% "play-frontend-hmrc"         % "1.4.0-play-28",
+  "uk.gov.hmrc"                  %% "bootstrap-frontend-play-28" % "5.19.0",
+  "uk.gov.hmrc"                  %% "auth-client"                % "5.8.0-play-28",
+  "uk.gov.hmrc"                  %% "play-fsm"                   % "0.88.0-play-28",
+  "uk.gov.hmrc.mongo"            %% "hmrc-mongo-play-28"         % "0.59.0",
+  "uk.gov.hmrc"                  %% "json-encryption"            % "4.11.0-play-28",
+  "uk.gov.hmrc"                  %% "play-frontend-hmrc"         % "1.31.0-play-28",
   "com.googlecode.libphonenumber" % "libphonenumber"             % "8.12.31",
   "com.fasterxml.jackson.module" %% "jackson-module-scala"       % "2.12.5",
   "com.sun.mail"                  % "javax.mail"                 % "1.6.2"
@@ -62,9 +61,17 @@ lazy val root = (project in file("."))
     scalafmtOnCompile in Test := true,
     majorVersion := 0,
     javaOptions in Test += "-Djava.locale.providers=CLDR,JRE",
-    WebpackKeys.outputFileName in WebpackKeys.webpack := "javascripts/application.min.js",
-    WebpackKeys.entries in WebpackKeys.webpack := Seq(
+    WebpackKeys.webpack / WebpackKeys.configFile := (Assets / sourceDirectory).value / "webpack.javascript.config.js",
+    WebpackKeys.webpack / WebpackKeys.outputPath := "javascripts",
+    WebpackKeys.webpack / WebpackKeys.outputFileName := "application.min.js",
+    WebpackKeys.webpack / WebpackKeys.entries := Seq(
       "assets:javascripts/index.ts"
+    ),
+    WebpackKeys.webpackCss / WebpackKeys.configFile := (Assets / sourceDirectory).value / "webpack.stylesheet.config.js",
+    WebpackKeys.webpackCss / WebpackKeys.outputPath := "stylesheets",
+    WebpackKeys.webpackCss / WebpackKeys.outputFileName := "application.css",
+    WebpackKeys.webpackCss / WebpackKeys.entries := Seq(
+      "assets:stylesheets/application.scss"
     )
   )
   .configs(IntegrationTest)
@@ -77,7 +84,7 @@ lazy val root = (project in file("."))
     scalafmtOnCompile in IntegrationTest := true,
     javaOptions in IntegrationTest += "-Djava.locale.providers=CLDR,JRE"
   )
-  .disablePlugins(JUnitXmlReportPlugin) //Required to prevent https://github.com/scalatest/scalatest/issues/1427
+  .disablePlugins(JUnitXmlReportPlugin) // Required to prevent https://github.com/scalatest/scalatest/issues/1427
   .enablePlugins(PlayScala, SbtDistributablesPlugin)
 
 inConfig(IntegrationTest)(org.scalafmt.sbt.ScalafmtPlugin.scalafmtConfigSettings)
