@@ -61,17 +61,28 @@ lazy val root = (project in file("."))
     scalafmtOnCompile in Test := true,
     majorVersion := 0,
     javaOptions in Test += "-Djava.locale.providers=CLDR,JRE",
-    WebpackKeys.webpack / WebpackKeys.configFile := (Assets / sourceDirectory).value / "webpack.javascript.config.js",
-    WebpackKeys.webpack / WebpackKeys.outputPath := "javascripts",
-    WebpackKeys.webpack / WebpackKeys.outputFileName := "application.min.js",
-    WebpackKeys.webpack / WebpackKeys.entries := Seq(
-      "assets:javascripts/index.ts"
-    ),
-    WebpackKeys.webpackCss / WebpackKeys.configFile := (Assets / sourceDirectory).value / "webpack.stylesheet.config.js",
-    WebpackKeys.webpackCss / WebpackKeys.outputPath := "stylesheets",
-    WebpackKeys.webpackCss / WebpackKeys.outputFileName := "application.css",
-    WebpackKeys.webpackCss / WebpackKeys.entries := Seq(
-      "assets:stylesheets/application.scss"
+    WebpackKeys.compilations := Seq(
+      WebpackCompilation(
+        id = "js",
+        configFilePath = "webpack.javascript.config.js",
+        includeFilter = "*.js" || "*.ts",
+        inputs = Seq("javascripts/index.ts"),
+        output = "javascripts/application.min.js"
+      ),
+      WebpackCompilation(
+        id = "css",
+        configFilePath = "webpack.stylesheet.config.js",
+        includeFilter = "*.scss" || "*.sass" || "*.css",
+        inputs = Seq("stylesheets/application.scss"),
+        output = "stylesheets/application.css"
+      ),
+      WebpackCompilation(
+        id = "print",
+        configFilePath = "webpack.stylesheet.config.js",
+        includeFilter = "*.scss" || "*.sass" || "*.css",
+        inputs = Seq("stylesheets/print.scss"),
+        output = "stylesheets/print.css"
+      )
     )
   )
   .configs(IntegrationTest)
