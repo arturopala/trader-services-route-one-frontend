@@ -127,7 +127,7 @@ object SbtWebpack extends AutoPlugin {
     val logger: ManagedLogger = (Assets / streams).value.log
     val targetDir: File = (Assets / WebpackKeys.webpack / resourceManaged).value
 
-    val nodeModulesLocation: File = (WebpackKeys.webpack / WebpackKeys.nodeModules).value
+    val nodeModulesPath: File = (WebpackKeys.webpack / WebpackKeys.nodeModules).value
     val webpackReporter: Reporter = (Assets / reporter).value
     val webpackBinary: File = (WebpackKeys.webpack / WebpackKeys.binary).value
     val outputDirectory: File = (WebpackKeys.webpack / resourceManaged).value
@@ -140,6 +140,10 @@ object SbtWebpack extends AutoPlugin {
       (WebpackKeys.webpack / WebpackKeys.configurations).value
 
     val cacheDirectory = (Assets / streams).value.cacheDirectory
+
+    val nodeModules: File =
+      if (nodeModulesPath.toPath.isAbsolute()) nodeModulesPath
+      else webpackSourceDirectory.toPath().resolve(nodeModulesPath.toPath()).toFile()
 
     webpackConfigs
       .filter(config => config.enabled && (acceptedIds.isEmpty || acceptedIds.contains(config.id)))
@@ -205,7 +209,7 @@ object SbtWebpack extends AutoPlugin {
                   webpackSourceDirectory,
                   assetsLocation,
                   assetsWebJarsLocation,
-                  nodeModulesLocation,
+                  nodeModules,
                   config.additionalProperties,
                   logger
                 )
@@ -287,17 +291,19 @@ object SbtWebpack extends AutoPlugin {
       sourceDirectory: File,
       assetsLocation: File,
       webjarsLocation: File,
-      nodeModulesLocation: File,
+      nodeModules: File,
       additionalEnvironmentProperties: Map[String, String],
       logger: ManagedLogger
     ): Either[String, WebpackExecutionResult] = {
       import sbt._
 
-      if (!webpackBinary.exists())
+      if (!webpackBinary.exists() || !webpackBinary.isFile())
         Left(s"webpack binary file ${webpackBinary.getPath()} not found")
-      else if (!configFile.exists())
+      else if (!configFile.exists() || !configFile.isFile())
         Left(s"webpack config file ${configFile.getPath()} not found")
-      else if (!inputFiles.forall(_.exists()))
+      else if (!nodeModules.exists() || !nodeModules.isDirectory())
+        Left(s"node_modules folder ${nodeModules.getPath()} not found")
+      else if (!inputFiles.forall(f => f.exists() && f.isFile()))
         if (inputFiles.size == 1)
           Left(s"input file ${inputFiles.map(_.toPath()).mkString(", ")} not found")
         else
@@ -330,7 +336,7 @@ object SbtWebpack extends AutoPlugin {
         logger.info(s"$tag Running command ${AnsiColor.CYAN}${cmd.mkString(" ")}${AnsiColor.RESET}")
 
         val (exitCode, output) =
-          Shell.execute(cmd, sourceDirectory, "NODE_PATH" -> nodeModulesLocation.getCanonicalPath)
+          Shell.execute(cmd, sourceDirectory, "NODE_PATH" -> nodeModules.getCanonicalPath)
 
         val success = exitCode == 0
 
