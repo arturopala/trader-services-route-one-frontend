@@ -23,9 +23,7 @@ import sbt.internal.util.ConsoleLogger
 import scala.util.Properties
 import scala.sys.process.Process
 
-/** Runs `webpack` command in assets. Project's build has to define `entries` and `outputFileName` settings. Supports
-  * `skip` setting.
-  */
+/** Runs `webpack` command. Project's build has to define `configurations` setting. */
 object SbtWebpack extends AutoPlugin {
 
   override def requires = SbtWeb
