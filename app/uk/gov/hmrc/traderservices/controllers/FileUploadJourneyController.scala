@@ -70,11 +70,11 @@ class FileUploadJourneyController @Inject() (
       .parseJsonWithFallback[FileUploadInitializationRequest](BadRequest)
       .apply(Transitions.initialize)
 
-  // GET /upload/finish
-  final val finish: Action[AnyContent] =
+  // POST /upload/continue-to-host
+  final val continueToHost: Action[AnyContent] =
     actions
       .show[ContinueToHost]
-      .orApply(Transitions.finish)
+      .orApply(Transitions.continueToHost)
 
   // ----------------------- FILES UPLOAD -----------------------
 
@@ -223,7 +223,7 @@ class FileUploadJourneyController @Inject() (
       .bindForm[Boolean](UploadAnotherFileChoiceForm)
       .applyWithRequest { implicit request =>
         FileUploadTransitions.submitedUploadAnotherFileChoice(upscanRequest)(upscanInitiateConnector.initiate(_))(
-          Transitions.finish
+          Transitions.continueToHost
         )
       }
 
@@ -314,7 +314,7 @@ class FileUploadJourneyController @Inject() (
             previewFile = controller.previewFileUploadByReference,
             markFileRejected = controller.markFileUploadAsRejectedAsync,
             None,
-            continueAction = controller.finish,
+            continueAction = controller.continueToHost,
             backLink = backLinkFor(breadcrumbs)
           )
         )
@@ -357,7 +357,7 @@ class FileUploadJourneyController @Inject() (
           else
             views.fileUploadedSummaryView(
               fileUploads,
-              controller.finish,
+              controller.continueToHost,
               controller.previewFileUploadByReference,
               controller.removeFileUploadByReference,
               backLinkFor(breadcrumbs)

@@ -26,7 +26,7 @@ object FileUploadJourneyModel extends FileUploadJourneyModelMixin {
 
   final override val maxFileUploadsNumber: Int = 10
 
-  final override val retreatFromFileUpload: Transition = Transitions.finish
+  final override val retreatFromFileUpload: Transition = Transitions.continueToHost
 
   /** Opaque data carried through the file upload process. */
   final type FileUploadHostData = FileUploadSessionConfig
@@ -62,7 +62,7 @@ object FileUploadJourneyModel extends FileUploadJourneyModelMixin {
         goto(Initialized(request.config, request.toFileUploads))
       }
 
-    final val finish =
+    final val continueToHost =
       Transition {
         case s: FileUploadState                  => goto(ContinueToHost(s.hostData, s.fileUploads))
         case Initialized(config, fileUploads)    => goto(ContinueToHost(config, fileUploads))

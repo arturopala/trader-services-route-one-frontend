@@ -275,6 +275,7 @@ class FileUploadJourneyISpec
           )
       }
     }
+
     "GET /file-upload" should {
       "show the upload page of first document" in {
         val state = Initialized(fileUploadSessionConfig, FileUploads())

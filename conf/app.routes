@@ -127,7 +127,7 @@ GET        /add/case-already-submitted                              @uk.gov.hmrc
 
 + nocsrf
 PUT        /initialize                                              @uk.gov.hmrc.traderservices.controllers.FileUploadJourneyController.initialize
-GET        /finish                                                  @uk.gov.hmrc.traderservices.controllers.FileUploadJourneyController.finish
+POST       /continue-to-host                                        @uk.gov.hmrc.traderservices.controllers.FileUploadJourneyController.continueToHost
 
 GET        /upload-files                                            @uk.gov.hmrc.traderservices.controllers.FileUploadJourneyController.showUploadMultipleFiles
 + nocsrf
