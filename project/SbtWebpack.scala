@@ -34,14 +34,17 @@ object SbtWebpack extends AutoPlugin {
 
     object WebpackKeys {
       val webpack =
-        TaskKey[Seq[File]]("webpack", "Run all enabled webpack compilations.")
+        TaskKey[Seq[File]]("webpack", "Run all enabled webpack configurations.")
       val webpackOnly =
-        inputKey[Seq[File]]("Run selected compilations for provided ids.")
-      val binary = SettingKey[File]("webpackBinary", "The location of webpack binary")
-      val nodeModules = TaskKey[File]("webpackNodeModules", "The location of the node_modules.")
+        inputKey[Seq[File]]("Run selected configurations for provided ids.")
+      val binary = SettingKey[File]("webpackBinary", "The location of the webpack binary.")
+      val nodeModules = TaskKey[File](
+        "webpackNodeModules",
+        "The location of the node_modules folder, either relative to webpack's sourceDirectory or absolute."
+      )
       val configurations = SettingKey[Seq[WebpackConfig]](
         "webpackConfigurations",
-        "Configurations of the webpack."
+        "Configurations of the webpack to execute."
       )
     }
 
