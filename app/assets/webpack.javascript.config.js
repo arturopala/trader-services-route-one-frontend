@@ -10,7 +10,7 @@ module.exports = function (env) {
     },
     watch: false,
     devtool: 'source-map',
-    entry: Object.values(env.entry),
+    entry: env.entry ? Object.values(env.entry) : [],
     resolve: {
       extensions: ['.js', '.ts'],
       alias: {

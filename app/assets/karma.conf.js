@@ -1,5 +1,5 @@
 const path = require('path');
-const webpackConfig = require('./webpack.config.js');
+const webpackConfig = require('./webpack.karma.config.js');
 process.env.CHROME_BIN = require('puppeteer').executablePath();
 
 module.exports = function (config) {
@@ -44,12 +44,8 @@ module.exports = function (config) {
       './spec/**/*.spec.js': ['webpack']
     },
     webpack: webpackConfig({
-      entry: {
-        0: path.join(__dirname, './javascripts/index.ts')
-      },
       output: {
-        path: path.join(__dirname, './build'),
-        filename: 'application.min.js',
+        path: path.join(__dirname, './build')
       },
       webjars: {
         path: path.join(__dirname, '../../target/web/web-modules/main/webjars')
