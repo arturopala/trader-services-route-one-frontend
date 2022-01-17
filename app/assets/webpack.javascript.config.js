@@ -46,8 +46,8 @@ module.exports = function (env) {
     output: env.output,
     plugins: [new ESLintPlugin({ fix: false })],
     stats: {
-      relatedAssets: true,
       moduleAssets: true,
+      relatedAssets: true,
       nestedModules: true,
       runtimeModules: true,
       dependentModules: true,

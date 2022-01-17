@@ -40,16 +40,15 @@ object SbtWebpack extends AutoPlugin {
       val webpackOnly =
         inputKey[Seq[File]]("Run selected compilations for provided ids.")
       val binary = SettingKey[File]("webpackBinary", "The location of webpack binary")
-      val nodeModulesPath = TaskKey[File]("webpackNodeModules", "The location of the node_modules.")
-      val workingDirectory = SettingKey[File]("webpackWorkingDirectory", "Compilation folder")
-      val compilations = SettingKey[Seq[WebpackCompilation]](
-        "webpackCompilations",
-        "Configurations of the webpack compilations."
+      val nodeModules = TaskKey[File]("webpackNodeModules", "The location of the node_modules.")
+      val configurations = SettingKey[Seq[WebpackConfig]](
+        "webpackConfigurations",
+        "Configurations of the webpack."
       )
     }
 
     /** Configuration of a single webpack compilation. */
-    case class WebpackCompilation(
+    case class WebpackConfig(
       /** Compilation id */
       id: String,
       /** A path of the webpack config.js definition relative to the working directory. */
@@ -77,15 +76,14 @@ object SbtWebpack extends AutoPlugin {
 
   final val unscopedWebpackSettings = Seq(
     WebpackKeys.binary := (Assets / sourceDirectory).value / "node_modules" / ".bin" / "webpack",
-    WebpackKeys.nodeModulesPath := new File("./node_modules"),
-    WebpackKeys.workingDirectory := (Assets / sourceDirectory).value,
-    WebpackKeys.webpack := runWebpackCompilations(Seq.empty)
+    WebpackKeys.nodeModules := new File("./node_modules"),
+    WebpackKeys.webpack := runWebpackConfigs(Seq.empty)
       .dependsOn(Assets / WebKeys.webModules)
       .dependsOn(NpmKeys.npmInstall)
       .value,
     WebpackKeys.webpackOnly := Def.inputTaskDyn {
       val ids = sbt.complete.Parsers.spaceDelimited("<args>").parsed
-      runWebpackCompilations(ids)
+      runWebpackConfigs(ids)
     }.evaluated,
     WebpackKeys.webpack / excludeFilter := HiddenFileFilter ||
       new FileFilter {
@@ -96,6 +94,7 @@ object SbtWebpack extends AutoPlugin {
           path.contains("/dist/")
         }
       },
+    WebpackKeys.webpack / sourceDirectory := (Assets / sourceDirectory).value,
     WebpackKeys.webpack / resourceManaged := webTarget.value / "webpack",
     WebpackKeys.webpack / sbt.Keys.skip := false,
     packager.Keys.dist := (packager.Keys.dist dependsOn WebpackKeys.webpack).value,
@@ -122,53 +121,53 @@ object SbtWebpack extends AutoPlugin {
       finally s.close()
     } else ""
 
-  final def runWebpackCompilations(acceptedIds: Seq[String]) = Def.task {
+  final def runWebpackConfigs(acceptedIds: Seq[String]) = Def.task {
     val tag = "[sbt-webpack]"
     val logger: ManagedLogger = (Assets / streams).value.log
     val targetDir: File = (Assets / WebpackKeys.webpack / resourceManaged).value
 
-    val nodeModulesLocation: File = (WebpackKeys.webpack / WebpackKeys.nodeModulesPath).value
+    val nodeModulesLocation: File = (WebpackKeys.webpack / WebpackKeys.nodeModules).value
     val webpackReporter: Reporter = (Assets / reporter).value
-    val webpackBinaryLocation: File = (WebpackKeys.webpack / WebpackKeys.binary).value
-    val webpackOutputDirectory: File = (WebpackKeys.webpack / resourceManaged).value
+    val webpackBinary: File = (WebpackKeys.webpack / WebpackKeys.binary).value
+    val outputDirectory: File = (WebpackKeys.webpack / resourceManaged).value
     val assetsLocation: File = (Assets / sourceDirectory).value
     val assetsWebJarsLocation: File = (Assets / webJarsDirectory).value
     val projectRoot: File = baseDirectory.value
-    val webpackWorkingDirectory: File = (WebpackKeys.webpack / WebpackKeys.workingDirectory).value
+    val webpackSourceDirectory: File = (WebpackKeys.webpack / sourceDirectory).value
 
-    val webpackCompilations: Seq[autoImport.WebpackCompilation] =
-      (WebpackKeys.webpack / WebpackKeys.compilations).value
+    val webpackConfigs: Seq[autoImport.WebpackConfig] =
+      (WebpackKeys.webpack / WebpackKeys.configurations).value
 
     val cacheDirectory = (Assets / streams).value.cacheDirectory
 
-    webpackCompilations
+    webpackConfigs
       .filter(config => config.enabled && (acceptedIds.isEmpty || acceptedIds.contains(config.id)))
       .flatMap { config =>
-        val compilationTag = s"$tag[${config.id}]"
+        val configTag = s"$tag[${config.id}]"
 
-        val webpackEntryFiles: Set[File] =
+        val inputFiles: Set[File] =
           config.inputs.map { path =>
             if (path.startsWith("assets:"))
               assetsLocation.toPath.resolve(path.drop(7)).toFile()
             else if (path.startsWith("webjar:"))
               assetsWebJarsLocation.toPath.resolve(path.drop(7)).toFile()
-            else webpackWorkingDirectory.toPath().resolve(path).toFile()
+            else webpackSourceDirectory.toPath().resolve(path).toFile()
           }.toSet
 
-        val webpackConfigFile: File =
-          webpackWorkingDirectory.toPath.resolve(config.configFilePath).toFile()
+        val configFile: File =
+          webpackSourceDirectory.toPath.resolve(config.configFilePath).toFile()
 
-        val webpackOutputFileName: String = config.output
+        val outputFileName: String = config.output
 
         val sources: Seq[File] =
-          ((webpackWorkingDirectory ** (config.includeFilter -- (WebpackKeys.webpack / excludeFilter).value)).get
-            .filter(_.isFile) ++ webpackEntryFiles ++ Seq(webpackConfigFile)).distinct
+          ((webpackSourceDirectory ** (config.includeFilter -- (WebpackKeys.webpack / excludeFilter).value)).get
+            .filter(_.isFile) ++ inputFiles ++ Seq(configFile)).distinct
 
         val globalHash = new String(
           Hash(
             Seq(
-              compilationTag,
-              readAndClose(webpackConfigFile),
+              configTag,
+              readAndClose(configFile),
               config.toString
             ).mkString("--")
           )
@@ -184,93 +183,80 @@ object SbtWebpack extends AutoPlugin {
         }
 
         val results =
-          incremental.syncIncremental(cacheDirectory / compilationTag, sources) { modifiedSources =>
-            val startInstant = System.currentTimeMillis
-
+          incremental.syncIncremental(cacheDirectory / configTag, sources) { modifiedSources =>
             if (modifiedSources.nonEmpty) {
               logger.info(s"""
-                |$compilationTag Detected ${modifiedSources.size} changed files:
-                |$compilationTag - ${modifiedSources
+                |$configTag Detected ${modifiedSources.size} changed files:
+                |$configTag - ${modifiedSources
                 .map(f => f.relativeTo(projectRoot).getOrElse(f).toString())
-                .mkString(s"\n$compilationTag - ")}
+                .mkString(s"\n$configTag - ")}
            """.stripMargin.trim)
 
-              val compiler = new Compiler(
-                compilationTag,
-                projectRoot,
-                webpackBinaryLocation,
-                webpackConfigFile,
-                webpackEntryFiles,
-                webpackOutputFileName,
-                webpackOutputDirectory,
-                webpackWorkingDirectory,
-                assetsLocation,
-                assetsWebJarsLocation,
-                nodeModulesLocation,
-                config.additionalProperties,
-                logger
-              )
+              Webpack
+                .execute(
+                  configTag,
+                  projectRoot,
+                  webpackBinary,
+                  configFile,
+                  inputFiles,
+                  outputFileName,
+                  outputDirectory,
+                  webpackSourceDirectory,
+                  assetsLocation,
+                  assetsWebJarsLocation,
+                  nodeModulesLocation,
+                  config.additionalProperties,
+                  logger
+                )
+                .fold(
+                  error => {
+                    CompileProblems.report(
+                      reporter = webpackReporter,
+                      problems = Seq(new Problem {
+                        override def category() = ""
+                        override def severity() = Severity.Error
+                        override def message() = error
+                        override def position() =
+                          new Position {
+                            override def line() = java.util.Optional.empty()
+                            override def lineContent() = ""
+                            override def offset() = java.util.Optional.empty()
+                            override def pointer() = java.util.Optional.empty()
+                            override def pointerSpace() = java.util.Optional.empty()
+                            override def sourcePath() = java.util.Optional.empty()
+                            override def sourceFile() = java.util.Optional.empty()
+                          }
+                      })
+                    )
 
-              // Compile all modified sources at once
-              val result: CompilationResult = compiler.compile()
+                    (modifiedSources.map(file => file -> OpFailure).toMap, Seq.empty)
+                  },
+                  result => {
+                    val opResults =
+                      (if (modifiedSources.exists(f => f.getCanonicalPath == result.configFile.getCanonicalPath)) {
+                         Map(result.configFile -> OpSuccess(result.filesRead, result.filesWritten))
+                       } else Map.empty) ++ modifiedSources
+                        .filterNot(modifiedSource =>
+                          result.configFile.getCanonicalPath.contains(modifiedSource.getCanonicalPath)
+                        )
+                        .map(modifiedSource =>
+                          modifiedSource -> OpSuccess(
+                            Set(modifiedSource),
+                            if (
+                              result.filesRead
+                                .exists(file => file.getCanonicalPath == modifiedSource.getCanonicalPath())
+                            )
+                              result.filesWritten
+                            else Set.empty
+                          )
+                        )
+                        .toMap
 
-              // Report compilation problems
-              CompileProblems.report(
-                reporter = webpackReporter,
-                problems =
-                  if (!result.success)
-                    Seq(new Problem {
-                      override def category() = ""
-
-                      override def severity() = Severity.Error
-
-                      override def message() = ""
-
-                      override def position() =
-                        new Position {
-                          override def line() = java.util.Optional.empty()
-
-                          override def lineContent() = ""
-
-                          override def offset() = java.util.Optional.empty()
-
-                          override def pointer() = java.util.Optional.empty()
-
-                          override def pointerSpace() = java.util.Optional.empty()
-
-                          override def sourcePath() = java.util.Optional.empty()
-
-                          override def sourceFile() = java.util.Optional.empty()
-                        }
-                    })
-                  else Seq.empty
-              )
-
-              val opResults = result.entries
-                .filter { entry =>
-                  // Webpack might generate extra files from extra input files. We can't track those input files.
-                  modifiedSources.exists(f => f.getCanonicalPath == entry.inputFile.getCanonicalPath)
-                }
-                .map { entry =>
-                  entry.inputFile -> OpSuccess(entry.filesRead, entry.filesWritten)
-                }
-                .toMap
-
-              // The below is important for excluding unrelated files in the next recompilation.
-              val resultInputFilePaths = result.entries.map(_.inputFile.getCanonicalPath)
-              val unrelatedOpResults = modifiedSources
-                .filterNot(file => resultInputFilePaths.contains(file.getCanonicalPath))
-                .map { file =>
-                  file -> OpSuccess(Set(file), Set.empty)
-                }
-                .toMap
-
-              val createdFiles = result.entries.flatMap(_.filesWritten).distinct
-              val endInstant = System.currentTimeMillis
-
-              (opResults ++ unrelatedOpResults, createdFiles)
+                    (opResults, result.filesWritten)
+                  }
+                )
             } else {
-              logger.info(s"$compilationTag No changes to re-compile")
+              logger.info(s"$configTag No changes to re-compile")
               (Map.empty, Seq.empty)
             }
 
@@ -281,8 +267,123 @@ object SbtWebpack extends AutoPlugin {
       }
   }
 
-  final case class CompilationResult(success: Boolean, entries: Seq[CompilationEntry])
-  final case class CompilationEntry(inputFile: File, filesRead: Set[File], filesWritten: Set[File])
+  final case class WebpackExecutionResult(
+    configFile: File,
+    filesRead: Set[File],
+    filesWritten: Set[File]
+  )
+
+  object Webpack {
+
+    def execute(
+      tag: String,
+      projectRoot: File,
+      webpackBinary: File,
+      configFile: File,
+      inputFiles: Set[File],
+      outputFileName: String,
+      outputDirectory: File,
+      sourceDirectory: File,
+      assetsLocation: File,
+      webjarsLocation: File,
+      nodeModulesLocation: File,
+      additionalEnvironmentProperties: Map[String, String],
+      logger: ManagedLogger
+    ): Either[String, WebpackExecutionResult] = {
+      import sbt._
+
+      if (!webpackBinary.exists())
+        Left(s"webpack binary file ${webpackBinary.getPath()} not found")
+      else if (!configFile.exists())
+        Left(s"webpack config file ${configFile.getPath()} not found")
+      else if (!inputFiles.forall(_.exists()))
+        if (inputFiles.size == 1)
+          Left(s"input file ${inputFiles.map(_.toPath()).mkString(", ")} not found")
+        else
+          Left(s"some input file(s) of ${inputFiles.map(_.toPath()).mkString(", ")} not found")
+      else {
+
+        val entriesEnvs = inputFiles.zipWithIndex.flatMap { case (file, index) =>
+          Seq("--env", s"""entry.$index=${file.getAbsolutePath()}""")
+        }
+
+        val additionalEnvs = additionalEnvironmentProperties.toSeq
+          .flatMap { case (key, value) =>
+            Seq("--env", s"$key=$value")
+          }
+
+        val cmd = Seq(
+          s"""${webpackBinary.getCanonicalPath}""",
+          "--config",
+          s"""${configFile.getAbsolutePath()}""",
+          "--env",
+          s"""output.path=${outputDirectory.getAbsolutePath()}""",
+          "--env",
+          s"""output.filename=$outputFileName""",
+          "--env",
+          s"""assets.path=${assetsLocation.getAbsolutePath()}""",
+          "--env",
+          s"""webjars.path=${webjarsLocation.getAbsolutePath()}"""
+        ) ++ entriesEnvs ++ additionalEnvs
+
+        logger.info(s"$tag Running command ${AnsiColor.CYAN}${cmd.mkString(" ")}${AnsiColor.RESET}")
+
+        val (exitCode, output) =
+          Shell.execute(cmd, sourceDirectory, "NODE_PATH" -> nodeModulesLocation.getCanonicalPath)
+
+        val success = exitCode == 0
+
+        if (success) {
+          val processedFiles: Seq[File] =
+            output
+              .filter(s => s.contains("[built]") && (s.startsWith(".") || s.startsWith("|")))
+              .map(_.dropWhile(_ == '|').dropWhile(_ == ' ').takeWhile(_ != ' '))
+              .sorted
+              .map(path => sourceDirectory.toPath().resolve(path).toFile.getCanonicalFile())
+
+          logger.info(
+            processedFiles
+              .map(file => file.relativeTo(projectRoot).getOrElse(file))
+              .mkString(
+                s"$tag Processed files:\n$tag - ${AnsiColor.GREEN}",
+                s"${AnsiColor.RESET}\n$tag - ${AnsiColor.GREEN}",
+                s"${AnsiColor.RESET}\n"
+              )
+          )
+
+          val generatedAssets: Seq[File] =
+            output
+              .filter(s => s.startsWith("asset ") || s.startsWith("sourceMap "))
+              .map(_.dropWhile(_ != ' ').drop(1).takeWhile(_ != ' '))
+              .sorted
+              .map(path => outputDirectory.toPath().resolve(path).toFile.getCanonicalFile())
+
+          logger.info(
+            generatedAssets
+              .map(file => file.relativeTo(projectRoot).getOrElse(file))
+              .mkString(
+                s"$tag Generated assets:\n$tag - ${AnsiColor.MAGENTA}",
+                s"${AnsiColor.RESET}\n$tag - ${AnsiColor.MAGENTA}",
+                s"${AnsiColor.RESET}\n"
+              )
+          )
+
+          Right(
+            WebpackExecutionResult(
+              configFile = configFile,
+              filesRead = processedFiles.toSet,
+              filesWritten = generatedAssets.toSet
+            )
+          )
+        } else {
+          logger.error(
+            output.map(s => s"$tag $s").mkString("\n")
+          )
+          Left(s"Error while executing ${cmd.mkString(" ")}")
+        }
+      }
+    }
+  }
 
   object Shell {
     def execute(cmd: Seq[String], cwd: File, envs: (String, String)*): (Int, Seq[String]) = {
@@ -290,109 +391,6 @@ object SbtWebpack extends AutoPlugin {
       val process = Process(cmd, cwd, envs: _*)
       val exitCode = process.!(ProcessLogger(s => output = output.:+(s.trim)))
       (exitCode, output)
-    }
-  }
-
-  final class Compiler(
-    tag: String,
-    projectRoot: File,
-    binary: File,
-    configFile: File,
-    entries: Set[File],
-    outputFileName: String,
-    outputDirectory: File,
-    workingDirectory: File,
-    assetsLocation: File,
-    webjarsLocation: File,
-    nodeModulesLocation: File,
-    additionalEnvironmentProperties: Map[String, String],
-    logger: ManagedLogger
-  ) {
-
-    def compile(): CompilationResult = {
-      import sbt._
-
-      val entriesEnvs = entries.zipWithIndex.flatMap { case (file, index) =>
-        Seq("--env", s"""entry.$index=${file.getAbsolutePath()}""")
-      }
-
-      val additionalEnvs = additionalEnvironmentProperties.toSeq
-        .flatMap { case (key, value) =>
-          Seq("--env", s"$key=$value")
-        }
-
-      val cmd = Seq(
-        s"""${binary.getCanonicalPath}""",
-        "--config",
-        s"""${configFile.getAbsolutePath()}""",
-        "--env",
-        s"""output.path=${outputDirectory.getAbsolutePath()}""",
-        "--env",
-        s"""output.filename=$outputFileName""",
-        "--env",
-        s"""assets.path=${assetsLocation.getAbsolutePath()}""",
-        "--env",
-        s"""webjars.path=${webjarsLocation.getAbsolutePath()}"""
-      ) ++ entriesEnvs ++ additionalEnvs
-
-      logger.info(s"$tag Running command ${AnsiColor.CYAN}${cmd.mkString(" ")}${AnsiColor.RESET}")
-
-      val (exitCode, output) =
-        Shell.execute(cmd, workingDirectory, "NODE_PATH" -> nodeModulesLocation.getCanonicalPath)
-
-      val success = exitCode == 0
-
-      if (success) {
-        val processedFiles: Seq[File] =
-          output
-            .filter(s => s.contains("[built]") && (s.startsWith(".") || s.startsWith("|")))
-            .map(_.dropWhile(_ == '|').dropWhile(_ == ' ').takeWhile(_ != ' '))
-            .sorted
-            .map(path => workingDirectory.toPath().resolve(path).toFile)
-
-        logger.info(
-          processedFiles
-            .map(file => file.relativeTo(projectRoot).getOrElse(file))
-            .mkString(
-              s"$tag Processed files:\n$tag - ${AnsiColor.GREEN}",
-              s"${AnsiColor.RESET}\n$tag - ${AnsiColor.GREEN}",
-              s"${AnsiColor.RESET}\n"
-            )
-        )
-
-        val generatedAssets: Seq[File] =
-          output
-            .filter(s => s.startsWith("asset ") || s.startsWith("sourceMap "))
-            .map(_.dropWhile(_ != ' ').drop(1).takeWhile(_ != ' '))
-            .sorted
-            .map(path => outputDirectory.toPath().resolve(path).toFile)
-
-        logger.info(
-          generatedAssets
-            .map(file => file.relativeTo(projectRoot).getOrElse(file))
-            .mkString(
-              s"$tag Generated assets:\n$tag - ${AnsiColor.MAGENTA}",
-              s"${AnsiColor.RESET}\n$tag - ${AnsiColor.MAGENTA}",
-              s"${AnsiColor.RESET}\n"
-            )
-        )
-
-        CompilationResult(
-          success = true,
-          entries = Seq(
-            CompilationEntry(
-              inputFile = configFile,
-              filesRead = processedFiles.toSet,
-              filesWritten = generatedAssets.toSet
-            )
-          )
-        )
-      } else {
-        logger.error(
-          output.map(s => s"$tag $s").mkString("\n")
-        )
-        CompilationResult(success = false, entries = Seq.empty)
-      }
     }
   }
 

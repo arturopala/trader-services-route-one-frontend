@@ -61,22 +61,22 @@ lazy val root = (project in file("."))
     scalafmtOnCompile in Test := true,
     majorVersion := 0,
     javaOptions in Test += "-Djava.locale.providers=CLDR,JRE",
-    WebpackKeys.compilations := Seq(
-      WebpackCompilation(
+    WebpackKeys.configurations := Seq(
+      WebpackConfig(
         id = "js",
         configFilePath = "webpack.javascript.config.js",
         includeFilter = "*.js" || "*.ts",
         inputs = Seq("javascripts/index.ts"),
         output = "javascripts/application.min.js"
       ),
-      WebpackCompilation(
+      WebpackConfig(
         id = "css",
         configFilePath = "webpack.stylesheet.config.js",
         includeFilter = "*.scss" || "*.sass" || "*.css",
         inputs = Seq("stylesheets/application.scss"),
         output = "stylesheets/application.css"
       ),
-      WebpackCompilation(
+      WebpackConfig(
         id = "print",
         configFilePath = "webpack.stylesheet.config.js",
         includeFilter = "*.scss" || "*.sass" || "*.css",
