@@ -20,6 +20,8 @@ import play.api.libs.json.Format
 import play.api.libs.json.Json
 
 final case class FileUploadSessionConfig(
+  serviceId: String,
+  nonce: Nonce,
   continueUrl: String,
   backlinkUrl: String
 )

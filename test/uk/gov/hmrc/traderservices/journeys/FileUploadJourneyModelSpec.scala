@@ -37,6 +37,8 @@ class FileUploadJourneyModelSpec
   override val model = FileUploadJourneyModel
 
   val fileUploadSessionConfig = FileUploadSessionConfig(
+    serviceId = "dummy-hmrc-service",
+    nonce = Nonce.random,
     continueUrl = "/continue-url",
     backlinkUrl = "/backlink-url"
   )
@@ -44,14 +46,15 @@ class FileUploadJourneyModelSpec
   "FileUploadJourneyModel" when {
     "at state Initialized" should {
       "go to UploadFile when initiateFileUpload" in {
-        val mockUpscanInitiate: UpscanInitiateRequest => Future[UpscanInitiateResponse] = request =>
-          Future.successful(
-            UpscanInitiateResponse(
-              reference = "foo-bar-ref",
-              uploadRequest =
-                UploadRequest(href = "https://s3.bucket", fields = Map("callbackUrl" -> request.callbackUrl))
+        val mockUpscanInitiate: (String, UpscanInitiateRequest) => Future[UpscanInitiateResponse] =
+          (serviceId, request) =>
+            Future.successful(
+              UpscanInitiateResponse(
+                reference = "foo-bar-ref",
+                uploadRequest =
+                  UploadRequest(href = "https://s3.bucket", fields = Map("callbackUrl" -> request.callbackUrl))
+              )
             )
-          )
         val upscanRequest = (nonce: String) =>
           UpscanInitiateRequest(
             "https://foo.bar/callback",
@@ -517,7 +520,7 @@ class FileUploadJourneyModelSpec
       }
 
       "update file upload status to ACCEPTED when positive upscanCallbackArrived transition" in {
-        val mockFileUploadResultPushApi: FileUploadResultPushApi =
+        val mockPushFileUploadResult: FileUploadResultPushApi =
           _ => Future.successful(FileUploadResultPushConnector.SuccessResponse)
         given(
           UploadMultipleFiles(
@@ -530,7 +533,7 @@ class FileUploadJourneyModelSpec
               )
             )
           )
-        ) when upscanCallbackArrived(mockFileUploadResultPushApi)(Nonce(1))(
+        ) when upscanCallbackArrived(mockPushFileUploadResult)(Nonce(1))(
           UpscanFileReady(
             reference = "foo-bar-ref-1",
             downloadUrl = "https://bucketName.s3.eu-west-2.amazonaws.com?1235676",
@@ -557,7 +560,7 @@ class FileUploadJourneyModelSpec
       }
 
       "update file upload status to ACCEPTED and ignore push failure" in {
-        val mockFileUploadResultPushApi: FileUploadResultPushApi =
+        val mockPushFileUploadResult: FileUploadResultPushApi =
           _ => Future.successful(Left(FileUploadResultPushConnector.Error(500, "")))
         given(
           UploadMultipleFiles(
@@ -570,7 +573,7 @@ class FileUploadJourneyModelSpec
               )
             )
           )
-        ) when upscanCallbackArrived(mockFileUploadResultPushApi)(Nonce(1))(
+        ) when upscanCallbackArrived(mockPushFileUploadResult)(Nonce(1))(
           UpscanFileReady(
             reference = "foo-bar-ref-1",
             downloadUrl = "https://bucketName.s3.eu-west-2.amazonaws.com?1235676",
@@ -597,7 +600,7 @@ class FileUploadJourneyModelSpec
       }
 
       "update file upload status to ACCEPTED with sanitized name of the file" in {
-        val mockFileUploadResultPushApi: FileUploadResultPushApi =
+        val mockPushFileUploadResult: FileUploadResultPushApi =
           _ => Future.successful(FileUploadResultPushConnector.SuccessResponse)
         given(
           UploadMultipleFiles(
@@ -610,7 +613,7 @@ class FileUploadJourneyModelSpec
               )
             )
           )
-        ) when upscanCallbackArrived(mockFileUploadResultPushApi)(Nonce(1))(
+        ) when upscanCallbackArrived(mockPushFileUploadResult)(Nonce(1))(
           UpscanFileReady(
             reference = "foo-bar-ref-1",
             downloadUrl = "https://bucketName.s3.eu-west-2.amazonaws.com?1235676",
@@ -647,7 +650,7 @@ class FileUploadJourneyModelSpec
       }
 
       "do nothing when positive upscanCallbackArrived transition and none matching file upload found" in {
-        val mockFileUploadResultPushApi: FileUploadResultPushApi =
+        val mockPushFileUploadResult: FileUploadResultPushApi =
           _ => Future.successful(FileUploadResultPushConnector.SuccessResponse)
         val state = UploadMultipleFiles(
           fileUploadSessionConfig,
@@ -659,7 +662,7 @@ class FileUploadJourneyModelSpec
             )
           )
         )
-        given(state) when upscanCallbackArrived(mockFileUploadResultPushApi)(Nonce(4))(
+        given(state) when upscanCallbackArrived(mockPushFileUploadResult)(Nonce(4))(
           UpscanFileReady(
             reference = "foo-bar-ref-4",
             downloadUrl = "https://bucketName.s3.eu-west-2.amazonaws.com?1235676",
@@ -675,7 +678,7 @@ class FileUploadJourneyModelSpec
       }
 
       "overwrite status when positive upscanCallbackArrived transition and file upload already in ACCEPTED state" in {
-        val mockFileUploadResultPushApi: FileUploadResultPushApi =
+        val mockPushFileUploadResult: FileUploadResultPushApi =
           _ => Future.successful(FileUploadResultPushConnector.SuccessResponse)
         given(
           UploadMultipleFiles(
@@ -698,7 +701,7 @@ class FileUploadJourneyModelSpec
               )
             )
           )
-        ) when upscanCallbackArrived(mockFileUploadResultPushApi)(Nonce(1))(
+        ) when upscanCallbackArrived(mockPushFileUploadResult)(Nonce(1))(
           UpscanFileReady(
             reference = "foo-bar-ref-1",
             downloadUrl = "https://bucketName.s3.eu-west-2.amazonaws.com?1235676",
@@ -726,7 +729,7 @@ class FileUploadJourneyModelSpec
 
       "do not overwrite status when positive upscanCallbackArrived transition and file upload already in ACCEPTED state if timestamp gap is to small" in {
         val now = Timestamp.now
-        val mockFileUploadResultPushApi: FileUploadResultPushApi =
+        val mockPushFileUploadResult: FileUploadResultPushApi =
           _ => Future.successful(FileUploadResultPushConnector.SuccessResponse)
         val state = UploadMultipleFiles(
           fileUploadSessionConfig,
@@ -748,7 +751,7 @@ class FileUploadJourneyModelSpec
             )
           )
         )
-        given(state) when upscanCallbackArrived(mockFileUploadResultPushApi)(Nonce(1))(
+        given(state) when upscanCallbackArrived(mockPushFileUploadResult)(Nonce(1))(
           UpscanFileReady(
             reference = "foo-bar-ref-1",
             downloadUrl = "https://bucketName.s3.eu-west-2.amazonaws.com?1235676",
@@ -764,7 +767,7 @@ class FileUploadJourneyModelSpec
       }
 
       "overwrite upload status when positive upscanCallbackArrived transition and file upload already in REJECTED state" in {
-        val mockFileUploadResultPushApi: FileUploadResultPushApi =
+        val mockPushFileUploadResult: FileUploadResultPushApi =
           _ => Future.successful(FileUploadResultPushConnector.SuccessResponse)
         given(
           UploadMultipleFiles(
@@ -777,7 +780,7 @@ class FileUploadJourneyModelSpec
               )
             )
           )
-        ) when upscanCallbackArrived(mockFileUploadResultPushApi)(Nonce(1))(
+        ) when upscanCallbackArrived(mockPushFileUploadResult)(Nonce(1))(
           UpscanFileReady(
             reference = "foo-bar-ref-1",
             downloadUrl = "https://bucketName.s3.eu-west-2.amazonaws.com?1235676",
@@ -804,7 +807,7 @@ class FileUploadJourneyModelSpec
       }
 
       "overwrite upload status when positive upscanCallbackArrived transition and file upload already in FAILED state" in {
-        val mockFileUploadResultPushApi: FileUploadResultPushApi =
+        val mockPushFileUploadResult: FileUploadResultPushApi =
           _ => Future.successful(FileUploadResultPushConnector.SuccessResponse)
         given(
           UploadMultipleFiles(
@@ -825,7 +828,7 @@ class FileUploadJourneyModelSpec
               )
             )
           )
-        ) when upscanCallbackArrived(mockFileUploadResultPushApi)(Nonce(1))(
+        ) when upscanCallbackArrived(mockPushFileUploadResult)(Nonce(1))(
           UpscanFileReady(
             reference = "foo-bar-ref-1",
             downloadUrl = "https://bucketName.s3.eu-west-2.amazonaws.com?1235676",
@@ -852,7 +855,7 @@ class FileUploadJourneyModelSpec
       }
 
       "update file upload status to FAILED when negative upscanCallbackArrived transition" in {
-        val mockFileUploadResultPushApi: FileUploadResultPushApi =
+        val mockPushFileUploadResult: FileUploadResultPushApi =
           _ => Future.successful(FileUploadResultPushConnector.SuccessResponse)
         given(
           UploadMultipleFiles(
@@ -865,7 +868,7 @@ class FileUploadJourneyModelSpec
               )
             )
           )
-        ) when upscanCallbackArrived(mockFileUploadResultPushApi)(Nonce(1))(
+        ) when upscanCallbackArrived(mockPushFileUploadResult)(Nonce(1))(
           UpscanFileFailed(
             reference = "foo-bar-ref-1",
             failureDetails = UpscanNotification.FailureDetails(
@@ -896,7 +899,7 @@ class FileUploadJourneyModelSpec
       }
 
       "do nothing when negative upscanCallbackArrived transition and none matching file upload found" in {
-        val mockFileUploadResultPushApi: FileUploadResultPushApi =
+        val mockPushFileUploadResult: FileUploadResultPushApi =
           _ => Future.successful(FileUploadResultPushConnector.SuccessResponse)
         val state = UploadMultipleFiles(
           fileUploadSessionConfig,
@@ -908,7 +911,7 @@ class FileUploadJourneyModelSpec
             )
           )
         )
-        given(state) when upscanCallbackArrived(mockFileUploadResultPushApi)(Nonce(4))(
+        given(state) when upscanCallbackArrived(mockPushFileUploadResult)(Nonce(4))(
           UpscanFileFailed(
             reference = "foo-bar-ref-4",
             failureDetails = UpscanNotification.FailureDetails(
@@ -920,7 +923,7 @@ class FileUploadJourneyModelSpec
       }
 
       "overwrite upload status when negative upscanCallbackArrived transition and upload already in FAILED state" in {
-        val mockFileUploadResultPushApi: FileUploadResultPushApi =
+        val mockPushFileUploadResult: FileUploadResultPushApi =
           _ => Future.successful(FileUploadResultPushConnector.SuccessResponse)
         given(
           UploadMultipleFiles(
@@ -941,7 +944,7 @@ class FileUploadJourneyModelSpec
               )
             )
           )
-        ) when upscanCallbackArrived(mockFileUploadResultPushApi)(Nonce(1))(
+        ) when upscanCallbackArrived(mockPushFileUploadResult)(Nonce(1))(
           UpscanFileFailed(
             reference = "foo-bar-ref-1",
             failureDetails = UpscanNotification.FailureDetails(
@@ -972,7 +975,7 @@ class FileUploadJourneyModelSpec
       }
 
       "overwrite upload status when negative upscanCallbackArrived transition and upload already in ACCEPTED state" in {
-        val mockFileUploadResultPushApi: FileUploadResultPushApi =
+        val mockPushFileUploadResult: FileUploadResultPushApi =
           _ => Future.successful(FileUploadResultPushConnector.SuccessResponse)
         given(
           UploadMultipleFiles(
@@ -995,7 +998,7 @@ class FileUploadJourneyModelSpec
               )
             )
           )
-        ) when upscanCallbackArrived(mockFileUploadResultPushApi)(Nonce(1))(
+        ) when upscanCallbackArrived(mockPushFileUploadResult)(Nonce(1))(
           UpscanFileFailed(
             reference = "foo-bar-ref-1",
             failureDetails = UpscanNotification.FailureDetails(
@@ -1026,6 +1029,8 @@ class FileUploadJourneyModelSpec
       }
 
       "remove file upload when removeFileUploadByReference transition and reference exists" in {
+        val mockPushFileUploadResult: FileUploadResultPushApi =
+          _ => Future.successful(FileUploadResultPushConnector.SuccessResponse)
         given(
           UploadMultipleFiles(
             fileUploadSessionConfig,
@@ -1048,7 +1053,9 @@ class FileUploadJourneyModelSpec
               )
             )
           )
-        ) when removeFileUploadByReference("foo-bar-ref-3")(testUpscanRequest)(mockUpscanInitiate) should thenGo(
+        ) when removeFileUploadByReference("foo-bar-ref-3")(testUpscanRequest)(mockUpscanInitiate)(
+          mockPushFileUploadResult
+        ) should thenGo(
           UploadMultipleFiles(
             fileUploadSessionConfig,
             FileUploads(files =
@@ -1063,6 +1070,8 @@ class FileUploadJourneyModelSpec
       }
 
       "do nothing when removeFileUploadByReference transition and none file upload matches" in {
+        val mockPushFileUploadResult: FileUploadResultPushApi =
+          _ => Future.successful(FileUploadResultPushConnector.SuccessResponse)
         val state = UploadMultipleFiles(
           fileUploadSessionConfig,
           FileUploads(files =
@@ -1084,8 +1093,8 @@ class FileUploadJourneyModelSpec
             )
           )
         )
-        given(state) when removeFileUploadByReference("foo-bar-ref-5")(testUpscanRequest)(
-          mockUpscanInitiate
+        given(state) when removeFileUploadByReference("foo-bar-ref-5")(testUpscanRequest)(mockUpscanInitiate)(
+          mockPushFileUploadResult
         ) should thenGo(state)
       }
     }
@@ -1317,7 +1326,7 @@ class FileUploadJourneyModelSpec
       }
 
       "go to FileUploaded when upscanCallbackArrived and accepted, and reference matches" in {
-        val mockFileUploadResultPushApi: FileUploadResultPushApi =
+        val mockPushFileUploadResult: FileUploadResultPushApi =
           _ => Future.successful(FileUploadResultPushConnector.SuccessResponse)
         given(
           UploadFile(
@@ -1333,7 +1342,7 @@ class FileUploadJourneyModelSpec
             ),
             FileUploads(files = Seq(FileUpload.Initiated(Nonce(1), Timestamp.Any, "foo-bar-ref-1")))
           )
-        ) when upscanCallbackArrived(mockFileUploadResultPushApi)(Nonce(1))(
+        ) when upscanCallbackArrived(mockPushFileUploadResult)(Nonce(1))(
           UpscanFileReady(
             reference = "foo-bar-ref-1",
             downloadUrl = "https://bucketName.s3.eu-west-2.amazonaws.com?1235676",
@@ -1354,7 +1363,7 @@ class FileUploadJourneyModelSpec
       }
 
       "go to UploadFile when upscanCallbackArrived and accepted, and reference matches but upload is a duplicate" in {
-        val mockFileUploadResultPushApi: FileUploadResultPushApi =
+        val mockPushFileUploadResult: FileUploadResultPushApi =
           _ => Future.successful(FileUploadResultPushConnector.SuccessResponse)
         given(
           UploadFile(
@@ -1385,7 +1394,7 @@ class FileUploadJourneyModelSpec
               )
             )
           )
-        ) when upscanCallbackArrived(mockFileUploadResultPushApi)(Nonce(1))(
+        ) when upscanCallbackArrived(mockPushFileUploadResult)(Nonce(1))(
           UpscanFileReady(
             reference = "foo-bar-ref-1",
             downloadUrl = "https://bucketName.s3.eu-west-2.amazonaws.com?1235676",
@@ -1444,7 +1453,7 @@ class FileUploadJourneyModelSpec
       }
 
       "go to UploadFile when upscanCallbackArrived and failed, and reference matches" in {
-        val mockFileUploadResultPushApi: FileUploadResultPushApi =
+        val mockPushFileUploadResult: FileUploadResultPushApi =
           _ => Future.successful(FileUploadResultPushConnector.SuccessResponse)
         given(
           UploadFile(
@@ -1460,7 +1469,7 @@ class FileUploadJourneyModelSpec
             ),
             FileUploads(files = Seq(FileUpload.Initiated(Nonce(1), Timestamp.Any, "foo-bar-ref-1")))
           )
-        ) when upscanCallbackArrived(mockFileUploadResultPushApi)(Nonce(1))(
+        ) when upscanCallbackArrived(mockPushFileUploadResult)(Nonce(1))(
           UpscanFileFailed(
             reference = "foo-bar-ref-1",
             failureDetails = UpscanNotification.FailureDetails(
@@ -1795,7 +1804,7 @@ class FileUploadJourneyModelSpec
       }
 
       "go to FileUploaded when upscanCallbackArrived and accepted, and reference matches" in {
-        val mockFileUploadResultPushApi: FileUploadResultPushApi =
+        val mockPushFileUploadResult: FileUploadResultPushApi =
           _ => Future.successful(FileUploadResultPushConnector.SuccessResponse)
         given(
           WaitingForFileVerification(
@@ -1812,7 +1821,7 @@ class FileUploadJourneyModelSpec
             FileUpload.Posted(Nonce(1), Timestamp.Any, "foo-bar-ref-1"),
             FileUploads(files = Seq(FileUpload.Posted(Nonce(1), Timestamp.Any, "foo-bar-ref-1")))
           )
-        ) when upscanCallbackArrived(mockFileUploadResultPushApi)(Nonce(1))(
+        ) when upscanCallbackArrived(mockPushFileUploadResult)(Nonce(1))(
           UpscanFileReady(
             reference = "foo-bar-ref-1",
             downloadUrl = "https://bucketName.s3.eu-west-2.amazonaws.com?1235676",
@@ -1833,7 +1842,7 @@ class FileUploadJourneyModelSpec
       }
 
       "go to UploadFile when upscanCallbackArrived and failed, and reference matches" in {
-        val mockFileUploadResultPushApi: FileUploadResultPushApi =
+        val mockPushFileUploadResult: FileUploadResultPushApi =
           _ => Future.successful(FileUploadResultPushConnector.SuccessResponse)
         given(
           WaitingForFileVerification(
@@ -1850,7 +1859,7 @@ class FileUploadJourneyModelSpec
             FileUpload.Posted(Nonce(1), Timestamp.Any, "foo-bar-ref-1"),
             FileUploads(files = Seq(FileUpload.Posted(Nonce(1), Timestamp.Any, "foo-bar-ref-1")))
           )
-        ) when upscanCallbackArrived(mockFileUploadResultPushApi)(Nonce(1))(
+        ) when upscanCallbackArrived(mockPushFileUploadResult)(Nonce(1))(
           UpscanFileFailed(
             reference = "foo-bar-ref-1",
             failureDetails = UpscanNotification.FailureDetails(
@@ -1890,7 +1899,7 @@ class FileUploadJourneyModelSpec
       }
 
       "stay at WaitingForFileVerification when upscanCallbackArrived and reference doesn't match" in {
-        val mockFileUploadResultPushApi: FileUploadResultPushApi =
+        val mockPushFileUploadResult: FileUploadResultPushApi =
           _ => Future.successful(FileUploadResultPushConnector.SuccessResponse)
         given(
           WaitingForFileVerification(
@@ -1912,7 +1921,7 @@ class FileUploadJourneyModelSpec
               )
             )
           )
-        ) when upscanCallbackArrived(mockFileUploadResultPushApi)(Nonce(2))(
+        ) when upscanCallbackArrived(mockPushFileUploadResult)(Nonce(2))(
           UpscanFileFailed(
             reference = "foo-bar-ref-2",
             failureDetails = UpscanNotification.FailureDetails(
@@ -2205,10 +2214,16 @@ class FileUploadJourneyModelSpec
       "go to UploadFile when removeFileUploadByReference leaving no files" in {
         val hostData = fileUploadSessionConfig
         val fileUploads = FileUploads(Seq(fileUploadAccepted))
+        val mockPushFileUploadResult: FileUploadResultPushApi =
+          _ => Future.successful(FileUploadResultPushConnector.SuccessResponse)
         given(
           FileUploaded(hostData, fileUploads)
         )
-          .when(removeFileUploadByReference(fileUploadAccepted.reference)(testUpscanRequest)(mockUpscanInitiate))
+          .when(
+            removeFileUploadByReference(fileUploadAccepted.reference)(testUpscanRequest)(mockUpscanInitiate)(
+              mockPushFileUploadResult
+            )
+          )
           .thenGoes(
             UploadFile(
               hostData,

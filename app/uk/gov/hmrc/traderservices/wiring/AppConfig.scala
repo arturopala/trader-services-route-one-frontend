@@ -35,7 +35,7 @@ object AppConfig {
 @ImplementedBy(classOf[AppConfigImpl])
 trait AppConfig {
 
-  val appName: String
+  val appName: String = "upload-documents-frontend"
   val baseInternalCallbackUrl: String
   val baseExternalCallbackUrl: String
   val authBaseUrl: String
@@ -83,8 +83,6 @@ trait AppConfig {
 }
 
 class AppConfigImpl @Inject() (config: ServicesConfig, configuration: Configuration) extends AppConfig {
-
-  override val appName: String = config.getString("appName")
   override val baseExternalCallbackUrl: String = config.getString("urls.callback.external")
   override val baseInternalCallbackUrl: String = config.getString("urls.callback.internal")
   override val authBaseUrl: String = config.baseUrl("auth")

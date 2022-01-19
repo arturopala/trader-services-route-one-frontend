@@ -47,7 +47,7 @@ trait TestData {
     )
   )
 
-  val mockUpscanInitiate: UpscanInitiateApi = request =>
+  val mockUpscanInitiate: UpscanInitiateApi = (serviceId, request) =>
     Future.successful(
       UpscanInitiateResponse(
         reference = "foo-bar-ref",

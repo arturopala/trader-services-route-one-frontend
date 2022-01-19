@@ -133,7 +133,7 @@ class FileUploadJourneyController @Inject() (
       .applyWithRequest { implicit request =>
         Transitions
           .initiateNextFileUpload(uploadId)(upscanRequestWhenUploadingMultipleFiles)(
-            upscanInitiateConnector.initiate(_)
+            upscanInitiateConnector.initiate(_, _)
           )
       }
       .displayUsing(renderUploadRequestJson(uploadId))
@@ -143,7 +143,7 @@ class FileUploadJourneyController @Inject() (
     whenAuthorisedAsUser
       .applyWithRequest { implicit request =>
         Transitions
-          .initiateFileUpload(upscanRequest)(upscanInitiateConnector.initiate(_))
+          .initiateFileUpload(upscanRequest)(upscanInitiateConnector.initiate(_, _))
       }
       .redirectOrDisplayIf[State.UploadFile]
 
@@ -222,7 +222,7 @@ class FileUploadJourneyController @Inject() (
     whenAuthorisedAsUser
       .bindForm[Boolean](UploadAnotherFileChoiceForm)
       .applyWithRequest { implicit request =>
-        Transitions.submitedUploadAnotherFileChoice(upscanRequest)(upscanInitiateConnector.initiate(_))(
+        Transitions.submitedUploadAnotherFileChoice(upscanRequest)(upscanInitiateConnector.initiate(_, _))(
           Transitions.continueToHost
         )
       }
@@ -232,8 +232,8 @@ class FileUploadJourneyController @Inject() (
     whenAuthorisedAsUser
       .applyWithRequest { implicit request =>
         Transitions.removeFileUploadByReference(reference)(upscanRequest)(
-          upscanInitiateConnector.initiate(_)
-        )
+          upscanInitiateConnector.initiate(_, _)
+        )(fileUploadResultPushConnector.push(_))
       }
 
   // POST /file-uploaded/:reference/remove
@@ -241,8 +241,8 @@ class FileUploadJourneyController @Inject() (
     whenAuthorisedAsUser
       .applyWithRequest { implicit request =>
         Transitions.removeFileUploadByReference(reference)(upscanRequest)(
-          upscanInitiateConnector.initiate(_)
-        )
+          upscanInitiateConnector.initiate(_, _)
+        )(fileUploadResultPushConnector.push(_))
       }
       .displayUsing(renderFileRemovalStatus)
 

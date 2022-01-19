@@ -61,4 +61,8 @@ trait ExternalApiStubs {
     verify(times, postRequestedFor(urlEqualTo(path)))
   }
 
+  def verifyHostPushEndpointHasNotHappened(path: String) {
+    verify(0, postRequestedFor(urlEqualTo(path)))
+  }
+
 }

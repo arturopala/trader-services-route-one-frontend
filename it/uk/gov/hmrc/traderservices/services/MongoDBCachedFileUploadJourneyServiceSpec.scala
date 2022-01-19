@@ -6,6 +6,7 @@ import uk.gov.hmrc.traderservices.support.AppISpec
 
 import java.util.UUID
 import scala.concurrent.ExecutionContext.Implicits.global
+import uk.gov.hmrc.traderservices.models.Nonce
 
 class MongoDBCachedFileUploadJourneyServiceSpec extends AppISpec {
 
@@ -18,7 +19,7 @@ class MongoDBCachedFileUploadJourneyServiceSpec extends AppISpec {
     HeaderCarrier()
       .withExtraHeaders("FileUploadJourney" -> UUID.randomUUID.toString)
 
-  val fileUploadConfig = FileUploadSessionConfig("/foo", "/bar")
+  val fileUploadConfig = FileUploadSessionConfig("dummy-id", Nonce.random, "/foo", "/bar")
   val request =
     FileUploadInitializationRequest(config = fileUploadConfig, existingFiles = Seq.empty)
 
@@ -26,7 +27,7 @@ class MongoDBCachedFileUploadJourneyServiceSpec extends AppISpec {
     "apply initialize transition" in {
       await(service.apply(Transitions.initialize(request))) shouldBe (
         (
-          State.Initialized(FileUploadSessionConfig("/foo", "/bar"), FileUploads()),
+          State.Initialized(fileUploadConfig, FileUploads()),
           List(State.Uninitialized)
         )
       )
@@ -46,7 +47,7 @@ class MongoDBCachedFileUploadJourneyServiceSpec extends AppISpec {
         State.ContinueToHost(fileUploadConfig, FileUploads()),
         Nil
       ) shouldBe List(
-        State.ContinueToHost(FileUploadSessionConfig("/foo", "/bar"), FileUploads(List()))
+        State.ContinueToHost(fileUploadConfig, FileUploads(List()))
       )
     }
 

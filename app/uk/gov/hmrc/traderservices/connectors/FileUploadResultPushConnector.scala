@@ -29,6 +29,8 @@ import java.net.URL
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
+import uk.gov.hmrc.traderservices.models.FileUploadSessionConfig
+import uk.gov.hmrc.traderservices.models.FileUploads
 
 /** Connector to push the results of the file uploads back to the host service. */
 @Singleton
@@ -76,6 +78,9 @@ object FileUploadResultPushConnector {
   }
 
   object Request {
+    def from(config: FileUploadSessionConfig, fileUploads: FileUploads): Request =
+      Request(config.serviceId, config.continueUrl, config.nonce, fileUploads.toUploadedFiles)
+
     implicit val format: Format[Request] = Json.format[Request]
   }
 
