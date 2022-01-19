@@ -45,7 +45,7 @@ lazy val root = (project in file("."))
     name := "upload-documents-frontend",
     organization := "uk.gov.hmrc",
     scalaVersion := "2.12.15",
-    PlayKeys.playDefaultPort := 9379,
+    PlayKeys.playDefaultPort := 10100,
     TwirlKeys.templateImports ++= Seq(
       "play.twirl.api.HtmlFormat",
       "uk.gov.hmrc.govukfrontend.views.html.components._",

@@ -23,9 +23,9 @@ Features:
     sm --stop UPLOAD_DOCUMENTS_FRONTEND 
     sbt run
 
-It should then be listening on port 9379
+It should then be listening on port 10100
 
-    browse http://localhost:9379/upload-documents
+    browse http://localhost:10100/upload-documents
 
 ### License
 

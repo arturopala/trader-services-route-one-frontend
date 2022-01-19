@@ -22,6 +22,7 @@ import uk.gov.hmrc.traderservices.connectors.UpscanInitiateRequest
 import scala.concurrent.Future
 import uk.gov.hmrc.traderservices.connectors.UpscanInitiateResponse
 import scala.concurrent.ExecutionContext
+import uk.gov.hmrc.traderservices.connectors.FileUploadResultPushConnector
 
 /** Generic file upload journey model mixin. Defines its own states and transitions.
   *
@@ -91,6 +92,8 @@ trait FileUploadJourneyModelMixin extends JourneyModel {
   }
 
   type UpscanInitiateApi = UpscanInitiateRequest => Future[UpscanInitiateResponse]
+  type FileUploadResultPushApi =
+    FileUploadResultPushConnector.Request => Future[FileUploadResultPushConnector.Response]
 
   /** Common file upload initialization helper. */
   private[journeys] final def gotoFileUploadOrUploaded(
@@ -392,8 +395,10 @@ trait FileUploadJourneyModelMixin extends JourneyModel {
       fileUpload.isNotReady ||
         (allowStatusOverwrite && now.isAfter(fileUpload.timestamp, minStatusOverwriteGapInMilliseconds))
 
-    /** Transition when notification arrives from upscan. */
-    final def upscanCallbackArrived(requestNonce: Nonce)(notification: UpscanNotification) = {
+    /** Transition when async notification arrives from the Upscan. */
+    final def upscanCallbackArrived(
+      fileUploadResultPushApi: FileUploadResultPushApi
+    )(requestNonce: Nonce)(notification: UpscanNotification) = {
       val now = Timestamp.now
 
       def updateFileUploads(fileUploads: FileUploads, allowStatusOverwrite: Boolean) =

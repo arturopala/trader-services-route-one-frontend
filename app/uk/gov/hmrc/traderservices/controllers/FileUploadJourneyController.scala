@@ -38,6 +38,7 @@ class FileUploadJourneyController @Inject() (
   fileUploadJourneyService: FileUploadJourneyServiceWithHeaderCarrier,
   views: uk.gov.hmrc.traderservices.views.FileUploadViews,
   upscanInitiateConnector: UpscanInitiateConnector,
+  fileUploadResultPushConnector: FileUploadResultPushConnector,
   uploadFileViewContext: UploadFileViewContext,
   appConfig: AppConfig,
   authConnector: FrontendAuthConnector,
@@ -201,7 +202,9 @@ class FileUploadJourneyController @Inject() (
   final def callbackFromUpscan(journeyId: String, nonce: String): Action[AnyContent] =
     actions
       .parseJsonWithFallback[UpscanNotification](BadRequest)
-      .apply(FileUploadTransitions.upscanCallbackArrived(Nonce(nonce)))
+      .applyWithRequest(implicit request =>
+        FileUploadTransitions.upscanCallbackArrived(fileUploadResultPushConnector.push(_))(Nonce(nonce))
+      )
       .transform {
         case r if r.header.status < 400 => NoContent
       }

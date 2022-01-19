@@ -52,7 +52,7 @@ class FileUploadResultPushConnector @Inject() (
           .transformWith[Response] {
             case Success(response) =>
               Future.successful(
-                if (response.status == 204) Right(())
+                if (response.status == 204) SuccessResponse
                 else Left(Error(response.status, s"Failure to push to ${request.url}: ${response.body}"))
               )
             case Failure(exception) =>
@@ -68,6 +68,8 @@ object FileUploadResultPushConnector {
   case class Request(hostServiceId: String, url: String, nonce: Nonce, uploadedFiles: Seq[UploadedFile])
 
   type Response = Either[FileUploadResultPushConnector.Error, Unit]
+
+  val SuccessResponse: Response = Right[FileUploadResultPushConnector.Error, Unit](())
 
   case class Error(status: Int, message: String) {
     def shouldRetry: Boolean = (status >= 500 && status < 600) || status == 499
