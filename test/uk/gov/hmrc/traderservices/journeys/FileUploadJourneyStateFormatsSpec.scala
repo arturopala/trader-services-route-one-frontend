@@ -17,7 +17,7 @@
 package uk.gov.hmrc.traderservices.journeys
 
 import play.api.libs.json.{Format, JsResultException, Json}
-import uk.gov.hmrc.traderservices.journeys.FileUploadJourneyModel.{FileUploadState, State}
+import uk.gov.hmrc.traderservices.journeys.FileUploadJourneyModel.State
 import uk.gov.hmrc.traderservices.models._
 import uk.gov.hmrc.traderservices.support.{JsonFormatTest, UnitSpec}
 
@@ -29,7 +29,7 @@ class FileUploadJourneyStateFormatsSpec extends UnitSpec {
   val generatedAt = java.time.LocalDateTime.of(2018, 12, 11, 10, 20, 30)
   val fileUploadSessionConfig = FileUploadSessionConfig("foo", "bar")
 
-  "AmendCaseJourneyStateFormats" should {
+  "FileUploadJourneyStateFormats" should {
     "serialize and deserialize state" in new JsonFormatTest[State](info) {
       validateCanReadAndWriteJson(
         State.Uninitialized
@@ -93,7 +93,7 @@ class FileUploadJourneyStateFormatsSpec extends UnitSpec {
         )
       )
       validateCanReadAndWriteJson(
-        FileUploadState.UploadFile(
+        State.UploadFile(
           fileUploadSessionConfig,
           "foo-bar-ref",
           UploadRequest(href = "https://foo.bar", fields = Map.empty),
@@ -125,7 +125,7 @@ class FileUploadJourneyStateFormatsSpec extends UnitSpec {
         )
       )
       validateCanReadAndWriteJson(
-        FileUploadState.UploadFile(
+        State.UploadFile(
           fileUploadSessionConfig,
           "foo-bar-ref-2",
           UploadRequest(href = "https://foo.bar", fields = Map("amz" -> "123")),
@@ -156,7 +156,7 @@ class FileUploadJourneyStateFormatsSpec extends UnitSpec {
         )
       )
       validateCanReadAndWriteJson(
-        FileUploadState.WaitingForFileVerification(
+        State.WaitingForFileVerification(
           fileUploadSessionConfig,
           "foo-bar-ref-2",
           UploadRequest(href = "https://foo.bar", fields = Map("amz" -> "123")),
@@ -189,7 +189,7 @@ class FileUploadJourneyStateFormatsSpec extends UnitSpec {
       )
 
       validateCanReadAndWriteJson(
-        FileUploadState.FileUploaded(
+        State.FileUploaded(
           fileUploadSessionConfig,
           FileUploads(files =
             Seq(
@@ -219,7 +219,7 @@ class FileUploadJourneyStateFormatsSpec extends UnitSpec {
       )
 
       validateCanReadAndWriteJson(
-        FileUploadState.UploadMultipleFiles(
+        State.UploadMultipleFiles(
           fileUploadSessionConfig,
           FileUploads(files =
             Seq(

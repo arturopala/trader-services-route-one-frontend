@@ -18,19 +18,17 @@ package uk.gov.hmrc.traderservices.journeys
 
 import play.api.libs.json._
 import uk.gov.hmrc.play.fsm.JsonStateFormats
-import uk.gov.hmrc.traderservices.journeys.FileUploadJourneyModel.FileUploadState._
-import uk.gov.hmrc.traderservices.journeys.FileUploadJourneyModel.State
 import uk.gov.hmrc.traderservices.journeys.FileUploadJourneyModel.State._
-import uk.gov.hmrc.traderservices.models.FileUploadSessionConfig
+import uk.gov.hmrc.traderservices.journeys.FileUploadJourneyModel.State
 
-object FileUploadJourneyStateFormats
-    extends FileUploadJourneyStateFormatsMixin(FileUploadJourneyModel) with JsonStateFormats[State] {
+object FileUploadJourneyStateFormats extends JsonStateFormats[State] {
 
   val initializedFormat = Json.format[Initialized]
   val continueToHostFormat = Json.format[ContinueToHost]
-
-  override val fileUploadHostDataFormat: Format[FileUploadSessionConfig] =
-    FileUploadSessionConfig.formats
+  val uploadFileFormat = Json.format[UploadFile]
+  val fileUploadedFormat = Json.format[FileUploaded]
+  val waitingForFileVerificationFormat = Json.format[WaitingForFileVerification]
+  val uploadMultipleFilesFormat = Json.format[UploadMultipleFiles]
 
   override val serializeStateProperties: PartialFunction[State, JsValue] = {
     case s: Initialized                => initializedFormat.writes(s)

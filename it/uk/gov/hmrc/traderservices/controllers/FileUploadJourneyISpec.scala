@@ -21,7 +21,6 @@ import scala.util.Random
 
 class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalApiStubs with UpscanInitiateStubs {
 
-  import journey.model.FileUploadState._
   import journey.model.State._
 
   implicit val journeyId: JourneyId = JourneyId()

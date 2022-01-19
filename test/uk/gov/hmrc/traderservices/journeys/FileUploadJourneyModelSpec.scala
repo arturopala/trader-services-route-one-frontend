@@ -25,8 +25,6 @@ import uk.gov.hmrc.traderservices.support.JourneyModelSpec
 import uk.gov.hmrc.traderservices.journeys.FileUploadJourneyModel._
 import uk.gov.hmrc.traderservices.journeys.FileUploadJourneyModel.State._
 import uk.gov.hmrc.traderservices.journeys.FileUploadJourneyModel.Transitions._
-import uk.gov.hmrc.traderservices.journeys.FileUploadJourneyModel.FileUploadState._
-import uk.gov.hmrc.traderservices.journeys.FileUploadJourneyModel.FileUploadTransitions._
 
 import java.time.ZonedDateTime
 import scala.concurrent.ExecutionContext.Implicits.global

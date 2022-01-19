@@ -24,7 +24,6 @@ import play.api.mvc._
 import play.api.{Configuration, Environment}
 import play.mvc.Http.HeaderNames
 import uk.gov.hmrc.traderservices.connectors._
-import uk.gov.hmrc.traderservices.journeys.FileUploadJourneyModel.State._
 import uk.gov.hmrc.traderservices.models._
 import uk.gov.hmrc.traderservices.services.FileUploadJourneyServiceWithHeaderCarrier
 import uk.gov.hmrc.traderservices.views.UploadFileViewContext
@@ -72,7 +71,7 @@ class FileUploadJourneyController @Inject() (
   // POST /continue-to-host
   final val continueToHost: Action[AnyContent] =
     whenAuthorisedAsUser
-      .show[ContinueToHost]
+      .show[State.ContinueToHost]
       .orApply(Transitions.continueToHost)
 
   // ----------------------- FILES UPLOAD -----------------------
@@ -125,14 +124,14 @@ class FileUploadJourneyController @Inject() (
   // GET /
   final val showUploadMultipleFiles: Action[AnyContent] =
     whenAuthorisedAsUser
-      .apply(FileUploadTransitions.toUploadMultipleFiles)
-      .redirectOrDisplayIf[FileUploadState.UploadMultipleFiles]
+      .apply(Transitions.toUploadMultipleFiles)
+      .redirectOrDisplayIf[State.UploadMultipleFiles]
 
   // POST /initialize-upscan/:uploadId
   final def initiateNextFileUpload(uploadId: String): Action[AnyContent] =
     whenAuthorisedAsUser
       .applyWithRequest { implicit request =>
-        FileUploadTransitions
+        Transitions
           .initiateNextFileUpload(uploadId)(upscanRequestWhenUploadingMultipleFiles)(
             upscanInitiateConnector.initiate(_)
           )
@@ -143,46 +142,46 @@ class FileUploadJourneyController @Inject() (
   final val showFileUpload: Action[AnyContent] =
     whenAuthorisedAsUser
       .applyWithRequest { implicit request =>
-        FileUploadTransitions
+        Transitions
           .initiateFileUpload(upscanRequest)(upscanInitiateConnector.initiate(_))
       }
-      .redirectOrDisplayIf[FileUploadState.UploadFile]
+      .redirectOrDisplayIf[State.UploadFile]
 
   // GET /file-rejected
   final val markFileUploadAsRejected: Action[AnyContent] =
     whenAuthorisedAsUser
       .bindForm(UpscanUploadErrorForm)
-      .apply(FileUploadTransitions.markUploadAsRejected)
+      .apply(Transitions.markUploadAsRejected)
 
   // POST /new/file-rejected
   final val markFileUploadAsRejectedAsync: Action[AnyContent] =
     whenAuthorisedAsUser
       .bindForm(UpscanUploadErrorForm)
-      .apply(FileUploadTransitions.markUploadAsRejected)
+      .apply(Transitions.markUploadAsRejected)
       .displayUsing(acknowledgeFileUploadRedirect)
 
   // GET /journey/:journeyId/file-rejected
   final def asyncMarkFileUploadAsRejected(journeyId: String): Action[AnyContent] =
     actions
       .bindForm(UpscanUploadErrorForm)
-      .apply(FileUploadTransitions.markUploadAsRejected)
+      .apply(Transitions.markUploadAsRejected)
       .displayUsing(acknowledgeFileUploadRedirect)
 
   // GET /file-verification
   final val showWaitingForFileVerification: Action[AnyContent] =
     whenAuthorisedAsUser
-      .waitForStateThenRedirect[FileUploadState.FileUploaded](INITIAL_CALLBACK_WAIT_TIME_SECONDS)
-      .orApplyOnTimeout(FileUploadTransitions.waitForFileVerification)
-      .redirectOrDisplayIf[FileUploadState.WaitingForFileVerification]
+      .waitForStateThenRedirect[State.FileUploaded](INITIAL_CALLBACK_WAIT_TIME_SECONDS)
+      .orApplyOnTimeout(Transitions.waitForFileVerification)
+      .redirectOrDisplayIf[State.WaitingForFileVerification]
 
   // GET /journey/:journeyId/file-verification
   final def asyncWaitingForFileVerification(journeyId: String): Action[AnyContent] =
     actions
-      .waitForStateAndDisplayUsing[FileUploadState.FileUploaded](
+      .waitForStateAndDisplayUsing[State.FileUploaded](
         INITIAL_CALLBACK_WAIT_TIME_SECONDS,
         acknowledgeFileUploadRedirect
       )
-      .orApplyOnTimeout(FileUploadTransitions.waitForFileVerification)
+      .orApplyOnTimeout(Transitions.waitForFileVerification)
       .displayUsing(acknowledgeFileUploadRedirect)
 
   // OPTIONS
@@ -195,7 +194,7 @@ class FileUploadJourneyController @Inject() (
   final def asyncMarkFileUploadAsPosted(journeyId: String): Action[AnyContent] =
     actions
       .bindForm(UpscanUploadSuccessForm)
-      .apply(FileUploadTransitions.markUploadAsPosted)
+      .apply(Transitions.markUploadAsPosted)
       .displayUsing(acknowledgeFileUploadRedirect)
 
   // POST /journey/:journeyId/callback-from-upscan/:nonce
@@ -203,7 +202,7 @@ class FileUploadJourneyController @Inject() (
     actions
       .parseJsonWithFallback[UpscanNotification](BadRequest)
       .applyWithRequest(implicit request =>
-        FileUploadTransitions.upscanCallbackArrived(fileUploadResultPushConnector.push(_))(Nonce(nonce))
+        Transitions.upscanCallbackArrived(fileUploadResultPushConnector.push(_))(Nonce(nonce))
       )
       .transform {
         case r if r.header.status < 400 => NoContent
@@ -215,15 +214,15 @@ class FileUploadJourneyController @Inject() (
   // GET /file-uploaded
   final val showFileUploaded: Action[AnyContent] =
     whenAuthorisedAsUser
-      .show[FileUploadState.FileUploaded]
-      .orApply(FileUploadTransitions.backToFileUploaded)
+      .show[State.FileUploaded]
+      .orApply(Transitions.backToFileUploaded)
 
   // POST /file-uploaded
   final val submitUploadAnotherFileChoice: Action[AnyContent] =
     whenAuthorisedAsUser
       .bindForm[Boolean](UploadAnotherFileChoiceForm)
       .applyWithRequest { implicit request =>
-        FileUploadTransitions.submitedUploadAnotherFileChoice(upscanRequest)(upscanInitiateConnector.initiate(_))(
+        Transitions.submitedUploadAnotherFileChoice(upscanRequest)(upscanInitiateConnector.initiate(_))(
           Transitions.continueToHost
         )
       }
@@ -232,7 +231,7 @@ class FileUploadJourneyController @Inject() (
   final def removeFileUploadByReference(reference: String): Action[AnyContent] =
     whenAuthorisedAsUser
       .applyWithRequest { implicit request =>
-        FileUploadTransitions.removeFileUploadByReference(reference)(upscanRequest)(
+        Transitions.removeFileUploadByReference(reference)(upscanRequest)(
           upscanInitiateConnector.initiate(_)
         )
       }
@@ -241,7 +240,7 @@ class FileUploadJourneyController @Inject() (
   final def removeFileUploadByReferenceAsync(reference: String): Action[AnyContent] =
     whenAuthorisedAsUser
       .applyWithRequest { implicit request =>
-        FileUploadTransitions.removeFileUploadByReference(reference)(upscanRequest)(
+        Transitions.removeFileUploadByReference(reference)(upscanRequest)(
           upscanInitiateConnector.initiate(_)
         )
       }
@@ -261,23 +260,23 @@ class FileUploadJourneyController @Inject() (
     */
   final override def getCallFor(state: State)(implicit request: Request[_]): Call =
     state match {
-      case Initialized(config, fileUploads) =>
+      case State.Initialized(config, fileUploads) =>
         if (preferUploadMultipleFiles) controller.showUploadMultipleFiles
         else controller.showFileUpload
 
-      case ContinueToHost(config, fileUploads) =>
+      case State.ContinueToHost(config, fileUploads) =>
         Call("GET", config.continueUrl)
 
-      case _: FileUploadState.UploadMultipleFiles =>
+      case _: State.UploadMultipleFiles =>
         controller.showUploadMultipleFiles
 
-      case _: FileUploadState.UploadFile =>
+      case _: State.UploadFile =>
         controller.showFileUpload
 
-      case _: FileUploadState.WaitingForFileVerification =>
+      case _: State.WaitingForFileVerification =>
         controller.showWaitingForFileVerification
 
-      case _: FileUploadState.FileUploaded =>
+      case _: State.FileUploaded =>
         controller.showFileUploaded
 
       case _ =>
@@ -292,19 +291,19 @@ class FileUploadJourneyController @Inject() (
     request: Request[_]
   ): Result =
     state match {
-      case Uninitialized =>
+      case State.Uninitialized =>
         Redirect(appConfig.govukStartUrl)
 
-      case Initialized(config, fileUploads) =>
+      case State.Initialized(config, fileUploads) =>
         if (preferUploadMultipleFiles)
           Redirect(controller.showUploadMultipleFiles)
         else
           Redirect(controller.showFileUpload)
 
-      case ContinueToHost(config, fileUploads) =>
+      case State.ContinueToHost(config, fileUploads) =>
         Redirect(config.continueUrl)
 
-      case FileUploadState.UploadMultipleFiles(model, fileUploads) =>
+      case State.UploadMultipleFiles(model, fileUploads) =>
         Ok(
           views.uploadMultipleFilesView(
             maxFileUploadsNumber,
@@ -319,7 +318,7 @@ class FileUploadJourneyController @Inject() (
           )
         )
 
-      case FileUploadState.UploadFile(model, reference, uploadRequest, fileUploads, maybeUploadError) =>
+      case State.UploadFile(model, reference, uploadRequest, fileUploads, maybeUploadError) =>
         Ok(
           views.uploadFileView(
             uploadRequest,
@@ -332,7 +331,7 @@ class FileUploadJourneyController @Inject() (
           )
         )
 
-      case FileUploadState.WaitingForFileVerification(_, reference, _, _, _) =>
+      case State.WaitingForFileVerification(_, reference, _, _, _) =>
         Ok(
           views.waitingForFileVerificationView(
             successAction = controller.showFileUploaded,
@@ -342,7 +341,7 @@ class FileUploadJourneyController @Inject() (
           )
         )
 
-      case FileUploadState.FileUploaded(model, fileUploads, _) =>
+      case State.FileUploaded(model, fileUploads, _) =>
         Ok(
           if (fileUploads.acceptedCount < maxFileUploadsNumber)
             views.fileUploadedView(
@@ -370,7 +369,7 @@ class FileUploadJourneyController @Inject() (
     uploadId: String
   ) =
     Renderer.simple {
-      case s: FileUploadState.UploadMultipleFiles =>
+      case s: State.UploadMultipleFiles =>
         s.fileUploads
           .findReferenceAndUploadRequestForUploadId(uploadId) match {
           case Some((reference, uploadRequest)) =>
@@ -414,14 +413,14 @@ class FileUploadJourneyController @Inject() (
 
   private def renderInitializationResponse =
     Renderer.simple {
-      case s: Initialized => Created
-      case _              => BadRequest
+      case s: State.Initialized => Created
+      case _                    => BadRequest
     }
 
   private def renderFileRemovalStatus =
     Renderer.simple {
-      case s: FileUploadState => NoContent
-      case _                  => BadRequest
+      case s: State => NoContent
+      case _        => BadRequest
     }
 
   private def streamFileFromUspcan(
@@ -452,10 +451,10 @@ class FileUploadJourneyController @Inject() (
 
   private def acknowledgeFileUploadRedirect = Renderer.simple { case state =>
     (state match {
-      case _: FileUploadState.UploadMultipleFiles        => Created
-      case _: FileUploadState.FileUploaded               => Created
-      case _: FileUploadState.WaitingForFileVerification => Accepted
-      case _                                             => NoContent
+      case _: State.UploadMultipleFiles        => Created
+      case _: State.FileUploaded               => Created
+      case _: State.WaitingForFileVerification => Accepted
+      case _                                   => NoContent
     }).withHeaders(HeaderNames.ACCESS_CONTROL_ALLOW_ORIGIN -> "*")
   }
 

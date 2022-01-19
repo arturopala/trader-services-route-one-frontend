@@ -1,12 +1,11 @@
 package uk.gov.hmrc.traderservices.services
 
-import uk.gov.hmrc.traderservices.support.AppISpec
 import uk.gov.hmrc.http.HeaderCarrier
-import scala.concurrent.ExecutionContext.Implicits.global
+import uk.gov.hmrc.traderservices.models.{FileUploadInitializationRequest, FileUploadSessionConfig, FileUploads}
+import uk.gov.hmrc.traderservices.support.AppISpec
+
 import java.util.UUID
-import uk.gov.hmrc.traderservices.models.FileUploadInitializationRequest
-import uk.gov.hmrc.traderservices.models.FileUploadSessionConfig
-import uk.gov.hmrc.traderservices.models.FileUploads
+import scala.concurrent.ExecutionContext.Implicits.global
 
 class MongoDBCachedFileUploadJourneyServiceSpec extends AppISpec {
 
