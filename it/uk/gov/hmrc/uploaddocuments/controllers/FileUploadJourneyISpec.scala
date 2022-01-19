@@ -34,7 +34,8 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
       serviceId = hostServiceId,
       nonce = Nonce.random,
       continueUrl = s"$wireMockBaseUrlAsString/continue-url",
-      backlinkUrl = s"$wireMockBaseUrlAsString/backlink-url"
+      backlinkUrl = s"$wireMockBaseUrlAsString/backlink-url",
+      resultPostUrl = s"$wireMockBaseUrlAsString/result-post-url"
     )
 
   "FileUploadJourneyController" when {
@@ -1082,7 +1083,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
     "GET /file-uploaded/:reference/remove" should {
       "remove file from upload list by reference" in {
         givenHostPushEndpoint(
-          "/continue-url",
+          "/result-post-url",
           FileUploadResultPushConnector.Request.from(
             fileUploadSessionConfig,
             FileUploads(files =
@@ -1159,7 +1160,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
           )
         )
         eventually(
-          verifyHostPushEndpointHasHappened("/continue-url", 1)
+          verifyHostPushEndpointHasHappened("/result-post-url", 1)
         )
       }
     }
@@ -1167,7 +1168,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
     "POST /file-uploaded/:reference/remove" should {
       "remove file from upload list by reference" in {
         givenHostPushEndpoint(
-          "/continue-url",
+          "/result-post-url",
           FileUploadResultPushConnector.Request.from(
             fileUploadSessionConfig,
             FileUploads(files =
@@ -1243,7 +1244,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
           )
         )
         eventually(
-          verifyHostPushEndpointHasHappened("/continue-url", 1)
+          verifyHostPushEndpointHasHappened("/result-post-url", 1)
         )
       }
     }
@@ -1426,7 +1427,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
       "modify file status to Accepted and return 204" in {
         val nonce = Nonce.random
         givenHostPushEndpoint(
-          "/continue-url",
+          "/result-post-url",
           FileUploadResultPushConnector.Request.from(
             fileUploadSessionConfig,
             FileUploads(files =
@@ -1501,7 +1502,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
           )
         )
         eventually {
-          verifyHostPushEndpointHasHappened("/continue-url", 1)
+          verifyHostPushEndpointHasHappened("/result-post-url", 1)
         }
       }
 

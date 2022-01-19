@@ -40,7 +40,8 @@ class FileUploadJourneyModelSpec
     serviceId = "dummy-hmrc-service",
     nonce = Nonce.random,
     continueUrl = "/continue-url",
-    backlinkUrl = "/backlink-url"
+    backlinkUrl = "/backlink-url",
+    resultPostUrl = "/result-post-url"
   )
 
   "FileUploadJourneyModel" when {

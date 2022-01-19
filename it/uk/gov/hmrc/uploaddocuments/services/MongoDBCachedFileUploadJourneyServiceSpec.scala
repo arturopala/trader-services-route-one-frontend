@@ -19,7 +19,7 @@ class MongoDBCachedFileUploadJourneyServiceSpec extends AppISpec {
     HeaderCarrier()
       .withExtraHeaders("FileUploadJourney" -> UUID.randomUUID.toString)
 
-  val fileUploadConfig = FileUploadSessionConfig("dummy-id", Nonce.random, "/foo", "/bar")
+  val fileUploadConfig = FileUploadSessionConfig("dummy-id", Nonce.random, "/foo", "/bar", "/zoo")
   val request =
     FileUploadInitializationRequest(config = fileUploadConfig, existingFiles = Seq.empty)
 

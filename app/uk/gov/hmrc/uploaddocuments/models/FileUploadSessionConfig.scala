@@ -23,7 +23,8 @@ final case class FileUploadSessionConfig(
   serviceId: String,
   nonce: Nonce,
   continueUrl: String,
-  backlinkUrl: String
+  backlinkUrl: String,
+  resultPostUrl: String
 )
 
 object FileUploadSessionConfig {
