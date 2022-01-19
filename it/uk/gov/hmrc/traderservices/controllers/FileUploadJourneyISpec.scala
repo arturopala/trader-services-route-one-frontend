@@ -161,7 +161,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
       }
     }
 
-    "GET /upload-files" should {
+    "GET /" should {
       "show the upload multiple files page " in {
         val state = UploadMultipleFiles(
           fileUploadSessionConfig,
@@ -170,7 +170,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
         journey.setState(state)
         givenAuthorisedForEnrolment(Enrolment("HMRC-XYZ", "EORINumber", "foo"))
 
-        val result = await(request("/upload-files").get())
+        val result = await(request("/").get())
 
         result.status shouldBe 200
         result.body should include(htmlEscapedPageTitle("view.upload-multiple-files.title"))
@@ -186,7 +186,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
         journey.setState(state)
         givenAuthorisedForEnrolment(Enrolment("HMRC-XYZ", "EORINumber", "foo"))
 
-        val result = await(request("/upload-files").get())
+        val result = await(request("/").get())
 
         result.status shouldBe 200
         result.body should include(htmlEscapedPageTitle("view.upload-multiple-files.title"))
@@ -198,7 +198,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
       }
     }
 
-    "POST /upload-files/initialize/:uploadId" should {
+    "POST /initialize-upscan/:uploadId" should {
       "initialise first file upload" in {
 
         val state = UploadMultipleFiles(
@@ -211,7 +211,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
           appConfig.baseInternalCallbackUrl + s"/upload-documents/journey/${journeyId.value}/callback-from-upscan"
         givenUpscanInitiateSucceeds(callbackUrl)
 
-        val result = await(request("/upload-files/initialize/001").post(""))
+        val result = await(request("/initialize-upscan/001").post(""))
 
         result.status shouldBe 200
         val json = result.body[JsValue]
@@ -282,7 +282,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
           appConfig.baseInternalCallbackUrl + s"/upload-documents/journey/${journeyId.value}/callback-from-upscan"
         givenUpscanInitiateSucceeds(callbackUrl)
 
-        val result = await(request("/upload-files/initialize/002").post(""))
+        val result = await(request("/initialize-upscan/002").post(""))
 
         result.status shouldBe 200
         val json = result.body[JsValue]

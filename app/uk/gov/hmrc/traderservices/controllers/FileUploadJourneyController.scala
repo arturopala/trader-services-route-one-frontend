@@ -61,14 +61,14 @@ class FileUploadJourneyController @Inject() (
 
   implicit val scheduler: Scheduler = actorSystem.scheduler
 
-  // POST /upload/initialize
+  // POST /initialize
   final val initialize: Action[AnyContent] =
     actions
       .parseJsonWithFallback[FileUploadInitializationRequest](BadRequest)
       .apply(Transitions.initialize)
       .displayUsing(renderInitializationResponse)
 
-  // POST /upload/continue-to-host
+  // POST /continue-to-host
   final val continueToHost: Action[AnyContent] =
     whenAuthorisedAsUser
       .show[ContinueToHost]
@@ -121,13 +121,13 @@ class FileUploadJourneyController @Inject() (
       expectedContentType = Some(appConfig.fileFormats.approvedFileTypes)
     )
 
-  // GET /upload-files
+  // GET /
   final val showUploadMultipleFiles: Action[AnyContent] =
     whenAuthorisedAsUser
       .apply(FileUploadTransitions.toUploadMultipleFiles)
       .redirectOrDisplayIf[FileUploadState.UploadMultipleFiles]
 
-  // POST /upload-files/initialize/:uploadId
+  // POST /initialize-upscan/:uploadId
   final def initiateNextFileUpload(uploadId: String): Action[AnyContent] =
     whenAuthorisedAsUser
       .applyWithRequest { implicit request =>
@@ -447,7 +447,7 @@ class FileUploadJourneyController @Inject() (
 
     }
 
-  private lazy val acknowledgeFileUploadRedirect = Renderer.simple { case state =>
+  private def acknowledgeFileUploadRedirect = Renderer.simple { case state =>
     (state match {
       case _: FileUploadState.UploadMultipleFiles        => Created
       case _: FileUploadState.FileUploaded               => Created
