@@ -20,7 +20,7 @@ import uk.gov.hmrc.traderservices.models._
 import java.time._
 import scala.concurrent.Future
 import uk.gov.hmrc.traderservices.connectors._
-import uk.gov.hmrc.traderservices.journeys.CreateCaseJourneyModel.UpscanInitiateApi
+import uk.gov.hmrc.traderservices.journeys.FileUploadJourneyModel.UpscanInitiateApi
 
 trait TestData {
 
@@ -29,38 +29,7 @@ trait TestData {
   val correlationId = "123"
   val generatedAt = java.time.LocalDateTime.of(2018, 12, 11, 10, 20, 0)
 
-  val exportEntryDetails = EntryDetails(EPU(123), EntryNumber("Z00000Z"), LocalDate.parse("2020-09-23"))
-  val importEntryDetails = EntryDetails(EPU(123), EntryNumber("000000Z"), LocalDate.parse("2020-09-23"))
-  val invalidEntryDetails = EntryDetails(EPU(123), EntryNumber("0000000"), LocalDate.parse("2020-09-23"))
-  val mandatoryReasonImportRequestType = ImportRequestType.Cancellation
-  val mandatoryReasonImportRouteType = ImportRouteType.Route3
-  val mandatoryReasonExportRequestType: Set[ExportRequestType] =
-    Set(ExportRequestType.WithdrawalOrReturn, ExportRequestType.Cancellation)
-  val mandatoryReasonExportRouteType = ExportRouteType.Route3
   val reasonText = "our supplier went bankrupt"
-
-  val completeExportQuestionsAnswers = ExportQuestions(
-    requestType = Some(ExportRequestType.New),
-    routeType = Some(ExportRouteType.Route2),
-    hasPriorityGoods = Some(true),
-    priorityGoods = Some(ExportPriorityGoods.ExplosivesOrFireworks),
-    freightType = Some(ExportFreightType.Air),
-    vesselDetails =
-      Some(VesselDetails(Some("Foo"), Some(LocalDate.parse("2021-01-01")), Some(LocalTime.parse("00:00")))),
-    contactInfo = Some(ExportContactInfo(contactEmail = "name@somewhere.com"))
-  )
-
-  val completeImportQuestionsAnswers = ImportQuestions(
-    requestType = Some(ImportRequestType.New),
-    routeType = Some(ImportRouteType.Route2),
-    hasPriorityGoods = Some(true),
-    priorityGoods = Some(ImportPriorityGoods.ExplosivesOrFireworks),
-    hasALVS = Some(true),
-    freightType = Some(ImportFreightType.Air),
-    vesselDetails =
-      Some(VesselDetails(Some("Foo"), Some(LocalDate.parse("2021-01-01")), Some(LocalTime.parse("00:00")))),
-    contactInfo = Some(ImportContactInfo(contactEmail = "name@somewhere.com"))
-  )
 
   val nonEmptyFileUploads = FileUploads(files =
     Seq(

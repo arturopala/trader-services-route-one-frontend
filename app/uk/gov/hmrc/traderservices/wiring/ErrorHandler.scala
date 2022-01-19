@@ -17,35 +17,21 @@
 package uk.gov.hmrc.traderservices.wiring
 
 import com.google.inject.name.Named
-import play.api.{Configuration, Environment, Logger, Mode, PlayException}
 import play.api.i18n.MessagesApi
-import play.api.mvc.Request
-import play.api.mvc.RequestHeader
-import play.api.mvc.Result
 import play.api.mvc.Results._
-import uk.gov.hmrc.auth.core.InsufficientEnrolments
-import uk.gov.hmrc.auth.core.NoActiveSession
-import uk.gov.hmrc.http.JsValidationException
-import uk.gov.hmrc.http.NotFoundException
-import uk.gov.hmrc.play.http.HeaderCarrierConverter
+import play.api.mvc.{Request, RequestHeader, Result}
+import play.api.{Configuration, Environment, Mode}
+import uk.gov.hmrc.auth.core.{InsufficientEnrolments, NoActiveSession}
+import uk.gov.hmrc.http.{JsValidationException, NotFoundException}
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
-import uk.gov.hmrc.play.bootstrap.config.AuthRedirects
-import uk.gov.hmrc.play.bootstrap.config.HttpAuditEvent
+import uk.gov.hmrc.play.bootstrap.config.{AuthRedirects, HttpAuditEvent}
 import uk.gov.hmrc.play.bootstrap.frontend.http.FrontendErrorHandler
-import uk.gov.hmrc.traderservices.connectors.TraderServicesAmendApiError
-import uk.gov.hmrc.traderservices.journeys.AmendCaseJourneyModel.CaseReferenceUpstreamException
-import uk.gov.hmrc.traderservices.models.DateTimeHelper
-import uk.gov.hmrc.traderservices.views.html.AmendCaseErrorView
-import uk.gov.hmrc.traderservices.views.html.ErrorOutOfHoursView
-import uk.gov.hmrc.traderservices.views.html.ErrorView
-import uk.gov.hmrc.traderservices.views.html.PageNotFoundErrorView
-import uk.gov.hmrc.traderservices.views.html.templates.ErrorTemplate
-import uk.gov.hmrc.traderservices.views.html.templates.GovukLayoutWrapper
+import uk.gov.hmrc.play.http.HeaderCarrierConverter
+import uk.gov.hmrc.traderservices.views.html.templates.{ErrorTemplate, GovukLayoutWrapper}
+import uk.gov.hmrc.traderservices.views.html.{ErrorView, PageNotFoundErrorView}
 
-import javax.inject.Inject
-import javax.inject.Singleton
-import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
+import javax.inject.{Inject, Singleton}
+import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 class ErrorHandler @Inject() (
@@ -56,12 +42,9 @@ class ErrorHandler @Inject() (
   govUkWrapper: GovukLayoutWrapper,
   html: uk.gov.hmrc.traderservices.views.components.html,
   pageNotFoundErrorView: PageNotFoundErrorView,
-  amendCaseErrorView: AmendCaseErrorView,
-  errorView: ErrorView,
-  errorOutOfHoursView: ErrorOutOfHoursView
+  errorView: ErrorView
 )(implicit val config: Configuration, ec: ExecutionContext, appConfig: uk.gov.hmrc.traderservices.wiring.AppConfig)
     extends FrontendErrorHandler with AuthRedirects with ErrorAuditing {
-  private val logger = Logger(getClass)
 
   private val isDevEnv =
     if (env.mode.equals(Mode.Test)) false
@@ -74,22 +57,6 @@ class ErrorHandler @Inject() (
 
   override def onServerError(request: RequestHeader, exception: Throwable): Future[Result] =
     exception match {
-      case TraderServicesAmendApiError(ex: CaseReferenceUpstreamException) =>
-        logger.warn(
-          """
-            |
-            |! %sInternal server error, for (%s) [%s] ->
-            | """.stripMargin.format(
-            ex match {
-              case p: PlayException => "@" + p.id + " - "
-              case _                => ""
-            },
-            request.method,
-            request.uri
-          ),
-          ex
-        )
-        Future.successful(resolveError(request, exception))
       case _ => super.onServerError(request, exception)
     }
 
@@ -98,20 +65,10 @@ class ErrorHandler @Inject() (
     implicit val r = Request(request, "")
     exception match {
       case _: NoActiveSession => toGGLogin(if (isDevEnv) s"http://${request.host}${request.uri}" else s"${request.uri}")
-      case _: InsufficientEnrolments      => Forbidden
-      case _: TraderServicesAmendApiError => Ok(externalAmendErrorTemplate())
+      case _: InsufficientEnrolments => Forbidden
       case _ =>
         Ok(
-          if (
-            DateTimeHelper.isWorkingHours(
-              DateTimeHelper.londonTime,
-              appConfig.workingHourStart,
-              appConfig.workingHourEnd
-            )
-          )
-            errorView()
-          else
-            errorOutOfHoursView()
+          errorView()
         )
     }
   }
@@ -122,8 +79,6 @@ class ErrorHandler @Inject() (
     new ErrorTemplate(govUkWrapper, html)(pageTitle, heading, message)
 
   override def notFoundTemplate(implicit request: Request[_]) = pageNotFoundErrorView()
-
-  def externalAmendErrorTemplate()(implicit request: Request[_]) = amendCaseErrorView()
 }
 
 object EventTypes {

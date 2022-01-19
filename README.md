@@ -1,11 +1,13 @@
-![GitHub release (latest by date)](https://img.shields.io/github/v/release/hmrc/trader-services-route-one-frontend) ![GitHub code size in bytes](https://img.shields.io/github/languages/code-size/hmrc/trader-services-route-one-frontend) ![GitHub last commit](https://img.shields.io/github/last-commit/hmrc/trader-services-route-one-frontend)
+![GitHub release (latest by date)](https://img.shields.io/github/v/release/hmrc/upload-documents-frontend) ![GitHub code size in bytes](https://img.shields.io/github/languages/code-size/hmrc/upload-documents-frontend) ![GitHub last commit](https://img.shields.io/github/last-commit/hmrc/upload-documents-frontend)
 
-# trader-services-route-one-frontend
+# upload-documents-frontend
 
-Frontend microservice exposing Trader Portal UI.
+Plug&Play customizable frontend microservice for uploading documents to the Upscan. 
 
 Features:
-- Send documents for pre-clearance checks
+- UI to upload multiple files on a single page
+- non-JS UI version for uploading one file per page
+- per-client customization
 
 ## Running the tests
 
@@ -17,13 +19,13 @@ Features:
 
 ## Running the app locally
 
-    sm --start TRADER_SERVICES_ALL
-    sm --stop TRADER_SERVICES_ROUTE_ONE_FRONTEND 
+    sm --start UPLOAD_DOCUMENTS_ALL
+    sm --stop UPLOAD_DOCUMENTS_FRONTEND 
     sbt run
 
 It should then be listening on port 9379
 
-    browse http://localhost:9379/send-documents-for-customs-check
+    browse http://localhost:9379/upload-documents
 
 ### License
 

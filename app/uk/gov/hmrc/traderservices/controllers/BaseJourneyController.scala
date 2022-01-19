@@ -77,7 +77,7 @@ abstract class BaseJourneyController[S <: JourneyService[HeaderCarrier]](
   final val actionNotYetImplemented = Action(NotImplemented)
 
   // Dummy URL to use when developing the journey
-  final val workInProgresDeadEndCall = Call("GET", "/send-documents-for-customs-check/work-in-progress")
+  final val workInProgresDeadEndCall = Call("GET", "/upload-documents/work-in-progress")
 
   // ------------------------------------
   // Retrieval of journeyId configuration

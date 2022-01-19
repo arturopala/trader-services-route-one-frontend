@@ -101,21 +101,21 @@ class FileUploadJourneyModelSpec
           .thenGoes(Initialized(fileUploadSessionConfig, nonEmptyFileUploads))
       }
 
-      "go to ContinueToHost when non-empty file uploads and finish" in {
+      "go to ContinueToHost when non-empty file uploads and continueToHost" in {
         given(
           UploadMultipleFiles(fileUploadSessionConfig, nonEmptyFileUploads)
-        ) when finish should thenGo(
+        ) when continueToHost should thenGo(
           ContinueToHost(fileUploadSessionConfig, nonEmptyFileUploads)
         )
       }
 
-      "go to ContinueToHost when empty file uploads and finish transition" in {
+      "go to ContinueToHost when empty file uploads and continueToHost transition" in {
         given(
           UploadMultipleFiles(
             fileUploadSessionConfig,
             FileUploads()
           )
-        ) when finish should thenGo(
+        ) when continueToHost should thenGo(
           ContinueToHost(
             fileUploadSessionConfig,
             FileUploads()
@@ -2088,7 +2088,7 @@ class FileUploadJourneyModelSpec
         given(
           FileUploaded(hostData, fileUploads)
         )
-          .when(submitedUploadAnotherFileChoice(testUpscanRequest)(mockUpscanInitiate)(finish)(true))
+          .when(submitedUploadAnotherFileChoice(testUpscanRequest)(mockUpscanInitiate)(continueToHost)(true))
           .thenGoes(
             UploadFile(
               hostData,
@@ -2108,7 +2108,7 @@ class FileUploadJourneyModelSpec
         given(
           FileUploaded(hostData, fileUploads)
         )
-          .when(submitedUploadAnotherFileChoice(testUpscanRequest)(mockUpscanInitiate)(finish)(true))
+          .when(submitedUploadAnotherFileChoice(testUpscanRequest)(mockUpscanInitiate)(continueToHost)(true))
           .thenGoes(
             ContinueToHost(fileUploadSessionConfig, fileUploads)
           )
@@ -2123,7 +2123,7 @@ class FileUploadJourneyModelSpec
         given(
           FileUploaded(hostData, fileUploads)
         )
-          .when(submitedUploadAnotherFileChoice(testUpscanRequest)(mockUpscanInitiate)(finish)(false))
+          .when(submitedUploadAnotherFileChoice(testUpscanRequest)(mockUpscanInitiate)(continueToHost)(false))
           .thenGoes(
             ContinueToHost(fileUploadSessionConfig, fileUploads)
           )

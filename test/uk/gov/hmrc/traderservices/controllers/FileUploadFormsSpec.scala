@@ -24,7 +24,7 @@ class FileUploadFormsSpec extends UnitSpec with FormValidator {
 
   "UploadAnotherFileChoiceForm" should {
     "bind uploadAnotherFile choice and fill it back" in {
-      val form = CreateCaseJourneyController.UploadAnotherFileChoiceForm
+      val form = FileUploadJourneyController.UploadAnotherFileChoiceForm
       validate(form, Map("uploadAnotherFile" -> "yes"), true)
       validate(form, Map("uploadAnotherFile" -> "no"), false)
       validate(form, "uploadAnotherFile", Map(), Seq("error.uploadAnotherFile.required"))
@@ -34,7 +34,7 @@ class FileUploadFormsSpec extends UnitSpec with FormValidator {
 
   "UpscanUploadSuccessForm" should {
     "bind S3 success query parameters" in {
-      val form = CreateCaseJourneyController.UpscanUploadSuccessForm
+      val form = FileUploadJourneyController.UpscanUploadSuccessForm
       validate(
         form,
         Map("key" -> "ABC-123", "bucket" -> "foo-bar-bucket"),
@@ -51,7 +51,7 @@ class FileUploadFormsSpec extends UnitSpec with FormValidator {
 
   "UpscanUploadErrorForm" should {
     "bind S3 error query parameters" in {
-      val form = CreateCaseJourneyController.UpscanUploadErrorForm
+      val form = FileUploadJourneyController.UpscanUploadErrorForm
       validate(
         form,
         Map(

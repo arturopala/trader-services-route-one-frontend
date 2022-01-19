@@ -32,7 +32,6 @@ class forms @Inject() (
   val inputDate: uk.gov.hmrc.traderservices.views.html.components.inputDate,
   val inputCheckboxes: uk.gov.hmrc.traderservices.views.html.components.inputCheckboxes,
   val inputRadio: uk.gov.hmrc.traderservices.views.html.components.inputRadio,
-  val inputTime: uk.gov.hmrc.traderservices.views.html.components.inputTime,
   val textarea: uk.gov.hmrc.traderservices.views.html.components.textarea,
   val inputCharacterCount: uk.gov.hmrc.traderservices.views.html.components.InputCharacterCount
 ) {
@@ -44,7 +43,7 @@ class forms @Inject() (
     _formWithCSRF.apply(
       action,
       (Seq(
-        'id         -> "send-documents-for-customs-check-form",
+        'id         -> "upload-documents",
         'novalidate -> "novalidate"
       ) ++ args): _*
     )(body)

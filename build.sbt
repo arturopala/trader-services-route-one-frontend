@@ -10,7 +10,7 @@ lazy val scoverageSettings = {
     ScoverageKeys.coverageMinimumStmtTotal := 80.00,
     ScoverageKeys.coverageFailOnMinimum := false,
     ScoverageKeys.coverageHighlighting := true,
-    parallelExecution in Test := false
+    Test / parallelExecution := false
   )
 }
 
@@ -42,7 +42,7 @@ lazy val itDeps = Seq(
 
 lazy val root = (project in file("."))
   .settings(
-    name := "trader-services-route-one-frontend",
+    name := "upload-documents-frontend",
     organization := "uk.gov.hmrc",
     scalaVersion := "2.12.15",
     PlayKeys.playDefaultPort := 9379,
@@ -56,11 +56,11 @@ lazy val root = (project in file("."))
     libraryDependencies ++= compileDeps ++ testDeps("test") ++ testDeps("it") ++ itDeps,
     publishingSettings,
     scoverageSettings,
-    unmanagedResourceDirectories in Compile += baseDirectory.value / "resources",
-    scalafmtOnCompile in Compile := true,
-    scalafmtOnCompile in Test := true,
+    Compile / unmanagedResourceDirectories += baseDirectory.value / "resources",
+    Compile / scalafmtOnCompile := true,
+    Test / scalafmtOnCompile := true,
     majorVersion := 0,
-    javaOptions in Test += "-Djava.locale.providers=CLDR,JRE",
+    Test / javaOptions += "-Djava.locale.providers=CLDR,JRE",
     WebpackKeys.configurations := Seq(
       WebpackConfig(
         id = "js",
@@ -87,13 +87,13 @@ lazy val root = (project in file("."))
   )
   .configs(IntegrationTest)
   .settings(
-    Keys.fork in IntegrationTest := false,
     Defaults.itSettings,
-    unmanagedSourceDirectories in IntegrationTest += baseDirectory(_ / "it").value,
-    parallelExecution in IntegrationTest := false,
-    testGrouping in IntegrationTest := oneForkedJvmPerTest((definedTests in IntegrationTest).value),
-    scalafmtOnCompile in IntegrationTest := true,
-    javaOptions in IntegrationTest += "-Djava.locale.providers=CLDR,JRE"
+    IntegrationTest / Keys.fork := false,
+    IntegrationTest / unmanagedSourceDirectories += baseDirectory(_ / "it").value,
+    IntegrationTest / parallelExecution := false,
+    IntegrationTest / testGrouping := oneForkedJvmPerTest((IntegrationTest / definedTests).value),
+    IntegrationTest / scalafmtOnCompile := true,
+    IntegrationTest / javaOptions += "-Djava.locale.providers=CLDR,JRE"
   )
   .disablePlugins(JUnitXmlReportPlugin) // Required to prevent https://github.com/scalatest/scalatest/issues/1427
   .enablePlugins(PlayScala, SbtDistributablesPlugin)

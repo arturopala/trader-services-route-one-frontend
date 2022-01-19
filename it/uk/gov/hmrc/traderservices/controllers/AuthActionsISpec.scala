@@ -34,7 +34,7 @@ class AuthActionsISpec extends AuthActionISpecSetup {
       val result = TestController.testAuthorizedWithEnrolment("serviceName", "serviceKey")
       status(result) shouldBe 303
       redirectLocation(result).get should include(
-        "/bas-gateway/sign-in?continue_url=%2F&origin=trader-services-route-one-frontend"
+        "/bas-gateway/sign-in?continue_url=%2F&origin=upload-documents-frontend"
       )
     }
   }
@@ -53,7 +53,7 @@ class AuthActionsISpec extends AuthActionISpecSetup {
       val result = TestController.testAuhorizedWithoutEnrolment
       status(result) shouldBe 303
       redirectLocation(result).get should include(
-        "/bas-gateway/sign-in?continue_url=%2F&origin=trader-services-route-one-frontend"
+        "/bas-gateway/sign-in?continue_url=%2F&origin=upload-documents-frontend"
       )
     }
   }

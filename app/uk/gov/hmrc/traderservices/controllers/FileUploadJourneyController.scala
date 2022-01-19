@@ -35,13 +35,10 @@ import scala.concurrent.Future
 
 @Singleton
 class FileUploadJourneyController @Inject() (
-  amendCaseJourneyService: FileUploadJourneyServiceWithHeaderCarrier,
-  views: uk.gov.hmrc.traderservices.views.AmendCaseViews,
-  traderServicesApiConnector: TraderServicesApiConnector,
+  fileUploadJourneyService: FileUploadJourneyServiceWithHeaderCarrier,
+  views: uk.gov.hmrc.traderservices.views.FileUploadViews,
   upscanInitiateConnector: UpscanInitiateConnector,
   uploadFileViewContext: UploadFileViewContext,
-  printStylesheet: ReceiptStylesheet,
-  pdfGeneratorConnector: PdfGeneratorConnector,
   appConfig: AppConfig,
   authConnector: FrontendAuthConnector,
   environment: Environment,
@@ -49,7 +46,7 @@ class FileUploadJourneyController @Inject() (
   controllerComponents: MessagesControllerComponents,
   val actorSystem: ActorSystem
 ) extends BaseJourneyController(
-      amendCaseJourneyService,
+      fileUploadJourneyService,
       controllerComponents,
       appConfig,
       authConnector,
@@ -313,7 +310,6 @@ class FileUploadJourneyController @Inject() (
             removeFile = controller.removeFileUploadByReferenceAsync,
             previewFile = controller.previewFileUploadByReference,
             markFileRejected = controller.markFileUploadAsRejectedAsync,
-            None,
             continueAction = controller.continueToHost,
             backLink = backLinkFor(breadcrumbs)
           )
@@ -325,7 +321,6 @@ class FileUploadJourneyController @Inject() (
             uploadRequest,
             fileUploads,
             maybeUploadError,
-            None,
             successAction = controller.showFileUploaded,
             failureAction = controller.showFileUpload,
             checkStatusAction = controller.checkFileVerificationStatus(reference),

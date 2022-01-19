@@ -3,7 +3,7 @@ package uk.gov.hmrc.traderservices.connectors
 import play.api.Application
 import uk.gov.hmrc.http._
 import uk.gov.hmrc.traderservices.models._
-import uk.gov.hmrc.traderservices.stubs.TraderServicesApiStubs
+import uk.gov.hmrc.traderservices.stubs.ExternalApiStubs
 import uk.gov.hmrc.traderservices.support.AppISpec
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -95,7 +95,7 @@ class FileUploadResultPushConnectorISpec extends FileUploadResultPushConnectorIS
 
 }
 
-trait FileUploadResultPushConnectorISpecSetup extends AppISpec with TraderServicesApiStubs {
+trait FileUploadResultPushConnectorISpecSetup extends AppISpec with ExternalApiStubs {
 
   implicit val hc: HeaderCarrier = HeaderCarrier()
 

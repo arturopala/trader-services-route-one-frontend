@@ -30,7 +30,7 @@ trait UpscanInitiateStubs {
   def givenUpscanInitiateSucceeds(callbackUrl: String): StubMapping =
     stubFor(
       post(urlEqualTo(s"/upscan/v2/initiate"))
-        .withHeader("User-Agent", containing("trader-services-route-one-frontend"))
+        .withHeader("User-Agent", containing("upload-documents-frontend"))
         .withHeader(HeaderNames.CONTENT_TYPE, containing("application/json"))
         .withRequestBody(
           matchingJsonPath("callbackUrl", containing(callbackUrl))

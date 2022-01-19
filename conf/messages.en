@@ -67,7 +67,6 @@ global.error.404.title=Page not found
 global.error.404.heading=Page not found
 global.error.404.line1=If you typed the web address, check it is correct.
 global.error.404.line2=If you pasted the web address, check you copied the entire address.
-global.error.404.line3=<a class="govuk-link" href="{0}">Send your documents for a customs check</a>
 
 global.error.500.title=Sorry, there is a problem with the service
 global.error.500.heading=Sorry, there is a problem with the service

@@ -24,7 +24,6 @@
 @import views.html.helper.CSPNonce
 @import uk.gov.hmrc.hmrcfrontend.views.config.StandardBetaBanner
 @import uk.gov.hmrc.traderservices.controllers.routes.SignOutController
-@import uk.gov.hmrc.traderservices.controllers.routes.CreateCaseJourneyController
 @import uk.gov.hmrc.hmrcfrontend.views.Aliases.UserResearchBanner
 
 @this(
@@ -100,7 +99,7 @@ beforeContentBlock = Some(beforeContentBlock),
 bodyEndBlock = None,
 scriptsBlock = Some(scripts),
 headerBlock = Some(hmrcStandardHeader(
-  serviceUrl = Some(CreateCaseJourneyController.showStart.url),
+  serviceUrl = Some("FIXME: use here an URL from the session config"),
   signOutUrl = if(timeout) Some(SignOutController.signOut().url) else None,
   phaseBanner = Some(standardBetaBanner(url = appConfig.betaFeedbackUrl)),
   userResearchBanner = Some(UserResearchBanner(url = appConfig.researchBannerUrl)),

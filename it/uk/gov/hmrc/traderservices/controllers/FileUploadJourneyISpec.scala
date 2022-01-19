@@ -11,7 +11,7 @@ import uk.gov.hmrc.traderservices.journeys.FileUploadJourneyStateFormats
 import uk.gov.hmrc.traderservices.models._
 import uk.gov.hmrc.traderservices.repository.CacheRepository
 import uk.gov.hmrc.traderservices.services.{FileUploadJourneyService, MongoDBCachedJourneyService}
-import uk.gov.hmrc.traderservices.stubs.{PdfGeneratorStubs, TraderServicesApiStubs, UpscanInitiateStubs}
+import uk.gov.hmrc.traderservices.stubs.{ExternalApiStubs, UpscanInitiateStubs}
 import uk.gov.hmrc.traderservices.support.{ServerISpec, StateMatchers, TestData, TestJourneyService}
 
 import java.time.temporal.ChronoUnit
@@ -19,8 +19,7 @@ import java.time.{LocalDate, LocalDateTime, ZonedDateTime}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.Random
 
-class FileUploadJourneyISpec
-    extends FileUploadJourneyISpecSetup with TraderServicesApiStubs with UpscanInitiateStubs with PdfGeneratorStubs {
+class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalApiStubs with UpscanInitiateStubs {
 
   import journey.model.FileUploadState._
   import journey.model.State._
@@ -39,18 +38,6 @@ class FileUploadJourneyISpec
 
   "FileUploadJourneyController" when {
 
-    "user not enrolled for HMRC-XYZ" should {
-      "be redirected to the subscription journey" in {
-        journey.setState(Uninitialized)
-        givenAuthorisedWithoutEnrolments
-        givenDummySubscriptionUrl
-        val result = await(request("/").get())
-        result.status shouldBe 200
-        verifyAuthoriseAttempt()
-        verifySubscriptionAttempt()
-      }
-    }
-
     "preferUploadMultipleFiles" should {
       "return false when jsenabled cookie NOT set" in {
         controller.preferUploadMultipleFiles(FakeRequest()) shouldBe false
@@ -66,7 +53,7 @@ class FileUploadJourneyISpec
     "successRedirect" should {
       "return /file-verification when jsenabled cookie NOT set" in {
         controller.successRedirect(FakeRequest()) should endWith(
-          "/send-documents-for-customs-check/file-verification"
+          "/upload-documents/file-verification"
         )
       }
 
@@ -74,7 +61,7 @@ class FileUploadJourneyISpec
         controller.successRedirect(
           fakeRequest(Cookie(controller.COOKIE_JSENABLED, "true"))
         ) should endWith(
-          s"/send-documents-for-customs-check/journey/${journeyId.value}/file-verification"
+          s"/upload-documents/journey/${journeyId.value}/file-verification"
         )
       }
     }
@@ -82,7 +69,7 @@ class FileUploadJourneyISpec
     "errorRedirect" should {
       "return /file-rejected when jsenabled cookie NOT set" in {
         controller.errorRedirect(FakeRequest()) should endWith(
-          "/send-documents-for-customs-check/file-rejected"
+          "/upload-documents/file-rejected"
         )
       }
 
@@ -90,7 +77,7 @@ class FileUploadJourneyISpec
         controller.errorRedirect(
           fakeRequest(Cookie(controller.COOKIE_JSENABLED, "true"))
         ) should endWith(
-          s"/send-documents-for-customs-check/journey/${journeyId.value}/file-rejected"
+          s"/upload-documents/journey/${journeyId.value}/file-rejected"
         )
       }
     }
@@ -143,7 +130,7 @@ class FileUploadJourneyISpec
         journey.setState(state)
         givenAuthorisedForEnrolment(Enrolment("HMRC-XYZ", "EORINumber", "foo"))
         val callbackUrl =
-          appConfig.baseInternalCallbackUrl + s"/send-documents-for-customs-check/journey/${journeyId.value}/callback-from-upscan"
+          appConfig.baseInternalCallbackUrl + s"/upload-documents/journey/${journeyId.value}/callback-from-upscan"
         givenUpscanInitiateSucceeds(callbackUrl)
 
         val result = await(request("/upload-files/initialise/001").post(""))
@@ -214,7 +201,7 @@ class FileUploadJourneyISpec
         journey.setState(state)
         givenAuthorisedForEnrolment(Enrolment("HMRC-XYZ", "EORINumber", "foo"))
         val callbackUrl =
-          appConfig.baseInternalCallbackUrl + s"/send-documents-for-customs-check/journey/${journeyId.value}/callback-from-upscan"
+          appConfig.baseInternalCallbackUrl + s"/upload-documents/journey/${journeyId.value}/callback-from-upscan"
         givenUpscanInitiateSucceeds(callbackUrl)
 
         val result = await(request("/upload-files/initialise/002").post(""))
@@ -282,7 +269,7 @@ class FileUploadJourneyISpec
         journey.setState(state)
         givenAuthorisedForEnrolment(Enrolment("HMRC-XYZ", "EORINumber", "foo"))
         val callbackUrl =
-          appConfig.baseInternalCallbackUrl + s"/send-documents-for-customs-check/journey/${journeyId.value}/callback-from-upscan"
+          appConfig.baseInternalCallbackUrl + s"/upload-documents/journey/${journeyId.value}/callback-from-upscan"
         givenUpscanInitiateSucceeds(callbackUrl)
 
         val result = await(request("/file-upload").get())
@@ -338,7 +325,7 @@ class FileUploadJourneyISpec
         journey.setState(state)
         givenAuthorisedForEnrolment(Enrolment("HMRC-XYZ", "EORINumber", "foo"))
         val callbackUrl =
-          appConfig.baseInternalCallbackUrl + s"/send-documents-for-customs-check/journey/${journeyId.value}/callback-from-upscan"
+          appConfig.baseInternalCallbackUrl + s"/upload-documents/journey/${journeyId.value}/callback-from-upscan"
         givenUpscanInitiateSucceeds(callbackUrl)
 
         val result = await(request("/file-upload").get())
@@ -400,7 +387,7 @@ class FileUploadJourneyISpec
         journey.setState(state)
         givenAuthorisedForEnrolment(Enrolment("HMRC-XYZ", "EORINumber", "foo"))
         val callbackUrl =
-          appConfig.baseInternalCallbackUrl + s"/send-documents-for-customs-check/journey/${journeyId.value}/callback-from-upscan"
+          appConfig.baseInternalCallbackUrl + s"/upload-documents/journey/${journeyId.value}/callback-from-upscan"
         givenUpscanInitiateSucceeds(callbackUrl)
 
         val result = await(request("/file-upload").get())
@@ -647,7 +634,7 @@ class FileUploadJourneyISpec
         val result3 =
           await(request("/file-verification/f029444f-415c-4dec-9cf2-36774ec63ab8/status").get())
         result3.status shouldBe 200
-        result3.body shouldBe """{"reference":"f029444f-415c-4dec-9cf2-36774ec63ab8","fileStatus":"ACCEPTED","fileMimeType":"application/pdf","fileName":"test.pdf","fileSize":4567890,"previewUrl":"/send-documents-for-customs-check/file-uploaded/f029444f-415c-4dec-9cf2-36774ec63ab8/test.pdf"}"""
+        result3.body shouldBe """{"reference":"f029444f-415c-4dec-9cf2-36774ec63ab8","fileStatus":"ACCEPTED","fileMimeType":"application/pdf","fileName":"test.pdf","fileSize":4567890,"previewUrl":"/upload-documents/file-uploaded/f029444f-415c-4dec-9cf2-36774ec63ab8/test.pdf"}"""
         journey.getState shouldBe state
 
         val result4 =
@@ -764,7 +751,7 @@ class FileUploadJourneyISpec
         journey.setState(state)
         givenAuthorisedForEnrolment(Enrolment("HMRC-XYZ", "EORINumber", "foo"))
         val callbackUrl =
-          appConfig.baseInternalCallbackUrl + s"/send-documents-for-customs-check/journey/${journeyId.value}/callback-from-upscan"
+          appConfig.baseInternalCallbackUrl + s"/upload-documents/journey/${journeyId.value}/callback-from-upscan"
         givenUpscanInitiateSucceeds(callbackUrl)
 
         val result = await(
@@ -811,7 +798,7 @@ class FileUploadJourneyISpec
         journey.setState(state)
         givenAuthorisedForEnrolment(Enrolment("HMRC-XYZ", "EORINumber", "foo"))
         val callbackUrl =
-          appConfig.baseInternalCallbackUrl + s"/send-documents-for-customs-check/journey/${journeyId.value}/callback-from-upscan"
+          appConfig.baseInternalCallbackUrl + s"/upload-documents/journey/${journeyId.value}/callback-from-upscan"
         givenUpscanInitiateSucceeds(callbackUrl)
 
         val result = await(

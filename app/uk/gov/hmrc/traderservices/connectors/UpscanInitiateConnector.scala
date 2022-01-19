@@ -35,7 +35,7 @@ class UpscanInitiateConnector @Inject() (appConfig: AppConfig, http: HttpGet wit
 
   val baseUrl: String = appConfig.upscanInitiateBaseUrl
   val upscanInitiatev2Path = "/upscan/v2/initiate"
-  val userAgent = "trader-services-route-one-frontend"
+  val userAgent = "upload-documents-frontend"
 
   override val kenshooRegistry: MetricRegistry = metrics.defaultRegistry
 

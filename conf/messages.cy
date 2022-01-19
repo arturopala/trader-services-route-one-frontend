@@ -50,7 +50,6 @@ global.error.404.title=Heb ddod o hyd i’r dudalen
 global.error.404.heading=Heb ddod o hyd i’r dudalen
 global.error.404.line1=Os gwnaethoch deipio’r cyfeiriad gwe, gwiriwch ei fod yn gywir.
 global.error.404.line2=Os gwnaethoch ludo’r cyfeiriad gwe, gwiriwch eich bod wedi copïo’r cyfeiriad yn llawn.
-global.error.404.line3=<a class="govuk-link" href="{0}">Anfon eich dogfennau i’w gwirio gan y tollau</a>
 
 global.error.500.title=Mae’n ddrwg gennym, mae problem gyda’r gwasanaeth
 global.error.500.heading=Mae’n ddrwg gennym – mae problem gyda’r gwasanaeth
