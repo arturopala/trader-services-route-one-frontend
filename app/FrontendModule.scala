@@ -19,9 +19,9 @@ import play.api.{Configuration, Environment}
 import uk.gov.hmrc.auth.core.AuthConnector
 import uk.gov.hmrc.http._
 import uk.gov.hmrc.play.http.ws.UploadHttpClient
-import uk.gov.hmrc.traderservices.connectors.FrontendAuthConnector
-import uk.gov.hmrc.traderservices.repository.{CacheRepository, JourneyCacheRepository}
-import uk.gov.hmrc.traderservices.services._
+import uk.gov.hmrc.uploaddocuments.connectors.FrontendAuthConnector
+import uk.gov.hmrc.uploaddocuments.repository.{CacheRepository, JourneyCacheRepository}
+import uk.gov.hmrc.uploaddocuments.services._
 
 class FrontendModule(val environment: Environment, val configuration: Configuration) extends AbstractModule {
 

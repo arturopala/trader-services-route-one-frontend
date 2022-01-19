@@ -6,7 +6,7 @@ lazy val scoverageSettings = {
   import scoverage.ScoverageKeys
   Seq(
     // Semicolon-separated list of regexes matching classes to exclude
-    ScoverageKeys.coverageExcludedPackages := """uk\.gov\.hmrc\.BuildInfo;.*\.Routes;.*\.RoutesPrefix;.*Filters?;MicroserviceAuditConnector;Module;GraphiteStartUp;.*\.Reverse[^.]*;uk\.gov\.hmrc\.traderservices\.views\.html\.components\.*""",
+    ScoverageKeys.coverageExcludedPackages := """uk\.gov\.hmrc\.BuildInfo;.*\.Routes;.*\.RoutesPrefix;.*Filters?;MicroserviceAuditConnector;Module;GraphiteStartUp;.*\.Reverse[^.]*;uk\.gov\.hmrc\.uploaddocuments\.views\.html\.components\.*""",
     ScoverageKeys.coverageMinimumStmtTotal := 80.00,
     ScoverageKeys.coverageFailOnMinimum := false,
     ScoverageKeys.coverageHighlighting := true,
@@ -50,8 +50,8 @@ lazy val root = (project in file("."))
       "play.twirl.api.HtmlFormat",
       "uk.gov.hmrc.govukfrontend.views.html.components._",
       "uk.gov.hmrc.hmrcfrontend.views.html.{components => hmrcComponents}",
-      "uk.gov.hmrc.traderservices.views.html.components",
-      "uk.gov.hmrc.traderservices.views.ViewHelpers._"
+      "uk.gov.hmrc.uploaddocuments.views.html.components",
+      "uk.gov.hmrc.uploaddocuments.views.ViewHelpers._"
     ),
     libraryDependencies ++= compileDeps ++ testDeps("test") ++ testDeps("it") ++ itDeps,
     publishingSettings,

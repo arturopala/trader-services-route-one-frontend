@@ -3,7 +3,7 @@
    <statusListener class="ch.qos.logback.core.status.NopStatusListener" />
 
     <appender name="FILE" class="ch.qos.logback.core.FileAppender">
-        <file>logs/trader-services-26-frontend.log</file>
+        <file>logs/upload-documents-frontend.log</file>
         <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
             <pattern>%date{ISO8601} level=[%level] logger=[%logger] thread=[%thread] message=[%message] %replace(exception=[%xException]){'^exception=\[\]$',''}%n</pattern>
         </encoder>
@@ -49,7 +49,7 @@
     <logger name="uk.gov" level="INFO"/>
 
     <logger name="uk.gov.hmrc.play.bootstrap" level="ERROR"/>
-    
+
     <logger name="uk.gov.hmrc.http" level="ERROR"/>
 
     <logger name="play" level="WARN"/>
@@ -60,11 +60,11 @@
 
     <logger name="uk.gov.hmrc.audit" level="ERROR"/>
 
-    <logger name="uk.gov.hmrc.traderservices" level="INFO"/>
+    <logger name="uk.gov.hmrc.uploaddocuments" level="INFO"/>
 
-    <logger name="uk.gov.hmrc.traderservices.services" level="DEBUG"/>
+    <logger name="uk.gov.hmrc.uploaddocuments.services" level="DEBUG"/>
 
-    <logger name="uk.gov.hmrc.traderservices.repository" level="ERROR"/>
+    <logger name="uk.gov.hmrc.uploaddocuments.repository" level="ERROR"/>
 
     <logger name="akka" level="ERROR"/>
 
