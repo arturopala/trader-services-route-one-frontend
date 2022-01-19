@@ -34,7 +34,7 @@ import scala.util.{Failure, Success, Try}
 @Singleton
 class FileUploadResultPushConnector @Inject() (
   appConfig: AppConfig,
-  http: HttpPut,
+  http: HttpPost,
   metrics: Metrics,
   val actorSystem: ActorSystem
 ) extends HttpAPIMonitor with Retries {
@@ -45,10 +45,10 @@ class FileUploadResultPushConnector @Inject() (
 
   def push(request: Request)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Response] =
     retry(appConfig.fileUploadResultPushRetryIntervals: _*)(shouldRetry, errorMessage) {
-      monitor(s"ConsumedAPI-push-file-uploads-${request.hostServiceId}-PUT") {
+      monitor(s"ConsumedAPI-push-file-uploads-${request.hostServiceId}-POST") {
         val endpointUrl = new URL(request.url).toExternalForm
         http
-          .PUT[Request, HttpResponse](endpointUrl, request)
+          .POST[Request, HttpResponse](endpointUrl, request)
           .transformWith[Response] {
             case Success(response) =>
               Future.successful(

@@ -82,9 +82,87 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
       }
     }
 
+    "POST /initialize" should {
+      "return 404 if wrong http method" in {
+        journey.setState(Uninitialized)
+        val result = await(request("/initialize").get())
+        result.status shouldBe 404
+        journey.getState shouldBe Uninitialized
+      }
+
+      "return 400 if malformed payload" in {
+        journey.setState(Uninitialized)
+        val result = await(request("/initialize").post(""))
+        result.status shouldBe 400
+        journey.getState shouldBe Uninitialized
+      }
+
+      "return 400 if cannot accept payload" in {
+        journey.setState(Uninitialized)
+        val result = await(
+          request("/initialize")
+            .post(
+              Json.toJson(
+                UploadedFile(
+                  upscanReference = "jjSJKjksjJSJ",
+                  downloadUrl = "https://aws.amzon.com/dummy.jpg",
+                  uploadTimestamp = ZonedDateTime.parse("2007-12-03T10:15:30+01:00"),
+                  checksum = "akskakslaklskalkskalksl",
+                  fileName = "dummy.jpg",
+                  fileMimeType = "image/jpg",
+                  fileSize = Some(1024)
+                )
+              )
+            )
+        )
+        result.status shouldBe 400
+        journey.getState shouldBe Uninitialized
+      }
+
+      "register config and empty file uploads" in {
+        journey.setState(Uninitialized)
+        val result = await(
+          request("/initialize")
+            .post(Json.toJson(FileUploadInitializationRequest(fileUploadSessionConfig, Seq.empty)))
+        )
+        result.status shouldBe 201
+        journey.getState shouldBe Initialized(fileUploadSessionConfig, FileUploads())
+      }
+
+      "register config and pre-existing file uploads" in {
+        val preexistingUploads = Seq(
+          UploadedFile(
+            upscanReference = "jjSJKjksjJSJ",
+            downloadUrl = "https://aws.amzon.com/dummy.jpg",
+            uploadTimestamp = ZonedDateTime.parse("2007-12-03T10:15:30+01:00"),
+            checksum = "akskakslaklskalkskalksl",
+            fileName = "dummy.jpg",
+            fileMimeType = "image/jpg",
+            fileSize = Some(1024)
+          )
+        )
+        journey.setState(Uninitialized)
+        val result = await(
+          request("/initialize")
+            .post(
+              Json.toJson(
+                FileUploadInitializationRequest(
+                  fileUploadSessionConfig,
+                  preexistingUploads
+                )
+              )
+            )
+        )
+        result.status shouldBe 201
+        journey.getState shouldBe Initialized(
+          fileUploadSessionConfig,
+          FileUploads(preexistingUploads.map(_.toFileUpload))
+        )
+      }
+    }
+
     "GET /upload-files" should {
       "show the upload multiple files page " in {
-
         val state = UploadMultipleFiles(
           fileUploadSessionConfig,
           fileUploads = FileUploads()
@@ -120,7 +198,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
       }
     }
 
-    "POST /upload-files/initialise/:uploadId" should {
+    "POST /upload-files/initialize/:uploadId" should {
       "initialise first file upload" in {
 
         val state = UploadMultipleFiles(
@@ -133,7 +211,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
           appConfig.baseInternalCallbackUrl + s"/upload-documents/journey/${journeyId.value}/callback-from-upscan"
         givenUpscanInitiateSucceeds(callbackUrl)
 
-        val result = await(request("/upload-files/initialise/001").post(""))
+        val result = await(request("/upload-files/initialize/001").post(""))
 
         result.status shouldBe 200
         val json = result.body[JsValue]
@@ -204,7 +282,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
           appConfig.baseInternalCallbackUrl + s"/upload-documents/journey/${journeyId.value}/callback-from-upscan"
         givenUpscanInitiateSucceeds(callbackUrl)
 
-        val result = await(request("/upload-files/initialise/002").post(""))
+        val result = await(request("/upload-files/initialize/002").post(""))
 
         result.status shouldBe 200
         val json = result.body[JsValue]

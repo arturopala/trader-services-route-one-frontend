@@ -3,12 +3,12 @@
 ->         /hmrc-frontend                                           hmrcfrontend.Routes 
 
 + nocsrf
-PUT        /initialize                                              @uk.gov.hmrc.traderservices.controllers.FileUploadJourneyController.initialize
+POST        /initialize                                              @uk.gov.hmrc.traderservices.controllers.FileUploadJourneyController.initialize
 POST       /continue-to-host                                        @uk.gov.hmrc.traderservices.controllers.FileUploadJourneyController.continueToHost
 
 GET        /upload-files                                            @uk.gov.hmrc.traderservices.controllers.FileUploadJourneyController.showUploadMultipleFiles
 + nocsrf
-POST       /upload-files/initialise/:uploadId                       @uk.gov.hmrc.traderservices.controllers.FileUploadJourneyController.initiateNextFileUpload(uploadId: String)
+POST       /upload-files/initialize/:uploadId                       @uk.gov.hmrc.traderservices.controllers.FileUploadJourneyController.initiateNextFileUpload(uploadId: String)
 
 GET        /file-upload                                             @uk.gov.hmrc.traderservices.controllers.FileUploadJourneyController.showFileUpload
 GET        /file-rejected                                           @uk.gov.hmrc.traderservices.controllers.FileUploadJourneyController.markFileUploadAsRejected

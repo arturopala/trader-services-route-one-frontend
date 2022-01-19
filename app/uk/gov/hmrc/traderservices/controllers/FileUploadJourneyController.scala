@@ -61,15 +61,16 @@ class FileUploadJourneyController @Inject() (
 
   implicit val scheduler: Scheduler = actorSystem.scheduler
 
-  // PUT /upload/initialize
+  // POST /upload/initialize
   final val initialize: Action[AnyContent] =
     actions
       .parseJsonWithFallback[FileUploadInitializationRequest](BadRequest)
       .apply(Transitions.initialize)
+      .displayUsing(renderInitializationResponse)
 
   // POST /upload/continue-to-host
   final val continueToHost: Action[AnyContent] =
-    actions
+    whenAuthorisedAsUser
       .show[ContinueToHost]
       .orApply(Transitions.continueToHost)
 
@@ -126,7 +127,7 @@ class FileUploadJourneyController @Inject() (
       .apply(FileUploadTransitions.toUploadMultipleFiles)
       .redirectOrDisplayIf[FileUploadState.UploadMultipleFiles]
 
-  // POST /upload-files/initialise/:uploadId
+  // POST /upload-files/initialize/:uploadId
   final def initiateNextFileUpload(uploadId: String): Action[AnyContent] =
     whenAuthorisedAsUser
       .applyWithRequest { implicit request =>
@@ -241,7 +242,7 @@ class FileUploadJourneyController @Inject() (
           upscanInitiateConnector.initiate(_)
         )
       }
-      .displayUsing(renderFileRemovalStatusJson(reference))
+      .displayUsing(renderFileRemovalStatus)
 
   // GET /file-uploaded/:reference/:fileName
   final def previewFileUploadByReference(reference: String, fileName: String): Action[AnyContent] =
@@ -408,9 +409,13 @@ class FileUploadJourneyController @Inject() (
       }
     }
 
-  private def renderFileRemovalStatusJson(
-    reference: String
-  ) =
+  private def renderInitializationResponse =
+    Renderer.simple {
+      case s: Initialized => Created
+      case _              => BadRequest
+    }
+
+  private def renderFileRemovalStatus =
     Renderer.simple {
       case s: FileUploadState => NoContent
       case _                  => BadRequest

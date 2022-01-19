@@ -52,17 +52,13 @@ trait ExternalApiStubs {
 
   def givenHostPushEndpoint(path: String, request: FileUploadResultPushConnector.Request, status: Int): Unit =
     stubFor(
-      put(urlPathEqualTo(path))
+      post(urlPathEqualTo(path))
         .withRequestBody(equalToJson(Json.stringify(Json.toJson(request))))
         .willReturn(aResponse().withStatus(status))
     )
 
   def verifyHostPushEndpointHasHappened(path: String, times: Int = 1) {
-    verify(times, putRequestedFor(urlEqualTo(path)))
-  }
-
-  def verifyCreateCaseRequestHappened(times: Int = 1) {
-    verify(times, postRequestedFor(urlEqualTo("/create-case")))
+    verify(times, postRequestedFor(urlEqualTo(path)))
   }
 
 }
