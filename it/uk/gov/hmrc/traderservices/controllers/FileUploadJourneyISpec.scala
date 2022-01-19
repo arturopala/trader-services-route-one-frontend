@@ -26,10 +26,6 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
 
   implicit val journeyId: JourneyId = JourneyId()
 
-  override def uploadMultipleFilesFeature: Boolean = false
-  override def requireEnrolmentFeature: Boolean = true
-  override def requireOptionalTransportFeature: Boolean = false
-
   val fileUploadSessionConfig =
     FileUploadSessionConfig(
       continueUrl = s"$wireMockBaseUrlAsString/continue-url",
@@ -43,10 +39,10 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
         controller.preferUploadMultipleFiles(FakeRequest()) shouldBe false
       }
 
-      "return false when jsenabled cookie set but uploadMultipleFilesFeature flag NOT set" in {
+      "return true when jsenabled cookie set" in {
         controller.preferUploadMultipleFiles(
           FakeRequest().withCookies(Cookie(controller.COOKIE_JSENABLED, "true"))
-        ) shouldBe false
+        ) shouldBe true
       }
     }
 

@@ -29,8 +29,6 @@ import uk.gov.hmrc.traderservices.connectors.Retries
 import play.api.Configuration
 
 object AppConfig {
-  val vesselArrivalConstraintMonths = 6
-
   case class FileFormats(maxFileSizeMb: Int, approvedFileTypes: String, approvedFileExtensions: String)
 }
 
@@ -40,17 +38,9 @@ trait AppConfig {
   val appName: String
   val baseInternalCallbackUrl: String
   val baseExternalCallbackUrl: String
-
   val authBaseUrl: String
-  val traderServicesApiBaseUrl: String
   val upscanInitiateBaseUrl: String
-  val pdfGeneratorServiceBaseUrl: String
-
-  val createCaseApiPath: String
-  val updateCaseApiPath: String
-
   val mongoSessionExpiration: Duration
-
   val authorisedServiceName: String
   val authorisedIdentifierKey: String
   val subscriptionJourneyUrl: String
@@ -86,52 +76,23 @@ trait AppConfig {
   val timeout: Int
   val countdown: Int
 
-  val uploadMultipleFilesFeature: Boolean
-  val requireEnrolmentFeature: Boolean
-
-  val workingHourStart: Int
-  val workingHourEnd: Int
-  val requireOptionalTransportFeature: Boolean
-
   val fileUploadResultPushRetryIntervals: Seq[FiniteDuration]
+
+  val requireEnrolmentFeature: Boolean = true
 
 }
 
 class AppConfigImpl @Inject() (config: ServicesConfig, configuration: Configuration) extends AppConfig {
 
   override val appName: String = config.getString("appName")
-
   override val baseExternalCallbackUrl: String = config.getString("urls.callback.external")
   override val baseInternalCallbackUrl: String = config.getString("urls.callback.internal")
-
   override val authBaseUrl: String = config.baseUrl("auth")
-  override val traderServicesApiBaseUrl: String = config.baseUrl("trader-services-api")
   override val upscanInitiateBaseUrl: String = config.baseUrl("upscan-initiate")
-  override val pdfGeneratorServiceBaseUrl: String = config.baseUrl("pdf-generator-service")
-
-  override val createCaseApiPath: String =
-    config.getConfString(
-      "trader-services-api.paths.create-case",
-      throw new IllegalStateException(
-        "Missing configuration property microservice.services.trader-services-api.paths.create-case"
-      )
-    )
-
-  override val updateCaseApiPath: String =
-    config.getConfString(
-      "trader-services-api.paths.update-case",
-      throw new IllegalStateException(
-        "Missing configuration property microservice.services.trader-services-api.paths.update-case"
-      )
-    )
-
   override val mongoSessionExpiration: Duration = config.getDuration("mongodb.session.expiration")
-
   override val authorisedServiceName: String = config.getString("authorisedServiceName")
   override val authorisedIdentifierKey: String = config.getString("authorisedIdentifierKey")
-
   override val subscriptionJourneyUrl: String = config.getString("urls.subscriptionJourney")
-
   override val contactHost: String = config.getString("contact-frontend.host")
   override val contactFormServiceIdentifier: String = config.getString("feedback-frontend.formIdentifier")
 
@@ -153,13 +114,6 @@ class AppConfigImpl @Inject() (config: ServicesConfig, configuration: Configurat
   )
 
   override val traceFSM: Boolean = config.getBoolean("trace.fsm")
-
-  override val uploadMultipleFilesFeature: Boolean = config.getBoolean("features.uploadMultipleFiles")
-  override val requireEnrolmentFeature: Boolean = config.getBoolean("features.requireEnrolment")
-  override val requireOptionalTransportFeature: Boolean = config.getBoolean("features.requireOptionalTransport")
-
-  override val workingHourStart: Int = config.getInt("features.workingHours.start")
-  override val workingHourEnd: Int = config.getInt("features.workingHours.end")
 
   override val govukStartUrl: String = config.getString("govuk.start.url")
 

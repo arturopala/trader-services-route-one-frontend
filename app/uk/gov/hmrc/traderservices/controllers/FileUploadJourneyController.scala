@@ -84,7 +84,7 @@ class FileUploadJourneyController @Inject() (
   final val COOKIE_JSENABLED = "jsenabled"
 
   final def preferUploadMultipleFiles(implicit rh: RequestHeader): Boolean =
-    rh.cookies.get(COOKIE_JSENABLED).isDefined && appConfig.uploadMultipleFilesFeature
+    rh.cookies.get(COOKIE_JSENABLED).isDefined
 
   final def successRedirect(implicit rh: RequestHeader) =
     appConfig.baseExternalCallbackUrl + (rh.cookies.get(COOKIE_JSENABLED) match {
@@ -290,7 +290,7 @@ class FileUploadJourneyController @Inject() (
   ): Result =
     state match {
       case Uninitialized =>
-        Redirect("https://www.gov.uk")
+        Redirect(appConfig.govukStartUrl)
 
       case Initialized(config, fileUploads) =>
         if (preferUploadMultipleFiles)

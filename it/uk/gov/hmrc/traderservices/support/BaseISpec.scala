@@ -19,10 +19,6 @@ abstract class BaseISpec
   import scala.concurrent.duration._
   override implicit val defaultTimeout: FiniteDuration = 5 seconds
 
-  def uploadMultipleFilesFeature: Boolean
-  def requireEnrolmentFeature: Boolean
-  def requireOptionalTransportFeature: Boolean
-
   protected def appBuilder: GuiceApplicationBuilder =
     new GuiceApplicationBuilder()
       .configure(
@@ -41,10 +37,7 @@ abstract class BaseISpec
           .toInstance(
             TestAppConfig(
               wireMockBaseUrlAsString,
-              wireMockPort,
-              uploadMultipleFilesFeature,
-              requireEnrolmentFeature,
-              requireOptionalTransportFeature
+              wireMockPort
             )
           )
       )
