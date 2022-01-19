@@ -44,7 +44,7 @@ class FileUploadResultPushConnectorISpec extends FileUploadResultPushConnectorIS
               checksum = "akskakslaklskalkskalksl",
               fileName = "dummy.jpg",
               fileMimeType = "image/jpg",
-              fileSize = Some(1024)
+              fileSize = 1024
             )
           )
         )

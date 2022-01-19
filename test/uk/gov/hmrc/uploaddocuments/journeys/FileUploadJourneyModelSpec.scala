@@ -140,7 +140,7 @@ class FileUploadJourneyModelSpec
               "396f101dd52e8b2ace0dcf5ed09b1d1f030e608938510ce46e7a5c7a4e775100",
               "test.pdf",
               "application/pdf",
-              Some(4567890)
+              4567890
             )
           )
         ) when toUploadMultipleFiles should thenGo(
@@ -155,7 +155,7 @@ class FileUploadJourneyModelSpec
               "396f101dd52e8b2ace0dcf5ed09b1d1f030e608938510ce46e7a5c7a4e775100",
               "test.pdf",
               "application/pdf",
-              Some(4567890)
+              4567890
             )
           )
         )
@@ -175,7 +175,7 @@ class FileUploadJourneyModelSpec
               "396f101dd52e8b2ace0dcf5ed09b1d1f030e608938510ce46e7a5c7a4e775100",
               "test.pdf",
               "application/pdf",
-              Some(4567890)
+              4567890
             )
           )
         ) when toUploadMultipleFiles should thenGo(
@@ -190,7 +190,7 @@ class FileUploadJourneyModelSpec
               "396f101dd52e8b2ace0dcf5ed09b1d1f030e608938510ce46e7a5c7a4e775100",
               "test.pdf",
               "application/pdf",
-              Some(4567890)
+              4567890
             )
           )
         )
@@ -334,7 +334,7 @@ class FileUploadJourneyModelSpec
                   "396f101dd52e8b2ace0dcf5ed09b1d1f030e608938510ce46e7a5c7a4e775100",
                   "test.pdf",
                   "application/pdf",
-                  Some(4567890)
+                  4567890
                 )
               )
             )
@@ -371,7 +371,7 @@ class FileUploadJourneyModelSpec
                 "396f101dd52e8b2ace0dcf5ed09b1d1f030e608938510ce46e7a5c7a4e775100",
                 "test.pdf",
                 "application/pdf",
-                Some(4567890)
+                4567890
               )
             )
           )
@@ -477,7 +477,7 @@ class FileUploadJourneyModelSpec
                   "396f101dd52e8b2ace0dcf5ed09b1d1f030e608938510ce46e7a5c7a4e775100",
                   "test.pdf",
                   "application/pdf",
-                  Some(4567890)
+                  4567890
                 )
               )
             )
@@ -543,7 +543,7 @@ class FileUploadJourneyModelSpec
               checksum = "396f101dd52e8b2ace0dcf5ed09b1d1f030e608938510ce46e7a5c7a4e775100",
               fileName = "test.pdf",
               fileMimeType = "application/pdf",
-              size = Some(4567890)
+              size = 4567890
             )
           )
         ) should thenGo(
@@ -583,7 +583,7 @@ class FileUploadJourneyModelSpec
               checksum = "396f101dd52e8b2ace0dcf5ed09b1d1f030e608938510ce46e7a5c7a4e775100",
               fileName = "test.pdf",
               fileMimeType = "application/pdf",
-              size = Some(4567890)
+              size = 4567890
             )
           )
         ) should thenGo(
@@ -623,7 +623,7 @@ class FileUploadJourneyModelSpec
               checksum = "396f101dd52e8b2ace0dcf5ed09b1d1f030e608938510ce46e7a5c7a4e775100",
               fileName = """F:\My Documents\my invoices\invoice00001_1234.pdf""",
               fileMimeType = "application/pdf",
-              size = Some(4567890)
+              size = 4567890
             )
           )
         ) should thenGo(
@@ -640,7 +640,7 @@ class FileUploadJourneyModelSpec
                   "396f101dd52e8b2ace0dcf5ed09b1d1f030e608938510ce46e7a5c7a4e775100",
                   "invoice00001_1234.pdf",
                   "application/pdf",
-                  Some(4567890)
+                  4567890
                 ),
                 FileUpload.Initiated(Nonce(2), Timestamp.Any, "foo-bar-ref-2"),
                 FileUpload.Rejected(Nonce(3), Timestamp.Any, "foo-bar-ref-3", S3UploadError("a", "b", "c"))
@@ -672,7 +672,7 @@ class FileUploadJourneyModelSpec
               checksum = "396f101dd52e8b2ace0dcf5ed09b1d1f030e608938510ce46e7a5c7a4e775100",
               fileName = "test.pdf",
               fileMimeType = "application/pdf",
-              size = Some(4567890)
+              size = 4567890
             )
           )
         ) should thenGo(state)
@@ -695,7 +695,7 @@ class FileUploadJourneyModelSpec
                   "786f101dd52e8b2ace0dcf5ed09b1d1ba30e608938510ce46e7a5c7a4e775189",
                   "test.png",
                   "image/png",
-                  Some(4567890)
+                  4567890
                 ),
                 FileUpload.Initiated(Nonce(2), Timestamp.Any, "foo-bar-ref-2"),
                 FileUpload.Rejected(Nonce(3), Timestamp.Any, "foo-bar-ref-3", S3UploadError("a", "b", "c"))
@@ -711,7 +711,7 @@ class FileUploadJourneyModelSpec
               checksum = "396f101dd52e8b2ace0dcf5ed09b1d1f030e608938510ce46e7a5c7a4e775100",
               fileName = "test.pdf",
               fileMimeType = "application/pdf",
-              size = Some(4567890)
+              size = 4567890
             )
           )
         ) should thenGo(
@@ -745,7 +745,7 @@ class FileUploadJourneyModelSpec
                 "786f101dd52e8b2ace0dcf5ed09b1d1ba30e608938510ce46e7a5c7a4e775189",
                 "test.png",
                 "image/png",
-                Some(4567890)
+                4567890
               ),
               FileUpload.Initiated(Nonce(2), Timestamp.Any, "foo-bar-ref-2"),
               FileUpload.Rejected(Nonce(3), Timestamp.Any, "foo-bar-ref-3", S3UploadError("a", "b", "c"))
@@ -761,7 +761,7 @@ class FileUploadJourneyModelSpec
               checksum = "396f101dd52e8b2ace0dcf5ed09b1d1f030e608938510ce46e7a5c7a4e775100",
               fileName = "test.pdf",
               fileMimeType = "application/pdf",
-              size = Some(4567890)
+              size = 4567890
             )
           )
         ) should thenGo(state)
@@ -790,7 +790,7 @@ class FileUploadJourneyModelSpec
               checksum = "396f101dd52e8b2ace0dcf5ed09b1d1f030e608938510ce46e7a5c7a4e775100",
               fileName = "test.pdf",
               fileMimeType = "application/pdf",
-              size = Some(4567890)
+              size = 4567890
             )
           )
         ) should thenGo(
@@ -838,7 +838,7 @@ class FileUploadJourneyModelSpec
               checksum = "396f101dd52e8b2ace0dcf5ed09b1d1f030e608938510ce46e7a5c7a4e775100",
               fileName = "test.pdf",
               fileMimeType = "application/pdf",
-              size = Some(4567890)
+              size = 4567890
             )
           )
         ) should thenGo(
@@ -992,7 +992,7 @@ class FileUploadJourneyModelSpec
                   "786f101dd52e8b2ace0dcf5ed09b1d1ba30e608938510ce46e7a5c7a4e775189",
                   "test.png",
                   "image/png",
-                  Some(4567890)
+                  4567890
                 ),
                 FileUpload.Initiated(Nonce(2), Timestamp.Any, "foo-bar-ref-2"),
                 FileUpload.Rejected(Nonce(3), Timestamp.Any, "foo-bar-ref-3", S3UploadError("a", "b", "c"))
@@ -1048,7 +1048,7 @@ class FileUploadJourneyModelSpec
                   "396f101dd52e8b2ace0dcf5ed09b1d1f030e608938510ce46e7a5c7a4e775100",
                   "test.pdf",
                   "application/pdf",
-                  Some(4567890)
+                  4567890
                 ),
                 FileUpload.Rejected(Nonce(4), Timestamp.Any, "foo-bar-ref-4", S3UploadError("a", "b", "c"))
               )
@@ -1088,7 +1088,7 @@ class FileUploadJourneyModelSpec
                 "396f101dd52e8b2ace0dcf5ed09b1d1f030e608938510ce46e7a5c7a4e775100",
                 "test.pdf",
                 "application/pdf",
-                Some(4567890)
+                4567890
               ),
               FileUpload.Rejected(Nonce(4), Timestamp.Any, "foo-bar-ref-4", S3UploadError("a", "b", "c"))
             )
@@ -1127,7 +1127,7 @@ class FileUploadJourneyModelSpec
                   "396f101dd52e8b2ace0dcf5ed09b1d1f030e608938510ce46e7a5c7a4e775100",
                   "test.pdf",
                   "application/pdf",
-                  Some(4567890)
+                  4567890
                 ),
                 FileUpload.Failed(
                   Nonce(4),
@@ -1164,7 +1164,7 @@ class FileUploadJourneyModelSpec
                   "396f101dd52e8b2ace0dcf5ed09b1d1f030e608938510ce46e7a5c7a4e775100",
                   "test.pdf",
                   "application/pdf",
-                  Some(4567890)
+                  4567890
                 ),
                 FileUpload.Failed(
                   Nonce(4),
@@ -1204,7 +1204,7 @@ class FileUploadJourneyModelSpec
                   "396f101dd52e8b2ace0dcf5ed09b1d1f030e608938510ce46e7a5c7a4e775100",
                   "test.pdf",
                   "application/pdf",
-                  Some(4567890)
+                  4567890
                 ),
                 FileUpload.Failed(
                   Nonce(4),
@@ -1231,7 +1231,7 @@ class FileUploadJourneyModelSpec
                   "396f101dd52e8b2ace0dcf5ed09b1d1f030e608938510ce46e7a5c7a4e775100",
                   "test.pdf",
                   "application/pdf",
-                  Some(4567890)
+                  4567890
                 ),
                 FileUpload.Failed(
                   Nonce(4),
@@ -1271,7 +1271,7 @@ class FileUploadJourneyModelSpec
                   "396f101dd52e8b2ace0dcf5ed09b1d1f030e608938510ce46e7a5c7a4e775100",
                   "test.pdf",
                   "application/pdf",
-                  Some(4567890)
+                  4567890
                 ),
                 FileUpload.Failed(
                   Nonce(4),
@@ -1307,7 +1307,7 @@ class FileUploadJourneyModelSpec
                   "396f101dd52e8b2ace0dcf5ed09b1d1f030e608938510ce46e7a5c7a4e775100",
                   "test.pdf",
                   "application/pdf",
-                  Some(4567890)
+                  4567890
                 ),
                 FileUpload.Failed(
                   Nonce(4),
@@ -1352,7 +1352,7 @@ class FileUploadJourneyModelSpec
               checksum = "396f101dd52e8b2ace0dcf5ed09b1d1f030e608938510ce46e7a5c7a4e775100",
               fileName = "test.pdf",
               fileMimeType = "application/pdf",
-              size = Some(4567890)
+              size = 4567890
             )
           )
         ) should thenGo(
@@ -1390,7 +1390,7 @@ class FileUploadJourneyModelSpec
                   "396f101dd52e8b2ace0dcf5ed09b1d1f030e608938510ce46e7a5c7a4e775100",
                   "test.pdf",
                   "application/pdf",
-                  Some(4567890)
+                  4567890
                 )
               )
             )
@@ -1404,7 +1404,7 @@ class FileUploadJourneyModelSpec
               checksum = "396f101dd52e8b2ace0dcf5ed09b1d1f030e608938510ce46e7a5c7a4e775100",
               fileName = "test2.png",
               fileMimeType = "image/png",
-              size = Some(4567890)
+              size = 4567890
             )
           )
         ) should thenGo(
@@ -1438,7 +1438,7 @@ class FileUploadJourneyModelSpec
                   "396f101dd52e8b2ace0dcf5ed09b1d1f030e608938510ce46e7a5c7a4e775100",
                   "test.pdf",
                   "application/pdf",
-                  Some(4567890)
+                  4567890
                 )
               )
             ),
@@ -1605,7 +1605,7 @@ class FileUploadJourneyModelSpec
               "396f101dd52e8b2ace0dcf5ed09b1d1f030e608938510ce46e7a5c7a4e775100",
               "test.pdf",
               "application/pdf",
-              Some(4567890)
+              4567890
             )
         )
         given(UploadMultipleFiles(hostData, fileUploads))
@@ -1633,7 +1633,7 @@ class FileUploadJourneyModelSpec
               "396f101dd52e8b2ace0dcf5ed09b1d1f030e608938510ce46e7a5c7a4e775100",
               "test.pdf",
               "application/pdf",
-              Some(4567890)
+              4567890
             )
         )
         given(UploadMultipleFiles(hostData, fileUploads))
@@ -1733,7 +1733,7 @@ class FileUploadJourneyModelSpec
               "396f101dd52e8b2ace0dcf5ed09b1d1f030e608938510ce46e7a5c7a4e775100",
               "test.pdf",
               "application/pdf",
-              Some(4567890)
+              4567890
             ),
             FileUploads(files = Seq(acceptedFileUpload))
           )
@@ -1831,7 +1831,7 @@ class FileUploadJourneyModelSpec
               checksum = "396f101dd52e8b2ace0dcf5ed09b1d1f030e608938510ce46e7a5c7a4e775100",
               fileName = "test.pdf",
               fileMimeType = "application/pdf",
-              size = Some(4567890)
+              size = 4567890
             )
           )
         ) should thenGo(
@@ -1984,7 +1984,7 @@ class FileUploadJourneyModelSpec
                   "396f101dd52e8b2ace0dcf5ed09b1d1f030e608938510ce46e7a5c7a4e775100",
                   "test.pdf",
                   "application/pdf",
-                  Some(4567890)
+                  4567890
                 )
               )
             )
@@ -2004,7 +2004,7 @@ class FileUploadJourneyModelSpec
                   "396f101dd52e8b2ace0dcf5ed09b1d1f030e608938510ce46e7a5c7a4e775100",
                   "test.pdf",
                   "application/pdf",
-                  Some(4567890)
+                  4567890
                 )
               )
             ),
@@ -2090,7 +2090,7 @@ class FileUploadJourneyModelSpec
                 "396f101dd52e8b2ace0dcf5ed09b1d1f030e608938510ce46e7a5c7a4e775100",
                 "test.pdf",
                 "application/pdf",
-                Some(4567890)
+                4567890
               )
             )
           ),
@@ -2114,7 +2114,7 @@ class FileUploadJourneyModelSpec
               "396f101dd52e8b2ace0dcf5ed09b1d1f030e608938510ce46e7a5c7a4e775100",
               "test.pdf",
               "application/pdf",
-              Some(4567890)
+              4567890
             )
         )
         given(
@@ -2148,7 +2148,7 @@ class FileUploadJourneyModelSpec
               "396f101dd52e8b2ace0dcf5ed09b1d1f030e608938510ce46e7a5c7a4e775100",
               "test.pdf",
               "application/pdf",
-              Some(4567890)
+              4567890
             )
         )
         given(

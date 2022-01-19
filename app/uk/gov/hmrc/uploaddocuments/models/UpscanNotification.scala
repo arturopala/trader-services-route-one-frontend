@@ -72,7 +72,7 @@ object UpscanNotification {
     checksum: String,
     fileName: String,
     fileMimeType: String,
-    size: Option[Int]
+    size: Int
   )
 
   case class FailureDetails(
@@ -95,17 +95,23 @@ object UpscanNotification {
 
   object UploadDetails {
 
+    val nullifyZero: JsValue => JsValue = { case JsNumber(n) if n.toInt == 0 => JsNull; case v => v }
+
     implicit val formats: Format[UploadDetails] = Format(
       ((__ \ "uploadTimestamp").read[ZonedDateTime] and
         (__ \ "checksum").read[String] and
         (__ \ "fileName").read[String].map(decodeMimeEncodedWord) and
         (__ \ "fileMimeType").read[String] and
-        (__ \ "size").readNullable[Int])(UploadDetails.apply _),
+        (__ \ "size").readWithDefault[Int](0))(UploadDetails.apply _),
       ((__ \ "uploadTimestamp").write[ZonedDateTime] and
         (__ \ "checksum").write[String] and
         (__ \ "fileName").write[String] and
         (__ \ "fileMimeType").write[String] and
-        (__ \ "size").writeNullable[Int])(unlift(UploadDetails.unapply))
+        (__ \ "size")
+          .writeNullable[Int]
+          .contramap((n: Int) => if (n == 0) None else Some(n)))(
+        unlift(UploadDetails.unapply)
+      )
     )
 
     def decodeMimeEncodedWord(word: String): String =

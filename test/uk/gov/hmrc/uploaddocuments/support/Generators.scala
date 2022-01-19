@@ -61,7 +61,7 @@ object Generators {
     checksum        <- nonEmptyString(64)
     fileName        <- nonEmptyString(20)
     fileMimeType    <- Gen.oneOf("text/plain", "text/jpeg", "application/pdf", "")
-    fileSize        <- Gen.option(Gen.chooseNum(1, 6 * 1024 * 1024))
+    fileSize        <- Gen.chooseNum(1, 6 * 1024 * 1024)
   } yield UploadedFile(
     upscanReference,
     downloadUrl,

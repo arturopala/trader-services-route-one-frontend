@@ -37,7 +37,7 @@ class FileUploadsSpec extends UnitSpec {
     "396f101dd52e8b2ace0dcf5ed09b1d1f030e608938510ce46e7a5c7a4e775100",
     "test.pdf",
     "application/pdf",
-    Some(4567890)
+    4567890
   )
 
   val failedFileUpload = FileUpload.Failed(

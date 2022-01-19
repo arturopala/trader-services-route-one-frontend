@@ -46,7 +46,7 @@ class UpscanNotificationFormatSpec extends UnitSpec {
             checksum = "396f101dd52e8b2ace0dcf5ed09b1d1f030e608938510ce46e7a5c7a4e775100",
             fileName = "test.pdf",
             fileMimeType = "application/pdf",
-            size = Some(123456789)
+            size = 123456789
           )
         )
       )
@@ -73,7 +73,7 @@ class UpscanNotificationFormatSpec extends UnitSpec {
             checksum = "396f101dd52e8b2ace0dcf5ed09b1d1f030e608938510ce46e7a5c7a4e775100",
             fileName = "test.pdf",
             fileMimeType = "application/pdf",
-            size = None
+            size = 0
           )
         )
       )
@@ -101,7 +101,7 @@ class UpscanNotificationFormatSpec extends UnitSpec {
             checksum = "396f101dd52e8b2ace0dcf5ed09b1d1f030e608938510ce46e7a5c7a4e775100",
             fileName = "sample_640×426.tiff",
             fileMimeType = "application/pdf",
-            size = Some(5432190)
+            size = 5432190
           )
         )
       )
@@ -129,7 +129,7 @@ class UpscanNotificationFormatSpec extends UnitSpec {
             checksum = "396f101dd52e8b2ace0dcf5ed09b1d1f030e608938510ce46e7a5c7a4e775100",
             fileName = "You’ve submitted your documents - Send documents for a customs check - GOV.UK.pdf",
             fileMimeType = "application/pdf",
-            size = Some(5432190)
+            size = 5432190
           )
         )
       )

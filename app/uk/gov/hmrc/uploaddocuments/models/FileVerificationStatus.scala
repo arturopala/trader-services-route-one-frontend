@@ -55,7 +55,7 @@ object FileVerificationStatus {
           "ACCEPTED",
           fileMimeType = Some(f.fileMimeType),
           fileName = Some(f.fileName),
-          fileSize = f.fileSize,
+          fileSize = Some(f.fileSize),
           previewUrl = Some(s"${filePreviewUrl(f.reference, f.fileName).url}")
         )
 

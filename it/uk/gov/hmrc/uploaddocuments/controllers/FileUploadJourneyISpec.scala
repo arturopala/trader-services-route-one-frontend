@@ -112,7 +112,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
                   checksum = "akskakslaklskalkskalksl",
                   fileName = "dummy.jpg",
                   fileMimeType = "image/jpg",
-                  fileSize = Some(1024)
+                  fileSize = 1024
                 )
               )
             )
@@ -140,7 +140,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
             checksum = "akskakslaklskalkskalksl",
             fileName = "dummy.jpg",
             fileMimeType = "image/jpg",
-            fileSize = Some(1024)
+            fileSize = 1024
           )
         )
         journey.setState(Uninitialized)
@@ -397,7 +397,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
                 "396f101dd52e8b2ace0dcf5ed09b1d1f030e608938510ce46e7a5c7a4e775100",
                 "test.pdf",
                 "application/pdf",
-                Some(4567890)
+                4567890
               )
             )
           )
@@ -427,7 +427,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
                 "396f101dd52e8b2ace0dcf5ed09b1d1f030e608938510ce46e7a5c7a4e775100",
                 "test.pdf",
                 "application/pdf",
-                Some(4567890)
+                4567890
               )
             )
           )
@@ -448,7 +448,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
                 "396f101dd52e8b2ace0dcf5ed09b1d1f030e608938510ce46e7a5c7a4e775100",
                 "test.pdf",
                 "application/pdf",
-                Some(4567890)
+                4567890
               ),
               FileUpload.Accepted(
                 Nonce.Any,
@@ -459,7 +459,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
                 "396f101dd52e8b2ace0dcf5ed09b1d1f030e608938510ce46e7a5c7a4e775100",
                 "test2.jpeg",
                 "image/jpeg",
-                Some(4567891)
+                4567891
               )
             )
           )
@@ -489,7 +489,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
                 "396f101dd52e8b2ace0dcf5ed09b1d1f030e608938510ce46e7a5c7a4e775100",
                 "test.pdf",
                 "application/pdf",
-                Some(4567890)
+                4567890
               ),
               FileUpload.Accepted(
                 Nonce.Any,
@@ -500,7 +500,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
                 "396f101dd52e8b2ace0dcf5ed09b1d1f030e608938510ce46e7a5c7a4e775100",
                 "test2.jpeg",
                 "image/jpeg",
-                Some(4567891)
+                4567891
               )
             )
           )
@@ -667,7 +667,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
                 "396f101dd52e8b2ace0dcf5ed09b1d1f030e608938510ce46e7a5c7a4e775100",
                 "test.pdf",
                 "application/pdf",
-                Some(4567890)
+                4567890
               ),
               FileUpload.Failed(
                 Nonce.Any,
@@ -773,7 +773,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
                 "396f101dd52e8b2ace0dcf5ed09b1d1f030e608938510ce46e7a5c7a4e775100",
                 "test2.pdf",
                 "application/pdf",
-                Some(5234567)
+                5234567
               ),
               FileUpload.Accepted(
                 Nonce.Any,
@@ -784,7 +784,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
                 "396f101dd52e8b2ace0dcf5ed09b1d1f030e608938510ce46e7a5c7a4e775100",
                 "test1.png",
                 "image/png",
-                Some(4567890)
+                4567890
               )
             )
           )
@@ -1097,7 +1097,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
                   "396f101dd52e8b2ace0dcf5ed09b1d1f030e608938510ce46e7a5c7a4e775100",
                   "test1.png",
                   "image/png",
-                  Some(4567890)
+                  4567890
                 )
               )
             )
@@ -1117,7 +1117,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
                 "396f101dd52e8b2ace0dcf5ed09b1d1f030e608938510ce46e7a5c7a4e775100",
                 "test2.pdf",
                 "application/pdf",
-                Some(5234567)
+                5234567
               ),
               FileUpload.Accepted(
                 Nonce.Any,
@@ -1128,7 +1128,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
                 "396f101dd52e8b2ace0dcf5ed09b1d1f030e608938510ce46e7a5c7a4e775100",
                 "test1.png",
                 "image/png",
-                Some(4567890)
+                4567890
               )
             )
           )
@@ -1154,7 +1154,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
                 "396f101dd52e8b2ace0dcf5ed09b1d1f030e608938510ce46e7a5c7a4e775100",
                 "test1.png",
                 "image/png",
-                Some(4567890)
+                4567890
               )
             )
           )
@@ -1182,7 +1182,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
                   "396f101dd52e8b2ace0dcf5ed09b1d1f030e608938510ce46e7a5c7a4e775100",
                   "test1.png",
                   "image/png",
-                  Some(4567890)
+                  4567890
                 )
               )
             )
@@ -1202,7 +1202,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
                 "396f101dd52e8b2ace0dcf5ed09b1d1f030e608938510ce46e7a5c7a4e775100",
                 "test2.pdf",
                 "application/pdf",
-                Some(5234567)
+                5234567
               ),
               FileUpload.Accepted(
                 Nonce.Any,
@@ -1213,7 +1213,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
                 "396f101dd52e8b2ace0dcf5ed09b1d1f030e608938510ce46e7a5c7a4e775100",
                 "test1.png",
                 "image/png",
-                Some(4567890)
+                4567890
               )
             )
           )
@@ -1238,7 +1238,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
                 "396f101dd52e8b2ace0dcf5ed09b1d1f030e608938510ce46e7a5c7a4e775100",
                 "test1.png",
                 "image/png",
-                Some(4567890)
+                4567890
               )
             )
           )
@@ -1270,7 +1270,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
                 "396f101dd52e8b2ace0dcf5ed09b1d1f030e608938510ce46e7a5c7a4e775100",
                 "test.pdf",
                 "application/pdf",
-                Some(4567890)
+                4567890
               ),
               FileUpload.Failed(
                 Nonce.Any,
@@ -1316,7 +1316,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
                 "396f101dd52e8b2ace0dcf5ed09b1d1f030e608938510ce46e7a5c7a4e775100",
                 "test.pdf",
                 "application/pdf",
-                Some(4567890)
+                4567890
               ),
               FileUpload.Failed(
                 Nonce.Any,
@@ -1441,7 +1441,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
                   "396f101dd52e8b2ace0dcf5ed09b1d1f030e608938510ce46e7a5c7a4e775100",
                   "foo.pdf",
                   "application/pdf",
-                  Some(1)
+                  1
                 )
               )
             )
@@ -1495,7 +1495,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
                   "396f101dd52e8b2ace0dcf5ed09b1d1f030e608938510ce46e7a5c7a4e775100",
                   "foo.pdf",
                   "application/pdf",
-                  Some(1)
+                  1
                 )
               )
             )
@@ -1523,7 +1523,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
                   "396f101dd52e8b2ace0dcf5ed09b1d1f030e608938510ce46e7a5c7a4e775100",
                   "foo.pdf",
                   "application/pdf",
-                  Some(1)
+                  1
                 )
               )
             )
@@ -1565,7 +1565,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
                   "396f101dd52e8b2ace0dcf5ed09b1d1f030e608938510ce46e7a5c7a4e775100",
                   "foo.pdf",
                   "application/pdf",
-                  Some(1)
+                  1
                 )
               )
             )
