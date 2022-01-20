@@ -19,6 +19,7 @@ package uk.gov.hmrc.uploaddocuments.models
 import java.time.ZonedDateTime
 import play.api.libs.json.Format
 import play.api.libs.json.Json
+import play.api.libs.json.JsValue
 
 case class UploadedFile(
   upscanReference: String,
@@ -27,7 +28,8 @@ case class UploadedFile(
   checksum: String,
   fileName: String,
   fileMimeType: String,
-  fileSize: Int
+  fileSize: Int,
+  cargo: Option[JsValue] = None // data carried through, from and to host service
 ) {
   def toFileUpload: FileUpload =
     FileUpload.Accepted(
@@ -39,7 +41,8 @@ case class UploadedFile(
       fileMimeType = fileMimeType,
       fileSize = fileSize,
       url = downloadUrl,
-      uploadTimestamp = uploadTimestamp
+      uploadTimestamp = uploadTimestamp,
+      cargo = cargo
     )
 }
 

@@ -87,7 +87,7 @@ object FileUploadResultPushConnector {
 
   object Request {
     def from(config: FileUploadSessionConfig, fileUploads: FileUploads): Request =
-      Request(config.serviceId, config.resultPostUrl, config.nonce, fileUploads.toUploadedFiles, config.context)
+      Request(config.serviceId, config.resultPostUrl, config.nonce, fileUploads.toUploadedFiles, config.cargo)
 
     implicit val format: Format[Request] = Json.format[Request]
   }

@@ -19,6 +19,7 @@ package uk.gov.hmrc.uploaddocuments.models
 import play.api.libs.json.{Format, Json}
 import java.time.ZonedDateTime
 import scala.util.matching.Regex
+import play.api.libs.json.JsValue
 
 /** Container for file upload status tracking. */
 case class FileUploads(
@@ -54,7 +55,8 @@ case class FileUploads(
         f.checksum,
         f.fileName,
         f.fileMimeType,
-        f.fileSize
+        f.fileSize,
+        f.cargo
       )
     }
 
@@ -154,7 +156,8 @@ object FileUpload extends SealedTraitFormats[FileUpload] {
     checksum: String,
     fileName: String,
     fileMimeType: String,
-    fileSize: Int
+    fileSize: Int,
+    cargo: Option[JsValue] = None // data carried through, from and to host service
   ) extends FileUpload {
 
     override def isReady: Boolean = true

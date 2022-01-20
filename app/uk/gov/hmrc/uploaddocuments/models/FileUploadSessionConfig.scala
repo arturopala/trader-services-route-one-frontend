@@ -26,7 +26,7 @@ final case class FileUploadSessionConfig(
   continueUrl: String,
   backlinkUrl: String,
   resultPostUrl: String,
-  context: Option[JsValue] = None
+  cargo: Option[JsValue] = None // data carried through, from and to host service
 )
 
 object FileUploadSessionConfig {

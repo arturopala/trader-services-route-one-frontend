@@ -140,7 +140,8 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
             checksum = "akskakslaklskalkskalksl",
             fileName = "dummy.jpg",
             fileMimeType = "image/jpg",
-            fileSize = 1024
+            fileSize = 1024,
+            cargo = Some(Json.obj("foo" -> JsString("bar")))
           )
         )
         journey.setState(Uninitialized)
@@ -1442,6 +1443,18 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
                   "foo.pdf",
                   "application/pdf",
                   1
+                ),
+                FileUpload.Accepted(
+                  Nonce.Any,
+                  Timestamp.Any,
+                  "1c72fe99-8adf-4edb-865e-622ae710f88b",
+                  "https://foo.bar/XYZ123/bar.pdf",
+                  ZonedDateTime.parse("2018-04-24T09:30:00Z"),
+                  "396f101dd52e8b2ace0dcf5ed09b1d1f030e608938510ce46e7a5c7a4e775101",
+                  "bar.pdf",
+                  "application/pdf",
+                  1,
+                  Some(Json.obj("bar" -> 1))
                 )
               )
             )
@@ -1454,7 +1467,19 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
             FileUploads(files =
               Seq(
                 FileUpload.Initiated(Nonce.Any, Timestamp.Any, "11370e18-6e24-453e-b45a-76d3e32ea33d"),
-                FileUpload.Posted(nonce, Timestamp.Any, "2b72fe99-8adf-4edb-865e-622ae710f77c")
+                FileUpload.Posted(nonce, Timestamp.Any, "2b72fe99-8adf-4edb-865e-622ae710f77c"),
+                FileUpload.Accepted(
+                  Nonce.Any,
+                  Timestamp.Any,
+                  "1c72fe99-8adf-4edb-865e-622ae710f88b",
+                  "https://foo.bar/XYZ123/bar.pdf",
+                  ZonedDateTime.parse("2018-04-24T09:30:00Z"),
+                  "396f101dd52e8b2ace0dcf5ed09b1d1f030e608938510ce46e7a5c7a4e775101",
+                  "bar.pdf",
+                  "application/pdf",
+                  1,
+                  Some(Json.obj("bar" -> 1))
+                )
               )
             )
           )
@@ -1496,6 +1521,18 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
                   "foo.pdf",
                   "application/pdf",
                   1
+                ),
+                FileUpload.Accepted(
+                  Nonce.Any,
+                  Timestamp.Any,
+                  "1c72fe99-8adf-4edb-865e-622ae710f88b",
+                  "https://foo.bar/XYZ123/bar.pdf",
+                  ZonedDateTime.parse("2018-04-24T09:30:00Z"),
+                  "396f101dd52e8b2ace0dcf5ed09b1d1f030e608938510ce46e7a5c7a4e775101",
+                  "bar.pdf",
+                  "application/pdf",
+                  1,
+                  Some(Json.obj("bar" -> 1))
                 )
               )
             )
