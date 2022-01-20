@@ -31,6 +31,7 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 import uk.gov.hmrc.uploaddocuments.models.FileUploadSessionConfig
 import uk.gov.hmrc.uploaddocuments.models.FileUploads
+import play.api.libs.json.JsValue
 
 /** Connector to push the results of the file uploads back to the host service. */
 @Singleton
@@ -50,7 +51,7 @@ class FileUploadResultPushConnector @Inject() (
       monitor(s"ConsumedAPI-push-file-uploads-${request.hostServiceId}-POST") {
         val endpointUrl = new URL(request.url).toExternalForm
         http
-          .POST[Request, HttpResponse](endpointUrl, request)
+          .POST[Payload, HttpResponse](endpointUrl, Payload.from(request))
           .transformWith[Response] {
             case Success(response) =>
               Future.successful(
@@ -67,7 +68,14 @@ class FileUploadResultPushConnector @Inject() (
 
 object FileUploadResultPushConnector {
 
-  case class Request(hostServiceId: String, url: String, nonce: Nonce, uploadedFiles: Seq[UploadedFile])
+  case class Request(
+    hostServiceId: String,
+    url: String,
+    nonce: Nonce,
+    uploadedFiles: Seq[UploadedFile],
+    context: Option[JsValue]
+  )
+  case class Payload(nonce: Nonce, uploadedFiles: Seq[UploadedFile], context: Option[JsValue])
 
   type Response = Either[FileUploadResultPushConnector.Error, Unit]
 
@@ -79,9 +87,19 @@ object FileUploadResultPushConnector {
 
   object Request {
     def from(config: FileUploadSessionConfig, fileUploads: FileUploads): Request =
-      Request(config.serviceId, config.resultPostUrl, config.nonce, fileUploads.toUploadedFiles)
+      Request(config.serviceId, config.resultPostUrl, config.nonce, fileUploads.toUploadedFiles, config.context)
 
     implicit val format: Format[Request] = Json.format[Request]
+  }
+
+  object Payload {
+    def from(request: Request): Payload =
+      Payload(request.nonce, request.uploadedFiles, request.context)
+
+    def from(config: FileUploadSessionConfig, fileUploads: FileUploads): Payload =
+      Payload.from(Request.from(config, fileUploads))
+
+    implicit val format: Format[Payload] = Json.format[Payload]
   }
 
   final def shouldRetry(response: Try[Response]): Boolean =

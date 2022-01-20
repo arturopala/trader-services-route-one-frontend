@@ -50,10 +50,10 @@ trait ExternalApiStubs {
         )
     )
 
-  def givenHostPushEndpoint(path: String, request: FileUploadResultPushConnector.Request, status: Int): Unit =
+  def givenHostPushEndpoint(path: String, payload: FileUploadResultPushConnector.Payload, status: Int): Unit =
     stubFor(
       post(urlPathEqualTo(path))
-        .withRequestBody(equalToJson(Json.stringify(Json.toJson(request))))
+        .withRequestBody(equalToJson(Json.stringify(Json.toJson(payload))))
         .willReturn(aResponse().withStatus(status))
     )
 

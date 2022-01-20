@@ -1084,7 +1084,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
       "remove file from upload list by reference" in {
         givenHostPushEndpoint(
           "/result-post-url",
-          FileUploadResultPushConnector.Request.from(
+          FileUploadResultPushConnector.Payload.from(
             fileUploadSessionConfig,
             FileUploads(files =
               Seq(
@@ -1169,7 +1169,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
       "remove file from upload list by reference" in {
         givenHostPushEndpoint(
           "/result-post-url",
-          FileUploadResultPushConnector.Request.from(
+          FileUploadResultPushConnector.Payload.from(
             fileUploadSessionConfig,
             FileUploads(files =
               Seq(
@@ -1428,7 +1428,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
         val nonce = Nonce.random
         givenHostPushEndpoint(
           "/result-post-url",
-          FileUploadResultPushConnector.Request.from(
+          FileUploadResultPushConnector.Payload.from(
             fileUploadSessionConfig,
             FileUploads(files =
               Seq(
