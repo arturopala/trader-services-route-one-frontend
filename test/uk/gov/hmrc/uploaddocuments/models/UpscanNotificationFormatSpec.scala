@@ -116,7 +116,7 @@ class UpscanNotificationFormatSpec extends UnitSpec {
           |"uploadDetails":{
           |"uploadTimestamp":"2018-04-24T09:30:00Z",
           |"checksum":"396f101dd52e8b2ace0dcf5ed09b1d1f030e608938510ce46e7a5c7a4e775100",
-          |"fileName":"=?UTF-8?Q?You=E2=80=99ve_submitted_your_documents_-_Send_d?= =?UTF-8?Q?ocuments_for_a_customs_check_-_GOV.UK.pdf?=",
+          |"fileName":"=?UTF-8?Q?You=E2=80=99ve_submitted_your_documents_-_Upload_d?= =?UTF-8?Q?ocuments_-_GOV.UK.pdf?=",
           |"fileMimeType":"application/pdf",
           |"size":5432190
           |}
@@ -127,7 +127,7 @@ class UpscanNotificationFormatSpec extends UnitSpec {
           uploadDetails = UpscanNotification.UploadDetails(
             uploadTimestamp = ZonedDateTime.parse("2018-04-24T09:30:00Z"),
             checksum = "396f101dd52e8b2ace0dcf5ed09b1d1f030e608938510ce46e7a5c7a4e775100",
-            fileName = "You’ve submitted your documents - Send documents for a customs check - GOV.UK.pdf",
+            fileName = "You’ve submitted your documents - Upload documents - GOV.UK.pdf",
             fileMimeType = "application/pdf",
             size = 5432190
           )

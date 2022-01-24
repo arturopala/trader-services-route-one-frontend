@@ -29,8 +29,8 @@ class UpscanNotificationUploadDetailsSpec extends UnitSpec {
 
     "decode text with multiple mime-encoded words" in {
       UpscanNotification.UploadDetails.decodeMimeEncodedWord(
-        "=?UTF-8?Q?You=E2=80=99ve_submitted_your_documents_-_Send_d?= =?UTF-8?Q?ocuments_for_a_customs_check_-_GOV.UK.pdf?="
-      ) shouldBe "You’ve submitted your documents - Send documents for a customs check - GOV.UK.pdf"
+        "=?UTF-8?Q?You=E2=80=99ve_submitted_your_documents_-_Upload_d?= =?UTF-8?Q?ocuments_-_GOV.UK.pdf?="
+      ) shouldBe "You’ve submitted your documents - Upload documents - GOV.UK.pdf"
     }
 
     "do nothing if text has no mime-encodings at all" in {

@@ -16,8 +16,7 @@
 
 package uk.gov.hmrc.uploaddocuments.models
 
-import play.api.libs.json.Format
-import play.api.libs.json.Json
+import play.api.libs.json.{Format, JsPath}
 
 final case class FileUploadInitializationRequest(
   config: FileUploadSessionConfig,
@@ -28,6 +27,13 @@ final case class FileUploadInitializationRequest(
 }
 
 object FileUploadInitializationRequest {
-  implicit val formats: Format[FileUploadInitializationRequest] =
-    Json.format[FileUploadInitializationRequest]
+  import play.api.libs.functional.syntax._
+  implicit val formats: Format[FileUploadInitializationRequest] = Format(
+    ((JsPath \ "config").read[FileUploadSessionConfig]
+      and (JsPath \ "existingFiles").readWithDefault[Seq[UploadedFile]](Seq.empty))(
+      new FileUploadInitializationRequest(_, _)
+    ),
+    ((JsPath \ "config").write[FileUploadSessionConfig]
+      and (JsPath \ "existingFiles").write[Seq[UploadedFile]])(request => (request.config, request.existingFiles))
+  )
 }

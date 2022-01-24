@@ -31,6 +31,7 @@ import uk.gov.hmrc.uploaddocuments.wiring.AppConfig
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.Future
+import com.fasterxml.jackson.core.JsonParseException
 
 @Singleton
 class FileUploadJourneyController @Inject() (
@@ -67,6 +68,10 @@ class FileUploadJourneyController @Inject() (
       .parseJsonWithFallback[FileUploadInitializationRequest](BadRequest)
       .apply(Transitions.initialize)
       .displayUsing(renderInitializationResponse)
+      .recover {
+        case e: JsonParseException => BadRequest(e.getMessage())
+        case e                     => InternalServerError
+      }
 
   // POST /continue-to-host
   final val continueToHost: Action[AnyContent] =
