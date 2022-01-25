@@ -29,8 +29,6 @@ import scala.concurrent.{ExecutionContext, Future}
 
 trait AuthActions extends AuthorisedFunctions with AuthRedirects {
 
-  def toSubscriptionJourney(continueUrl: String): Result
-
   protected def authorisedWithEnrolment[A](serviceName: String, identifierKey: String)(
     body: ((Option[String], Option[String])) => Future[Result]
   )(implicit request: Request[A], hc: HeaderCarrier, ec: ExecutionContext): Future[Result] =
@@ -57,11 +55,6 @@ trait AuthActions extends AuthorisedFunctions with AuthRedirects {
       .recover(handleFailure)
 
   def handleFailure(implicit request: Request[_]): PartialFunction[Throwable, Result] = {
-
-    case e @ InsufficientEnrolments(_) =>
-      val continueUrl = CallOps.localFriendlyUrl(env, config)(request.uri, request.host)
-      toSubscriptionJourney(continueUrl)
-
     case e: AuthorisationException =>
       val continueUrl = CallOps.localFriendlyUrl(env, config)(request.uri, request.host)
       toGGLogin(continueUrl)

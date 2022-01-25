@@ -26,7 +26,7 @@ import scala.util.Try
 object FileUploadJourneyModel extends JourneyModel {
 
   sealed trait State
-  sealed trait IsTransient
+  sealed trait IsTransient extends State
 
   override val root: State = State.Uninitialized
 
@@ -90,6 +90,9 @@ object FileUploadJourneyModel extends JourneyModel {
       fileUploads: FileUploads
     ) extends FileUploadState
 
+    final case class SwitchToSingleFileUpload(context: FileUploadContext, fileUploadsOpt: Option[FileUploads])
+        extends CanEnterFileUpload with IsTransient
+
   }
 
   type UpscanInitiateApi = (String, UpscanInitiateRequest) => Future[UpscanInitiateResponse]
@@ -137,9 +140,8 @@ object FileUploadJourneyModel extends JourneyModel {
 
     final val continueToHost =
       Transition {
-        case s: FileUploadState                  => goto(ContinueToHost(s.context, s.fileUploads))
-        case Initialized(config, fileUploads)    => goto(ContinueToHost(config, fileUploads))
-        case ContinueToHost(config, fileUploads) => goto(ContinueToHost(config, fileUploads))
+        case s: FileUploadState    => goto(ContinueToHost(s.context, s.fileUploads))
+        case s: CanEnterFileUpload => goto(ContinueToHost(s.context, s.fileUploadsOpt.getOrElse(FileUploads())))
       }
 
     private def resetFileUploadStatusToInitiated(reference: String, fileUploads: FileUploads): FileUploads =
@@ -149,18 +151,26 @@ object FileUploadJourneyModel extends JourneyModel {
         case other => other
       })
 
-    final val toUploadMultipleFiles =
+    final def toUploadMultipleFiles(preferUploadMultipleFiles: Boolean = true) =
       Transition {
         case current: UploadMultipleFiles =>
           goto(current.copy(fileUploads = current.fileUploads.onlyAccepted))
 
         case state: CanEnterFileUpload =>
-          goto(
-            UploadMultipleFiles(
-              context = state.context,
-              fileUploads = state.fileUploadsOpt.map(_.onlyAccepted).getOrElse(FileUploads())
+          if (preferUploadMultipleFiles)
+            goto(
+              UploadMultipleFiles(
+                context = state.context,
+                fileUploads = state.fileUploadsOpt.map(_.onlyAccepted).getOrElse(FileUploads())
+              )
             )
-          )
+          else
+            goto(
+              SwitchToSingleFileUpload(
+                context = state.context,
+                fileUploadsOpt = state.fileUploadsOpt
+              )
+            )
 
         case state: FileUploadState =>
           goto(UploadMultipleFiles(state.context, state.fileUploads.onlyAccepted))
@@ -544,17 +554,22 @@ object FileUploadJourneyModel extends JourneyModel {
     )(
       upscanInitiate: UpscanInitiateApi
     )(exitFileUpload: Transition)(uploadAnotherFile: Boolean)(implicit ec: ExecutionContext) =
-      Transition { case current @ FileUploaded(config, fileUploads, acknowledged) =>
-        if (uploadAnotherFile && fileUploads.acceptedCount < maxFileUploadsNumber)
-          gotoFileUploadOrUploaded(
-            config,
-            upscanRequest,
-            upscanInitiate,
-            Some(fileUploads),
-            showUploadSummaryIfAny = false
-          )
-        else
+      Transition {
+        case current @ FileUploaded(config, fileUploads, acknowledged) =>
+          if (uploadAnotherFile && fileUploads.acceptedCount < maxFileUploadsNumber)
+            gotoFileUploadOrUploaded(
+              config,
+              upscanRequest,
+              upscanInitiate,
+              Some(fileUploads),
+              showUploadSummaryIfAny = false
+            )
+          else {
+            exitFileUpload.apply(current)
+          }
+        case current: CanEnterFileUpload =>
           exitFileUpload.apply(current)
+
       }
 
     final def removeFileUploadByReference(reference: String)(

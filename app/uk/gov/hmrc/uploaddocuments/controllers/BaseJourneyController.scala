@@ -44,12 +44,8 @@ abstract class BaseJourneyController[S <: JourneyService[HeaderCarrier]](
 
   implicit val ec: ExecutionContext = controllerComponents.executionContext
 
-  /** Provide response when user have no required enrolment. */
-  final def toSubscriptionJourney(continueUrl: String): Result =
-    Redirect(appConfig.subscriptionJourneyUrl)
-
-  /** AsUser authorisation request */
-  final val AsUser: WithAuthorised[Option[String]] =
+  /** AsAnyUser authorisation request */
+  final val AsAnyUser: WithAuthorised[Option[String]] =
     if (appConfig.requireEnrolmentFeature) { implicit request => body =>
       authorisedWithEnrolment(
         appConfig.authorisedServiceName,
@@ -59,26 +55,8 @@ abstract class BaseJourneyController[S <: JourneyService[HeaderCarrier]](
       authorisedWithoutEnrolment(x => body(x._2))
     }
 
-  final val AsUserWithUidAndEori: WithAuthorised[(Option[String], Option[String])] =
-    if (appConfig.requireEnrolmentFeature) { implicit request =>
-      authorisedWithEnrolment(
-        appConfig.authorisedServiceName,
-        appConfig.authorisedIdentifierKey
-      )
-    } else { implicit request =>
-      authorisedWithoutEnrolment
-    }
-
   /** Base authorized action builder */
-  final val whenAuthorisedAsUser = actions.whenAuthorised(AsUser)
-  final val whenAuthorisedAsUserWithEori = actions.whenAuthorisedWithRetrievals(AsUser)
-  final val whenAuthorisedAsUserWithUidAndEori = actions.whenAuthorisedWithRetrievals(AsUserWithUidAndEori)
-
-  /** Dummy action to use only when developing to fill loose-ends. */
-  final val actionNotYetImplemented = Action(NotImplemented)
-
-  // Dummy URL to use when developing the journey
-  final val workInProgresDeadEndCall = Call("GET", "/upload-documents/work-in-progress")
+  final val whenAuthenticated = actions.whenAuthorised(AsAnyUser)
 
   // ------------------------------------
   // Retrieval of journeyId configuration

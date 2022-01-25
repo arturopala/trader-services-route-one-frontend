@@ -95,6 +95,33 @@ class FileUploadJourneyModelSpec
           .thenGoes(ContinueToHost(fileUploadContext, FileUploads()))
       }
 
+      "go to UploadMultipleFiles when toUploadMultipleFiles transition" in {
+        given(
+          Initialized(
+            fileUploadContext,
+            nonEmptyFileUploads
+          )
+        ) when toUploadMultipleFiles(preferUploadMultipleFiles = true) should thenGo(
+          UploadMultipleFiles(
+            fileUploadContext,
+            nonEmptyFileUploads
+          )
+        )
+      }
+
+      "go to SwitchToSingleFileUpload when toUploadMultipleFiles transition and preferUploadMutipleFiles is false" in {
+        given(
+          Initialized(
+            fileUploadContext,
+            nonEmptyFileUploads
+          )
+        ) when toUploadMultipleFiles(preferUploadMultipleFiles = false) should thenGo(
+          SwitchToSingleFileUpload(
+            fileUploadContext,
+            Some(nonEmptyFileUploads)
+          )
+        )
+      }
     }
 
     "at state UploadMultipleFiles" should {
@@ -132,7 +159,7 @@ class FileUploadJourneyModelSpec
         )
       }
 
-      "stay and filter accepted uploads when export and toUploadMultipleFiles transition" in {
+      "stay and filter accepted uploads when toUploadMultipleFiles transition" in {
         given(
           UploadMultipleFiles(
             fileUploadContext,
@@ -149,42 +176,7 @@ class FileUploadJourneyModelSpec
               4567890
             )
           )
-        ) when toUploadMultipleFiles should thenGo(
-          UploadMultipleFiles(
-            fileUploadContext,
-            nonEmptyFileUploads + FileUpload.Accepted(
-              Nonce(4),
-              Timestamp.Any,
-              "foo-bar-ref-4",
-              "https://bucketName.s3.eu-west-2.amazonaws.com?1235676",
-              ZonedDateTime.parse("2018-04-24T09:30:00Z"),
-              "396f101dd52e8b2ace0dcf5ed09b1d1f030e608938510ce46e7a5c7a4e775100",
-              "test.pdf",
-              "application/pdf",
-              4567890
-            )
-          )
-        )
-      }
-
-      "stay and filter accepted uploads when import and toUploadMultipleFiles transition" in {
-        given(
-          UploadMultipleFiles(
-            fileUploadContext,
-            nonEmptyFileUploads + FileUpload.Initiated(Nonce.Any, Timestamp.Any, "foo-2") + FileUpload
-              .Posted(Nonce.Any, Timestamp.Any, "foo-3") + FileUpload.Accepted(
-              Nonce(4),
-              Timestamp.Any,
-              "foo-bar-ref-4",
-              "https://bucketName.s3.eu-west-2.amazonaws.com?1235676",
-              ZonedDateTime.parse("2018-04-24T09:30:00Z"),
-              "396f101dd52e8b2ace0dcf5ed09b1d1f030e608938510ce46e7a5c7a4e775100",
-              "test.pdf",
-              "application/pdf",
-              4567890
-            )
-          )
-        ) when toUploadMultipleFiles should thenGo(
+        ) when toUploadMultipleFiles() should thenGo(
           UploadMultipleFiles(
             fileUploadContext,
             nonEmptyFileUploads + FileUpload.Accepted(
@@ -1563,7 +1555,7 @@ class FileUploadJourneyModelSpec
         )
       }
 
-      "switch over to UploadMultipleFiles when toUploadMultipleFiles" in {
+      "switch over to UploadMultipleFiles when toUploadMultipleFiles()" in {
         given(
           UploadFile(
             fileUploadContext,
@@ -1580,7 +1572,7 @@ class FileUploadJourneyModelSpec
             None
           )
         )
-          .when(toUploadMultipleFiles)
+          .when(toUploadMultipleFiles())
           .thenGoes(
             UploadMultipleFiles(
               fileUploadContext,

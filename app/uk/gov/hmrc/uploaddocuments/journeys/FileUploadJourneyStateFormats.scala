@@ -29,6 +29,7 @@ object FileUploadJourneyStateFormats extends JsonStateFormats[State] {
   val fileUploadedFormat = Json.format[FileUploaded]
   val waitingForFileVerificationFormat = Json.format[WaitingForFileVerification]
   val uploadMultipleFilesFormat = Json.format[UploadMultipleFiles]
+  val switchToSingleFileUploadFormat = Json.format[SwitchToSingleFileUpload]
 
   override val serializeStateProperties: PartialFunction[State, JsValue] = {
     case s: Initialized                => initializedFormat.writes(s)
@@ -37,6 +38,7 @@ object FileUploadJourneyStateFormats extends JsonStateFormats[State] {
     case s: FileUploaded               => fileUploadedFormat.writes(s)
     case s: WaitingForFileVerification => waitingForFileVerificationFormat.writes(s)
     case s: UploadMultipleFiles        => uploadMultipleFilesFormat.writes(s)
+    case s: SwitchToSingleFileUpload   => switchToSingleFileUploadFormat.writes(s)
   }
 
   override def deserializeState(stateName: String, properties: JsValue): JsResult[State] =
@@ -48,6 +50,7 @@ object FileUploadJourneyStateFormats extends JsonStateFormats[State] {
       case "FileUploaded"               => fileUploadedFormat.reads(properties)
       case "WaitingForFileVerification" => waitingForFileVerificationFormat.reads(properties)
       case "UploadMultipleFiles"        => uploadMultipleFilesFormat.reads(properties)
+      case "SwitchToSingleFileUpload"   => switchToSingleFileUploadFormat.reads(properties)
       case _                            => JsError(s"Unknown state name $stateName")
     }
 }

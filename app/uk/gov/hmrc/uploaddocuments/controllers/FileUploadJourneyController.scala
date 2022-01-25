@@ -77,7 +77,7 @@ class FileUploadJourneyController @Inject() (
 
   // GET /continue-to-host
   final val continueToHost: Action[AnyContent] =
-    whenAuthorisedAsUser
+    whenAuthenticated
       .show[State.ContinueToHost]
       .orApply(Transitions.continueToHost)
 
@@ -130,13 +130,13 @@ class FileUploadJourneyController @Inject() (
 
   // GET /
   final val showUploadMultipleFiles: Action[AnyContent] =
-    whenAuthorisedAsUser
-      .apply(Transitions.toUploadMultipleFiles)
+    whenAuthenticated
+      .applyWithRequest(implicit request => Transitions.toUploadMultipleFiles(preferUploadMultipleFiles))
       .redirectOrDisplayIf[State.UploadMultipleFiles]
 
   // POST /initialize-upscan/:uploadId
   final def initiateNextFileUpload(uploadId: String): Action[AnyContent] =
-    whenAuthorisedAsUser
+    whenAuthenticated
       .applyWithRequest { implicit request =>
         Transitions
           .initiateNextFileUpload(uploadId)(upscanRequestWhenUploadingMultipleFiles)(
@@ -147,7 +147,7 @@ class FileUploadJourneyController @Inject() (
 
   // GET /file-upload
   final val showFileUpload: Action[AnyContent] =
-    whenAuthorisedAsUser
+    whenAuthenticated
       .applyWithRequest { implicit request =>
         Transitions
           .initiateFileUpload(upscanRequest)(upscanInitiateConnector.initiate(_, _))
@@ -156,13 +156,13 @@ class FileUploadJourneyController @Inject() (
 
   // GET /file-rejected
   final val markFileUploadAsRejected: Action[AnyContent] =
-    whenAuthorisedAsUser
+    whenAuthenticated
       .bindForm(UpscanUploadErrorForm)
       .apply(Transitions.markUploadAsRejected)
 
   // POST /new/file-rejected
   final val markFileUploadAsRejectedAsync: Action[AnyContent] =
-    whenAuthorisedAsUser
+    whenAuthenticated
       .bindForm(UpscanUploadErrorForm)
       .apply(Transitions.markUploadAsRejected)
       .displayUsing(acknowledgeFileUploadRedirect)
@@ -176,7 +176,7 @@ class FileUploadJourneyController @Inject() (
 
   // GET /file-verification
   final val showWaitingForFileVerification: Action[AnyContent] =
-    whenAuthorisedAsUser
+    whenAuthenticated
       .waitForStateThenRedirect[State.FileUploaded](INITIAL_CALLBACK_WAIT_TIME_SECONDS)
       .orApplyOnTimeout(Transitions.waitForFileVerification)
       .redirectOrDisplayIf[State.WaitingForFileVerification]
@@ -221,13 +221,13 @@ class FileUploadJourneyController @Inject() (
 
   // GET /file-uploaded
   final val showFileUploaded: Action[AnyContent] =
-    whenAuthorisedAsUser
+    whenAuthenticated
       .show[State.FileUploaded]
       .orApply(Transitions.backToFileUploaded)
 
   // POST /file-uploaded
   final val submitUploadAnotherFileChoice: Action[AnyContent] =
-    whenAuthorisedAsUser
+    whenAuthenticated
       .bindForm[Boolean](UploadAnotherFileChoiceForm)
       .applyWithRequest { implicit request =>
         Transitions.submitedUploadAnotherFileChoice(upscanRequest)(upscanInitiateConnector.initiate(_, _))(
@@ -237,7 +237,7 @@ class FileUploadJourneyController @Inject() (
 
   // GET /file-uploaded/:reference/remove
   final def removeFileUploadByReference(reference: String): Action[AnyContent] =
-    whenAuthorisedAsUser
+    whenAuthenticated
       .applyWithRequest { implicit request =>
         Transitions.removeFileUploadByReference(reference)(upscanRequest)(
           upscanInitiateConnector.initiate(_, _)
@@ -246,7 +246,7 @@ class FileUploadJourneyController @Inject() (
 
   // POST /file-uploaded/:reference/remove
   final def removeFileUploadByReferenceAsync(reference: String): Action[AnyContent] =
-    whenAuthorisedAsUser
+    whenAuthenticated
       .applyWithRequest { implicit request =>
         Transitions.removeFileUploadByReference(reference)(upscanRequest)(
           upscanInitiateConnector.initiate(_, _)
@@ -256,24 +256,23 @@ class FileUploadJourneyController @Inject() (
 
   // GET /file-uploaded/:reference/:fileName
   final def previewFileUploadByReference(reference: String, fileName: String): Action[AnyContent] =
-    whenAuthorisedAsUser.showCurrentState
+    whenAuthenticated.showCurrentState
       .displayAsyncUsing(streamFileFromUspcan(reference))
 
   // GET /file-verification/:reference/status
   final def checkFileVerificationStatus(reference: String): Action[AnyContent] =
-    whenAuthorisedAsUser.showCurrentState
+    whenAuthenticated.showCurrentState
       .displayUsing(renderFileVerificationStatus(reference))
 
   /** Function from the `State` to the `Call` (route), used by play-fsm internally to create redirects.
     */
   final override def getCallFor(state: State)(implicit request: Request[_]): Call =
     state match {
-      case State.Initialized(config, fileUploads) =>
-        if (preferUploadMultipleFiles) controller.showUploadMultipleFiles
-        else controller.showFileUpload
+      case State.Initialized(context, fileUploads) =>
+        Call("GET", context.config.backlinkUrl)
 
       case State.ContinueToHost(context, fileUploads) =>
-        Call("GET", context.config.continueUrl)
+        controller.continueToHost
 
       case _: State.UploadMultipleFiles =>
         controller.showUploadMultipleFiles
@@ -287,8 +286,11 @@ class FileUploadJourneyController @Inject() (
       case _: State.FileUploaded =>
         controller.showFileUploaded
 
+      case _: State.SwitchToSingleFileUpload =>
+        controller.showFileUpload
+
       case _ =>
-        workInProgresDeadEndCall
+        Call("GET", appConfig.govukStartUrl)
     }
 
   import uk.gov.hmrc.play.fsm.OptionalFormOps._

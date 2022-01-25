@@ -22,11 +22,13 @@ class AuthActionsISpec extends AuthActionISpecSetup {
       bodyOf(result) should be("12345-credId,serviceIdentifierFoo")
     }
 
-    "redirect to subscription journey when insufficient enrollments" in {
+    "redirect to government gateway login when insufficient enrollments" in {
       givenRequestIsNotAuthorised("InsufficientEnrolments")
       val result = TestController.testAuthorizedWithEnrolment("serviceName", "serviceKey")
       status(result) shouldBe 303
-      redirectLocation(result).get should include("/subscription")
+      redirectLocation(result).get should include(
+        "/bas-gateway/sign-in?continue_url=%2F&origin=upload-documents-frontend"
+      )
     }
 
     "redirect to government gateway login when authorization fails" in {
@@ -85,8 +87,6 @@ trait AuthActionISpecSetup extends AppISpec {
       await(super.authorisedWithoutEnrolment { case (uid, res) =>
         Future.successful(Ok(uid.getOrElse("none") + "," + res.getOrElse("none")))
       })
-
-    override def toSubscriptionJourney(continueUrl: String): Result = Redirect("/subscription")
   }
 
 }
