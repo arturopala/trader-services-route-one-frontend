@@ -86,9 +86,11 @@ trait JourneyCache[T, C] extends ExplicitAskSupport {
               Future.failed(new Exception(error))
 
             case Left(error: Throwable) =>
+              Logger(getClass).error(s"${error.getClass()} ${error.getMessage()}")
               Future.failed(error)
 
             case Left(e) =>
+              Logger(getClass).error(s"${e.getClass()} $e")
               Future.failed(new RuntimeException(s"Unknow error $e"))
           }
 

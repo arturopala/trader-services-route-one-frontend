@@ -58,11 +58,11 @@ trait AuthActions extends AuthorisedFunctions with AuthRedirects {
 
   def handleFailure(implicit request: Request[_]): PartialFunction[Throwable, Result] = {
 
-    case InsufficientEnrolments(_) =>
+    case e @ InsufficientEnrolments(_) =>
       val continueUrl = CallOps.localFriendlyUrl(env, config)(request.uri, request.host)
       toSubscriptionJourney(continueUrl)
 
-    case _: AuthorisationException ⇒
+    case e: AuthorisationException =>
       val continueUrl = CallOps.localFriendlyUrl(env, config)(request.uri, request.host)
       toGGLogin(continueUrl)
   }

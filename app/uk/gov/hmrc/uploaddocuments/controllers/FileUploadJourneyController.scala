@@ -66,7 +66,7 @@ class FileUploadJourneyController @Inject() (
   final val initialize: Action[AnyContent] =
     actions
       .parseJsonWithFallback[FileUploadInitializationRequest](BadRequest)
-      .apply(Transitions.initialize)
+      .applyWithRequest(implicit request => Transitions.initialize(CallbackAuth.from(hc(request))))
       .displayUsing(renderInitializationResponse)
       .recover {
         case e: JsonParseException => BadRequest(e.getMessage())
@@ -207,7 +207,8 @@ class FileUploadJourneyController @Inject() (
     actions
       .parseJsonWithFallback[UpscanNotification](BadRequest)
       .applyWithRequest(implicit request =>
-        Transitions.upscanCallbackArrived(fileUploadResultPushConnector.push(_))(Nonce(nonce))
+        Transitions
+          .upscanCallbackArrived(fileUploadResultPushConnector.push(_))(Nonce(nonce))
       )
       .transform {
         case r if r.header.status < 400 => NoContent
@@ -269,8 +270,8 @@ class FileUploadJourneyController @Inject() (
         if (preferUploadMultipleFiles) controller.showUploadMultipleFiles
         else controller.showFileUpload
 
-      case State.ContinueToHost(config, fileUploads) =>
-        Call("GET", config.continueUrl)
+      case State.ContinueToHost(context, fileUploads) =>
+        Call("GET", context.config.continueUrl)
 
       case _: State.UploadMultipleFiles =>
         controller.showUploadMultipleFiles
@@ -305,8 +306,8 @@ class FileUploadJourneyController @Inject() (
         else
           Redirect(controller.showFileUpload)
 
-      case State.ContinueToHost(config, fileUploads) =>
-        Redirect(config.continueUrl)
+      case State.ContinueToHost(context, fileUploads) =>
+        Redirect(context.config.continueUrl)
 
       case State.UploadMultipleFiles(model, fileUploads) =>
         Ok(

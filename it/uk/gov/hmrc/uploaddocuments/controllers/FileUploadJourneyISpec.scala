@@ -12,7 +12,7 @@ import uk.gov.hmrc.uploaddocuments.models._
 import uk.gov.hmrc.uploaddocuments.repository.CacheRepository
 import uk.gov.hmrc.uploaddocuments.services.{FileUploadJourneyService, MongoDBCachedJourneyService}
 import uk.gov.hmrc.uploaddocuments.stubs.{ExternalApiStubs, UpscanInitiateStubs}
-import uk.gov.hmrc.uploaddocuments.support.{ServerISpec, StateMatchers, TestData, TestJourneyService}
+import uk.gov.hmrc.uploaddocuments.support.{SHA256, ServerISpec, StateMatchers, TestData, TestJourneyService}
 
 import java.time.temporal.ChronoUnit
 import java.time.{LocalDate, LocalDateTime, ZonedDateTime}
@@ -20,6 +20,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.Random
 import uk.gov.hmrc.uploaddocuments.connectors.FileUploadResultPushConnector
 import java.util.UUID
+import uk.gov.hmrc.http.SessionKeys
 
 class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalApiStubs with UpscanInitiateStubs {
 
@@ -63,7 +64,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
         controller.successRedirect(
           fakeRequest(Cookie(controller.COOKIE_JSENABLED, "true"))
         ) should endWith(
-          s"/upload-documents/journey/${journeyId.value}/file-verification"
+          s"/upload-documents/journey/${SHA256.compute(journeyId.value)}/file-verification"
         )
       }
     }
@@ -79,7 +80,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
         controller.errorRedirect(
           fakeRequest(Cookie(controller.COOKIE_JSENABLED, "true"))
         ) should endWith(
-          s"/upload-documents/journey/${journeyId.value}/file-rejected"
+          s"/upload-documents/journey/${SHA256.compute(journeyId.value)}/file-rejected"
         )
       }
     }
@@ -128,7 +129,13 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
             .post(Json.toJson(FileUploadInitializationRequest(fileUploadSessionConfig, Seq.empty)))
         )
         result.status shouldBe 201
-        journey.getState shouldBe Initialized(fileUploadSessionConfig, FileUploads())
+        journey.getState shouldBe Initialized(
+          FileUploadContext(
+            fileUploadSessionConfig,
+            CallbackAuth.Any
+          ),
+          FileUploads()
+        )
       }
 
       "register config and pre-existing file uploads" in {
@@ -158,7 +165,10 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
         )
         result.status shouldBe 201
         journey.getState shouldBe Initialized(
-          fileUploadSessionConfig,
+          FileUploadContext(
+            fileUploadSessionConfig,
+            CallbackAuth.Any
+          ),
           FileUploads(preexistingUploads.map(_.toFileUpload))
         )
       }
@@ -167,7 +177,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
     "GET /" should {
       "show the upload multiple files page " in {
         val state = UploadMultipleFiles(
-          fileUploadSessionConfig,
+          FileUploadContext(fileUploadSessionConfig),
           fileUploads = FileUploads()
         )
         journey.setState(state)
@@ -183,7 +193,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
 
       "retreat from finished to the upload multiple files page " in {
         val state = ContinueToHost(
-          fileUploadSessionConfig,
+          FileUploadContext(fileUploadSessionConfig),
           FileUploads()
         )
         journey.setState(state)
@@ -195,7 +205,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
         result.body should include(htmlEscapedPageTitle("view.upload-multiple-files.title"))
         result.body should include(htmlEscapedMessage("view.upload-multiple-files.heading"))
         journey.getState shouldBe UploadMultipleFiles(
-          fileUploadSessionConfig,
+          FileUploadContext(fileUploadSessionConfig),
           fileUploads = FileUploads()
         )
       }
@@ -205,13 +215,13 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
       "initialise first file upload" in {
 
         val state = UploadMultipleFiles(
-          fileUploadSessionConfig,
+          FileUploadContext(fileUploadSessionConfig),
           fileUploads = FileUploads()
         )
         journey.setState(state)
         givenAuthorisedForEnrolment(Enrolment("HMRC-XYZ", "EORINumber", "foo"))
         val callbackUrl =
-          appConfig.baseInternalCallbackUrl + s"/upload-documents/journey/${journeyId.value}/callback-from-upscan"
+          appConfig.baseInternalCallbackUrl + s"/upload-documents/journey/${SHA256.compute(journeyId.value)}/callback-from-upscan"
         givenUpscanInitiateSucceeds(callbackUrl, hostServiceId)
 
         val result = await(request("/initialize-upscan/001").post(""))
@@ -239,7 +249,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
 
         journey.getState shouldBe
           UploadMultipleFiles(
-            fileUploadSessionConfig,
+            FileUploadContext(fileUploadSessionConfig),
             fileUploads = FileUploads(files =
               Seq(
                 FileUpload.Initiated(
@@ -274,7 +284,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
       "initialise next file upload" in {
 
         val state = UploadMultipleFiles(
-          fileUploadSessionConfig,
+          FileUploadContext(fileUploadSessionConfig),
           fileUploads = FileUploads(
             Seq(FileUpload.Posted(Nonce.Any, Timestamp.Any, "23370e18-6e24-453e-b45a-76d3e32ea389"))
           )
@@ -282,7 +292,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
         journey.setState(state)
         givenAuthorisedForEnrolment(Enrolment("HMRC-XYZ", "EORINumber", "foo"))
         val callbackUrl =
-          appConfig.baseInternalCallbackUrl + s"/upload-documents/journey/${journeyId.value}/callback-from-upscan"
+          appConfig.baseInternalCallbackUrl + s"/upload-documents/journey/${SHA256.compute(journeyId.value)}/callback-from-upscan"
         givenUpscanInitiateSucceeds(callbackUrl, hostServiceId)
 
         val result = await(request("/initialize-upscan/002").post(""))
@@ -310,7 +320,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
 
         journey.getState shouldBe
           UploadMultipleFiles(
-            fileUploadSessionConfig,
+            FileUploadContext(fileUploadSessionConfig),
             fileUploads = FileUploads(files =
               Seq(
                 FileUpload.Posted(Nonce.Any, Timestamp.Any, "23370e18-6e24-453e-b45a-76d3e32ea389"),
@@ -346,11 +356,11 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
 
     "GET /file-upload" should {
       "show the upload page of first document" in {
-        val state = Initialized(fileUploadSessionConfig, FileUploads())
+        val state = Initialized(FileUploadContext(fileUploadSessionConfig), FileUploads())
         journey.setState(state)
         givenAuthorisedForEnrolment(Enrolment("HMRC-XYZ", "EORINumber", "foo"))
         val callbackUrl =
-          appConfig.baseInternalCallbackUrl + s"/upload-documents/journey/${journeyId.value}/callback-from-upscan"
+          appConfig.baseInternalCallbackUrl + s"/upload-documents/journey/${SHA256.compute(journeyId.value)}/callback-from-upscan"
         givenUpscanInitiateSucceeds(callbackUrl, hostServiceId)
 
         val result = await(request("/file-upload").get())
@@ -360,7 +370,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
         result.body should include(htmlEscapedMessage("view.upload-file.first.heading"))
 
         journey.getState shouldBe UploadFile(
-          fileUploadSessionConfig,
+          FileUploadContext(fileUploadSessionConfig),
           reference = "11370e18-6e24-453e-b45a-76d3e32ea33d",
           uploadRequest = UploadRequest(
             href = "https://bucketName.s3.eu-west-2.amazonaws.com",
@@ -386,7 +396,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
 
       "show the singular file uploaded page" in {
         val state = Initialized(
-          fileUploadSessionConfig,
+          FileUploadContext(fileUploadSessionConfig),
           FileUploads(
             Seq(
               FileUpload.Accepted(
@@ -406,7 +416,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
         journey.setState(state)
         givenAuthorisedForEnrolment(Enrolment("HMRC-XYZ", "EORINumber", "foo"))
         val callbackUrl =
-          appConfig.baseInternalCallbackUrl + s"/upload-documents/journey/${journeyId.value}/callback-from-upscan"
+          appConfig.baseInternalCallbackUrl + s"/upload-documents/journey/${SHA256.compute(journeyId.value)}/callback-from-upscan"
         givenUpscanInitiateSucceeds(callbackUrl, hostServiceId)
 
         val result = await(request("/file-upload").get())
@@ -416,7 +426,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
         result.body should include(htmlEscapedMessage("view.file-uploaded.singular.heading", "1"))
 
         journey.getState shouldBe FileUploaded(
-          fileUploadSessionConfig,
+          FileUploadContext(fileUploadSessionConfig),
           fileUploads = FileUploads(files =
             Seq(
               FileUpload.Accepted(
@@ -437,7 +447,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
 
       "show the plural file uploaded page" in {
         val state = Initialized(
-          fileUploadSessionConfig,
+          FileUploadContext(fileUploadSessionConfig),
           FileUploads(
             Seq(
               FileUpload.Accepted(
@@ -468,7 +478,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
         journey.setState(state)
         givenAuthorisedForEnrolment(Enrolment("HMRC-XYZ", "EORINumber", "foo"))
         val callbackUrl =
-          appConfig.baseInternalCallbackUrl + s"/upload-documents/journey/${journeyId.value}/callback-from-upscan"
+          appConfig.baseInternalCallbackUrl + s"/upload-documents/journey/${SHA256.compute(journeyId.value)}/callback-from-upscan"
         givenUpscanInitiateSucceeds(callbackUrl, hostServiceId)
 
         val result = await(request("/file-upload").get())
@@ -478,7 +488,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
         result.body should include(htmlEscapedMessage("view.file-uploaded.plural.heading", "2"))
 
         journey.getState shouldBe FileUploaded(
-          fileUploadSessionConfig,
+          FileUploadContext(fileUploadSessionConfig),
           fileUploads = FileUploads(files =
             Seq(
               FileUpload.Accepted(
@@ -513,7 +523,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
       "display waiting for file verification page" in {
         journey.setState(
           UploadFile(
-            fileUploadSessionConfig,
+            FileUploadContext(fileUploadSessionConfig),
             "2b72fe99-8adf-4edb-865e-622ae710f77c",
             UploadRequest(href = "https://s3.bucket", fields = Map("callbackUrl" -> "https://foo.bar/callback")),
             FileUploads(files =
@@ -534,7 +544,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
 
         journey.getState shouldBe (
           WaitingForFileVerification(
-            fileUploadSessionConfig,
+            FileUploadContext(fileUploadSessionConfig),
             "2b72fe99-8adf-4edb-865e-622ae710f77c",
             UploadRequest(href = "https://s3.bucket", fields = Map("callbackUrl" -> "https://foo.bar/callback")),
             FileUpload.Posted(Nonce.Any, Timestamp.Any, "2b72fe99-8adf-4edb-865e-622ae710f77c"),
@@ -553,7 +563,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
       "set current file upload status as rejected and return 204 NoContent" in {
         journey.setState(
           UploadFile(
-            fileUploadSessionConfig,
+            FileUploadContext(fileUploadSessionConfig),
             "11370e18-6e24-453e-b45a-76d3e32ea33d",
             UploadRequest(href = "https://s3.bucket", fields = Map("callbackUrl" -> "https://foo.bar/callback")),
             FileUploads(files =
@@ -568,8 +578,8 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
 
         val result1 =
           await(
-            requestWithoutJourneyId(
-              s"/journey/${journeyId.value}/file-rejected?key=11370e18-6e24-453e-b45a-76d3e32ea33d&errorCode=ABC123&errorMessage=ABC+123"
+            requestWithoutSessionId(
+              s"/journey/${SHA256.compute(journeyId.value)}/file-rejected?key=11370e18-6e24-453e-b45a-76d3e32ea33d&errorCode=ABC123&errorMessage=ABC+123"
             ).get()
           )
 
@@ -577,7 +587,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
         result1.body.isEmpty shouldBe true
         journey.getState shouldBe (
           UploadFile(
-            fileUploadSessionConfig,
+            FileUploadContext(fileUploadSessionConfig),
             "11370e18-6e24-453e-b45a-76d3e32ea33d",
             UploadRequest(href = "https://s3.bucket", fields = Map("callbackUrl" -> "https://foo.bar/callback")),
             FileUploads(files =
@@ -609,7 +619,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
       "set current file upload status as posted and return 204 NoContent" in {
         journey.setState(
           UploadFile(
-            fileUploadSessionConfig,
+            FileUploadContext(fileUploadSessionConfig),
             "11370e18-6e24-453e-b45a-76d3e32ea33d",
             UploadRequest(href = "https://s3.bucket", fields = Map("callbackUrl" -> "https://foo.bar/callback")),
             FileUploads(files =
@@ -623,13 +633,13 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
         givenAuthorisedForEnrolment(Enrolment("HMRC-XYZ", "EORINumber", "foo"))
 
         val result1 =
-          await(requestWithoutJourneyId(s"/journey/${journeyId.value}/file-verification").get())
+          await(requestWithoutSessionId(s"/journey/${SHA256.compute(journeyId.value)}/file-verification").get())
 
         result1.status shouldBe 202
         result1.body.isEmpty shouldBe true
         journey.getState shouldBe (
           WaitingForFileVerification(
-            fileUploadSessionConfig,
+            FileUploadContext(fileUploadSessionConfig),
             "11370e18-6e24-453e-b45a-76d3e32ea33d",
             UploadRequest(href = "https://s3.bucket", fields = Map("callbackUrl" -> "https://foo.bar/callback")),
             FileUpload.Posted(Nonce.Any, Timestamp.Any, "11370e18-6e24-453e-b45a-76d3e32ea33d"),
@@ -648,7 +658,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
       "return file verification status" in {
 
         val state = FileUploaded(
-          fileUploadSessionConfig,
+          FileUploadContext(fileUploadSessionConfig),
           FileUploads(files =
             Seq(
               FileUpload.Initiated(
@@ -746,7 +756,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
     "GET /file-uploaded" should {
       "show uploaded singular file view" in {
         val state = FileUploaded(
-          fileUploadSessionConfig,
+          FileUploadContext(fileUploadSessionConfig),
           fileUploads = FileUploads(files = Seq(TestData.acceptedFileUpload))
         )
         journey.setState(state)
@@ -762,7 +772,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
 
       "show uploaded plural file view" in {
         val state = FileUploaded(
-          fileUploadSessionConfig,
+          FileUploadContext(fileUploadSessionConfig),
           fileUploads = FileUploads(files =
             Seq(
               FileUpload.Accepted(
@@ -803,7 +813,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
 
       "show file upload summary view" in {
         val state = FileUploaded(
-          fileUploadSessionConfig,
+          FileUploadContext(fileUploadSessionConfig),
           fileUploads = FileUploads(files = for (i <- 1 to 10) yield TestData.acceptedFileUpload)
         )
         journey.setState(state)
@@ -826,13 +836,13 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
 
         val fileUploads = FileUploads(files = for (i <- 1 until FILES_LIMIT) yield TestData.acceptedFileUpload)
         val state = FileUploaded(
-          fileUploadSessionConfig,
+          FileUploadContext(fileUploadSessionConfig),
           fileUploads
         )
         journey.setState(state)
         givenAuthorisedForEnrolment(Enrolment("HMRC-XYZ", "EORINumber", "foo"))
         val callbackUrl =
-          appConfig.baseInternalCallbackUrl + s"/upload-documents/journey/${journeyId.value}/callback-from-upscan"
+          appConfig.baseInternalCallbackUrl + s"/upload-documents/journey/${SHA256.compute(journeyId.value)}/callback-from-upscan"
         givenUpscanInitiateSucceeds(callbackUrl, hostServiceId)
 
         val result = await(
@@ -844,7 +854,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
         result.body should include(htmlEscapedPageTitle("view.upload-file.next.title"))
         result.body should include(htmlEscapedMessage("view.upload-file.next.heading"))
         journey.getState shouldBe UploadFile(
-          fileUploadSessionConfig,
+          FileUploadContext(fileUploadSessionConfig),
           reference = "11370e18-6e24-453e-b45a-76d3e32ea33d",
           uploadRequest = UploadRequest(
             href = "https://bucketName.s3.eu-west-2.amazonaws.com",
@@ -873,13 +883,13 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
 
         val fileUploads = FileUploads(files = for (i <- 1 until FILES_LIMIT) yield TestData.acceptedFileUpload)
         val state = FileUploaded(
-          fileUploadSessionConfig,
+          FileUploadContext(fileUploadSessionConfig),
           fileUploads
         )
         journey.setState(state)
         givenAuthorisedForEnrolment(Enrolment("HMRC-XYZ", "EORINumber", "foo"))
         val callbackUrl =
-          appConfig.baseInternalCallbackUrl + s"/upload-documents/journey/${journeyId.value}/callback-from-upscan"
+          appConfig.baseInternalCallbackUrl + s"/upload-documents/journey/${SHA256.compute(journeyId.value)}/callback-from-upscan"
         givenUpscanInitiateSucceeds(callbackUrl, hostServiceId)
 
         val result = await(
@@ -891,7 +901,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
         result.body should include(htmlEscapedPageTitle("view.upload-file.next.title"))
         result.body should include(htmlEscapedMessage("view.upload-file.next.heading"))
         journey.getState shouldBe UploadFile(
-          fileUploadSessionConfig,
+          FileUploadContext(fileUploadSessionConfig),
           reference = "11370e18-6e24-453e-b45a-76d3e32ea33d",
           uploadRequest = UploadRequest(
             href = "https://bucketName.s3.eu-west-2.amazonaws.com",
@@ -920,7 +930,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
 
         val fileUploads = FileUploads(files = for (i <- 1 to FILES_LIMIT) yield TestData.acceptedFileUpload)
         val state = FileUploaded(
-          fileUploadSessionConfig,
+          FileUploadContext(fileUploadSessionConfig),
           fileUploads
         )
         journey.setState(state)
@@ -933,7 +943,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
         )
 
         journey.getState shouldBe ContinueToHost(
-          fileUploadSessionConfig,
+          FileUploadContext(fileUploadSessionConfig),
           fileUploads
         )
 
@@ -945,7 +955,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
 
         val fileUploads = FileUploads(files = for (i <- 1 until FILES_LIMIT) yield TestData.acceptedFileUpload)
         val state = FileUploaded(
-          fileUploadSessionConfig,
+          FileUploadContext(fileUploadSessionConfig),
           fileUploads
         )
         journey.setState(state)
@@ -958,7 +968,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
         )
 
         journey.getState shouldBe ContinueToHost(
-          fileUploadSessionConfig,
+          FileUploadContext(fileUploadSessionConfig),
           fileUploads
         )
 
@@ -970,7 +980,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
 
         val fileUploads = FileUploads(files = for (i <- 1 to FILES_LIMIT) yield TestData.acceptedFileUpload)
         val state = FileUploaded(
-          fileUploadSessionConfig,
+          FileUploadContext(fileUploadSessionConfig),
           fileUploads
         )
         journey.setState(state)
@@ -983,7 +993,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
         )
 
         journey.getState shouldBe ContinueToHost(
-          fileUploadSessionConfig,
+          FileUploadContext(fileUploadSessionConfig),
           fileUploads
         )
 
@@ -996,7 +1006,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
       "show upload document again" in {
         journey.setState(
           UploadFile(
-            fileUploadSessionConfig,
+            FileUploadContext(fileUploadSessionConfig),
             "2b72fe99-8adf-4edb-865e-622ae710f77c",
             UploadRequest(href = "https://s3.bucket", fields = Map("callbackUrl" -> "https://foo.bar/callback")),
             FileUploads(files =
@@ -1019,7 +1029,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
         result.body should include(htmlEscapedPageTitle("view.upload-file.first.title"))
         result.body should include(htmlEscapedMessage("view.upload-file.first.heading"))
         journey.getState shouldBe UploadFile(
-          fileUploadSessionConfig,
+          FileUploadContext(fileUploadSessionConfig),
           "2b72fe99-8adf-4edb-865e-622ae710f77c",
           UploadRequest(href = "https://s3.bucket", fields = Map("callbackUrl" -> "https://foo.bar/callback")),
           FileUploads(files =
@@ -1041,7 +1051,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
       "mark file upload as rejected" in {
         journey.setState(
           UploadMultipleFiles(
-            fileUploadSessionConfig,
+            FileUploadContext(fileUploadSessionConfig),
             FileUploads(files =
               Seq(
                 FileUpload.Initiated(Nonce.Any, Timestamp.Any, "11370e18-6e24-453e-b45a-76d3e32ea33d"),
@@ -1065,7 +1075,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
         result.status shouldBe 201
 
         journey.getState shouldBe UploadMultipleFiles(
-          fileUploadSessionConfig,
+          FileUploadContext(fileUploadSessionConfig),
           FileUploads(files =
             Seq(
               FileUpload.Initiated(Nonce.Any, Timestamp.Any, "11370e18-6e24-453e-b45a-76d3e32ea33d"),
@@ -1086,7 +1096,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
         givenHostPushEndpoint(
           "/result-post-url",
           FileUploadResultPushConnector.Payload.from(
-            fileUploadSessionConfig,
+            FileUploadContext(fileUploadSessionConfig),
             FileUploads(files =
               Seq(
                 FileUpload.Accepted(
@@ -1106,7 +1116,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
           204
         )
         val state = FileUploaded(
-          fileUploadSessionConfig,
+          FileUploadContext(fileUploadSessionConfig),
           fileUploads = FileUploads(files =
             Seq(
               FileUpload.Accepted(
@@ -1143,7 +1153,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
         result.body should include(htmlEscapedPageTitle("view.file-uploaded.singular.title", "1"))
         result.body should include(htmlEscapedMessage("view.file-uploaded.singular.heading", "1"))
         journey.getState shouldBe FileUploaded(
-          fileUploadSessionConfig,
+          FileUploadContext(fileUploadSessionConfig),
           fileUploads = FileUploads(files =
             Seq(
               FileUpload.Accepted(
@@ -1171,7 +1181,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
         givenHostPushEndpoint(
           "/result-post-url",
           FileUploadResultPushConnector.Payload.from(
-            fileUploadSessionConfig,
+            FileUploadContext(fileUploadSessionConfig),
             FileUploads(files =
               Seq(
                 FileUpload.Accepted(
@@ -1191,7 +1201,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
           204
         )
         val state = UploadMultipleFiles(
-          fileUploadSessionConfig,
+          FileUploadContext(fileUploadSessionConfig),
           fileUploads = FileUploads(files =
             Seq(
               FileUpload.Accepted(
@@ -1227,7 +1237,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
         result.status shouldBe 204
 
         journey.getState shouldBe UploadMultipleFiles(
-          fileUploadSessionConfig,
+          FileUploadContext(fileUploadSessionConfig),
           fileUploads = FileUploads(files =
             Seq(
               FileUpload.Accepted(
@@ -1257,7 +1267,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
         val upscanUrl = stubForFileDownload(200, bytes, "test.pdf")
 
         val state = FileUploaded(
-          fileUploadSessionConfig,
+          FileUploadContext(fileUploadSessionConfig),
           FileUploads(files =
             Seq(
               FileUpload.Initiated(Nonce.Any, Timestamp.Any, "11370e18-6e24-453e-b45a-76d3e32ea33d"),
@@ -1303,7 +1313,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
         val upscanUrl = stubForFileDownloadFailure(404, "test.pdf")
 
         val state = FileUploaded(
-          fileUploadSessionConfig,
+          FileUploadContext(fileUploadSessionConfig),
           FileUploads(files =
             Seq(
               FileUpload.Initiated(Nonce.Any, Timestamp.Any, "11370e18-6e24-453e-b45a-76d3e32ea33d"),
@@ -1348,7 +1358,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
       "set current file upload status as posted and return 201 Created" in {
         journey.setState(
           UploadMultipleFiles(
-            fileUploadSessionConfig,
+            FileUploadContext(fileUploadSessionConfig),
             FileUploads(files =
               Seq(
                 FileUpload.Initiated(Nonce.Any, Timestamp.Any, "11370e18-6e24-453e-b45a-76d3e32ea33d"),
@@ -1361,8 +1371,8 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
 
         val result =
           await(
-            requestWithoutJourneyId(
-              s"/journey/${journeyId.value}/file-posted?key=11370e18-6e24-453e-b45a-76d3e32ea33d&bucket=foo"
+            requestWithoutSessionId(
+              s"/journey/${SHA256.compute(journeyId.value)}/file-posted?key=11370e18-6e24-453e-b45a-76d3e32ea33d&bucket=foo"
             ).get()
           )
 
@@ -1371,7 +1381,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
         result.headerValues(HeaderNames.ACCESS_CONTROL_ALLOW_ORIGIN) shouldBe Seq("*")
         journey.getState should beState(
           UploadMultipleFiles(
-            fileUploadSessionConfig,
+            FileUploadContext(fileUploadSessionConfig),
             FileUploads(files =
               Seq(
                 FileUpload.Posted(Nonce.Any, Timestamp.Any, "11370e18-6e24-453e-b45a-76d3e32ea33d"),
@@ -1388,7 +1398,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
         val nonce = Nonce.random
         journey.setState(
           UploadMultipleFiles(
-            fileUploadSessionConfig,
+            FileUploadContext(fileUploadSessionConfig),
             FileUploads(files =
               Seq(
                 FileUpload.Initiated(Nonce.Any, Timestamp.Any, "11370e18-6e24-453e-b45a-76d3e32ea33d"),
@@ -1399,7 +1409,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
         )
         val result =
           await(
-            request(s"/journey/${journeyId.value}/callback-from-upscan/$nonce")
+            requestWithoutSessionId(s"/journey/${SHA256.compute(journeyId.value)}/callback-from-upscan/$nonce")
               .withHttpHeaders(HeaderNames.CONTENT_TYPE -> MimeTypes.JSON)
               .post(
                 Json.obj(
@@ -1411,7 +1421,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
         result.status shouldBe 400
         journey.getState should beState(
           UploadMultipleFiles(
-            fileUploadSessionConfig,
+            FileUploadContext(fileUploadSessionConfig),
             FileUploads(files =
               Seq(
                 FileUpload.Initiated(Nonce.Any, Timestamp.Any, "11370e18-6e24-453e-b45a-76d3e32ea33d"),
@@ -1430,7 +1440,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
         givenHostPushEndpoint(
           "/result-post-url",
           FileUploadResultPushConnector.Payload.from(
-            fileUploadSessionConfig,
+            FileUploadContext(fileUploadSessionConfig),
             FileUploads(files =
               Seq(
                 FileUpload.Accepted(
@@ -1463,7 +1473,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
         )
         journey.setState(
           UploadMultipleFiles(
-            fileUploadSessionConfig,
+            FileUploadContext(fileUploadSessionConfig),
             FileUploads(files =
               Seq(
                 FileUpload.Initiated(Nonce.Any, Timestamp.Any, "11370e18-6e24-453e-b45a-76d3e32ea33d"),
@@ -1486,7 +1496,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
         )
         val result =
           await(
-            request(s"/journey/${journeyId.value}/callback-from-upscan/$nonce")
+            requestWithoutSessionId(s"/journey/${SHA256.compute(journeyId.value)}/callback-from-upscan/$nonce")
               .withHttpHeaders(HeaderNames.CONTENT_TYPE -> MimeTypes.JSON)
               .post(
                 Json.obj(
@@ -1507,7 +1517,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
         result.status shouldBe 204
         journey.getState should beState(
           UploadMultipleFiles(
-            fileUploadSessionConfig,
+            FileUploadContext(fileUploadSessionConfig),
             FileUploads(files =
               Seq(
                 FileUpload.Initiated(Nonce.Any, Timestamp.Any, "11370e18-6e24-453e-b45a-76d3e32ea33d"),
@@ -1547,7 +1557,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
         val nonce = Nonce.random
         journey.setState(
           UploadMultipleFiles(
-            fileUploadSessionConfig,
+            FileUploadContext(fileUploadSessionConfig),
             FileUploads(files =
               Seq(
                 FileUpload.Initiated(Nonce.Any, Timestamp.Any, "11370e18-6e24-453e-b45a-76d3e32ea33d"),
@@ -1568,7 +1578,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
         )
         val result =
           await(
-            request(s"/journey/${journeyId.value}/callback-from-upscan/$nonce")
+            requestWithoutSessionId(s"/journey/${SHA256.compute(journeyId.value)}/callback-from-upscan/$nonce")
               .withHttpHeaders(HeaderNames.CONTENT_TYPE -> MimeTypes.JSON)
               .post(
                 Json.obj(
@@ -1589,7 +1599,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
         result.status shouldBe 204
         journey.getState should beState(
           UploadMultipleFiles(
-            fileUploadSessionConfig,
+            FileUploadContext(fileUploadSessionConfig),
             FileUploads(files =
               Seq(
                 FileUpload.Initiated(Nonce.Any, Timestamp.Any, "11370e18-6e24-453e-b45a-76d3e32ea33d"),
@@ -1617,7 +1627,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
         val nonce = Nonce.random
         journey.setState(
           UploadMultipleFiles(
-            fileUploadSessionConfig,
+            FileUploadContext(fileUploadSessionConfig),
             FileUploads(files =
               Seq(
                 FileUpload.Initiated(Nonce.Any, Timestamp.Any, "11370e18-6e24-453e-b45a-76d3e32ea33d"),
@@ -1628,7 +1638,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
         )
         val result =
           await(
-            request(s"/journey/${journeyId.value}/callback-from-upscan/${Nonce.random}")
+            requestWithoutSessionId(s"/journey/${SHA256.compute(journeyId.value)}/callback-from-upscan/${Nonce.random}")
               .withHttpHeaders(HeaderNames.CONTENT_TYPE -> MimeTypes.JSON)
               .post(
                 Json.obj(
@@ -1649,7 +1659,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
         result.status shouldBe 204
         journey.getState should beState(
           UploadMultipleFiles(
-            fileUploadSessionConfig,
+            FileUploadContext(fileUploadSessionConfig),
             FileUploads(files =
               Seq(
                 FileUpload.Initiated(Nonce.Any, Timestamp.Any, "11370e18-6e24-453e-b45a-76d3e32ea33d"),
@@ -1668,7 +1678,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
       "return 201 with access control header" in {
         val result =
           await(
-            request(s"/journey/${journeyId.value}/file-rejected")
+            requestWithoutSessionId(s"/journey/${SHA256.compute(journeyId.value)}/file-rejected")
               .options()
           )
         result.status shouldBe 201
@@ -1681,7 +1691,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
       "return 201 with access control header" in {
         val result =
           await(
-            request(s"/journey/${journeyId.value}/file-posted")
+            requestWithoutSessionId(s"/journey/${SHA256.compute(journeyId.value)}/file-posted")
               .options()
           )
         result.status shouldBe 201
@@ -1728,7 +1738,8 @@ trait FileUploadJourneyISpecSetup extends ServerISpec with StateMatchers {
     override val stateFormats: Format[model.State] =
       FileUploadJourneyStateFormats.formats
 
-    override def getJourneyId(journeyId: JourneyId): Option[String] = Some(journeyId.value)
+    override def getJourneyId(journeyId: JourneyId): Option[String] =
+      Some(SHA256.compute(journeyId.value))
   }
 
   final def fakeRequest(cookies: Cookie*)(implicit
@@ -1741,12 +1752,12 @@ trait FileUploadJourneyISpecSetup extends ServerISpec with StateMatchers {
   ): Request[AnyContent] =
     FakeRequest(Call(method, path))
       .withCookies(cookies: _*)
-      .withSession(journey.journeyKey -> journeyId.value)
+      .withSession(SessionKeys.sessionId -> journeyId.value)
 
   final def request(path: String)(implicit journeyId: JourneyId): StandaloneWSRequest = {
     val sessionCookie =
       sessionCookieBaker
-        .encodeAsCookie(Session(Map(journey.journeyKey -> journeyId.value)))
+        .encodeAsCookie(Session(Map(SessionKeys.sessionId -> journeyId.value)))
     wsClient
       .url(s"$baseUrl$path")
       .withCookies(
@@ -1762,7 +1773,7 @@ trait FileUploadJourneyISpecSetup extends ServerISpec with StateMatchers {
   ): StandaloneWSRequest = {
     val sessionCookie =
       sessionCookieBaker
-        .encodeAsCookie(Session(Map(journey.journeyKey -> journeyId.value)))
+        .encodeAsCookie(Session(Map(SessionKeys.sessionId -> journeyId.value)))
 
     wsClient
       .url(s"$baseUrl$path")

@@ -16,7 +16,7 @@ class AuthActionsISpec extends AuthActionISpecSetup {
   "authorisedWithEnrolment" should {
 
     "authorize when enrolment granted" in {
-      givenAuthorisedForEnrolment(Enrolment("serviceName", "serviceKey", "serviceIdentifierFoo"))
+      givenAuthorisedForEnrolment(Enrolment("serviceName", "serviceKey", "serviceIdentifierFoo"), required = true)
       val result = TestController.testAuthorizedWithEnrolment("serviceName", "serviceKey")
       status(result) shouldBe 200
       bodyOf(result) should be("12345-credId,serviceIdentifierFoo")

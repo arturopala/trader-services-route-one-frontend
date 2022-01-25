@@ -21,11 +21,12 @@ import play.api.mvc._
 import play.api.{Configuration, Environment}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendController
-import uk.gov.hmrc.play.fsm.{JourneyController, JourneyIdSupport, JourneyService}
+import uk.gov.hmrc.play.fsm.{JourneyController, JourneyService}
 import uk.gov.hmrc.uploaddocuments.connectors.FrontendAuthConnector
+import uk.gov.hmrc.uploaddocuments.support.SHA256
 import uk.gov.hmrc.uploaddocuments.wiring.AppConfig
 
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, Future}
 
 /** Base controller class for a journey. */
 abstract class BaseJourneyController[S <: JourneyService[HeaderCarrier]](
@@ -36,7 +37,7 @@ abstract class BaseJourneyController[S <: JourneyService[HeaderCarrier]](
   val env: Environment,
   val config: Configuration
 ) extends FrontendController(controllerComponents) with I18nSupport with AuthActions
-    with JourneyController[HeaderCarrier] with JourneyIdSupport[HeaderCarrier] {
+    with JourneyController[HeaderCarrier] {
 
   final override val actionBuilder = controllerComponents.actionBuilder
   final override val messagesApi = controllerComponents.messagesApi
@@ -83,25 +84,29 @@ abstract class BaseJourneyController[S <: JourneyService[HeaderCarrier]](
   // Retrieval of journeyId configuration
   // ------------------------------------
 
-  private val journeyIdPathParamRegex = ".*?/journey/([A-Za-z0-9-]{36})/.*".r
+  private val journeyIdPathParamRegex = ".*?/journey/([a-fA-F0-9]+?)/.*".r
 
-  final override def journeyId(implicit rh: RequestHeader): Option[String] = {
-    val journeyIdFromPath = rh.path match {
+  final def journeyId(implicit rh: RequestHeader): Option[String] =
+    (rh.path match {
       case journeyIdPathParamRegex(id) => Some(id)
       case _                           => None
-    }
-
-    val idOpt = journeyIdFromPath
-      .orElse(rh.session.get(journeyService.journeyKey))
-
-    idOpt
-  }
+    })
+      .orElse(hc.sessionId.map(_.value).map(SHA256.compute))
 
   final def currentJourneyId(implicit rh: RequestHeader): String = journeyId.get
 
-  final override implicit def context(implicit rh: RequestHeader): HeaderCarrier =
-    appendJourneyId(super.hc)
+  final override implicit def context(implicit rh: RequestHeader): HeaderCarrier = {
+    val headerCarrier = super.hc(rh)
+    journeyId
+      .map(value => headerCarrier.withExtraHeaders(journeyService.journeyKey -> value))
+      .getOrElse(headerCarrier)
+  }
 
-  final override def amendContext(headerCarrier: HeaderCarrier)(key: String, value: String): HeaderCarrier =
-    headerCarrier.withExtraHeaders(key -> value)
+  final override def withValidRequest(
+    body: => Future[Result]
+  )(implicit rc: HeaderCarrier, request: Request[_], ec: ExecutionContext): Future[Result] =
+    journeyId match {
+      case None => Future.successful(Redirect(appConfig.govukStartUrl))
+      case _    => body
+    }
 }

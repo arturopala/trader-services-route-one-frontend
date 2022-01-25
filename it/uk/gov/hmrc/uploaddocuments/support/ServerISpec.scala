@@ -33,7 +33,7 @@ abstract class ServerISpec extends BaseISpec with GuiceOneServerPerSuite {
 
   val baseUrl: String = s"http://localhost:$port/upload-documents"
 
-  def requestWithoutJourneyId(path: String) =
+  def requestWithoutSessionId(path: String) =
     wsClient
       .url(s"$baseUrl$path")
 

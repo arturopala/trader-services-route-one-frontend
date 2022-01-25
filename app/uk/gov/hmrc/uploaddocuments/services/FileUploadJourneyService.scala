@@ -34,8 +34,8 @@ trait FileUploadJourneyService[RequestContext] extends PersistentJourneyService[
 
   // do not keep errors or transient states in the journey history
   override val breadcrumbsRetentionStrategy: Breadcrumbs => Breadcrumbs =
-    _.filterNot(s => s.isInstanceOf[model.IsError] || s.isInstanceOf[model.IsTransient])
-      .take(10) // retain last 10 states as a breadcrumbs
+    _.filterNot(s => s.isInstanceOf[model.IsTransient])
+      .take(2) // retain last two states as a breadcrumbs
 
   override def updateBreadcrumbs(
     newState: model.State,

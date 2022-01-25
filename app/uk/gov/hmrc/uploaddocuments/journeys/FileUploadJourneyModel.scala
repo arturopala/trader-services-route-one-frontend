@@ -16,19 +16,17 @@
 
 package uk.gov.hmrc.uploaddocuments.journeys
 
-import uk.gov.hmrc.uploaddocuments.models._
 import uk.gov.hmrc.play.fsm.JourneyModel
-import uk.gov.hmrc.uploaddocuments.connectors.UpscanInitiateRequest
-import scala.concurrent.Future
-import uk.gov.hmrc.uploaddocuments.connectors.FileUploadResultPushConnector
-import uk.gov.hmrc.uploaddocuments.connectors.UpscanInitiateResponse
-import scala.concurrent.ExecutionContext
+import uk.gov.hmrc.uploaddocuments.connectors.{FileUploadResultPushConnector, UpscanInitiateRequest, UpscanInitiateResponse}
+import uk.gov.hmrc.uploaddocuments.models._
+
+import scala.concurrent.{ExecutionContext, Future}
+import scala.util.Try
 
 object FileUploadJourneyModel extends JourneyModel {
 
   sealed trait State
   sealed trait IsTransient
-  sealed trait IsError
 
   override val root: State = State.Uninitialized
 
@@ -39,12 +37,12 @@ object FileUploadJourneyModel extends JourneyModel {
 
   /** Marker trait of permitted entry states. */
   trait CanEnterFileUpload extends State {
-    def config: FileUploadSessionConfig
+    def context: FileUploadContext
     def fileUploadsOpt: Option[FileUploads]
   }
 
   sealed trait FileUploadState extends State {
-    def config: FileUploadSessionConfig
+    def context: FileUploadContext
     def fileUploads: FileUploads
   }
 
@@ -53,20 +51,20 @@ object FileUploadJourneyModel extends JourneyModel {
     /** Root state of the journey. */
     final case object Uninitialized extends State
 
-    final case class Initialized(config: FileUploadSessionConfig, fileUploads: FileUploads)
+    final case class Initialized(context: FileUploadContext, fileUploads: FileUploads)
         extends State with CanEnterFileUpload {
       final def fileUploadsOpt: Option[FileUploads] =
         if (fileUploads.isEmpty) None else Some(fileUploads)
     }
 
-    final case class ContinueToHost(config: FileUploadSessionConfig, fileUploads: FileUploads)
+    final case class ContinueToHost(context: FileUploadContext, fileUploads: FileUploads)
         extends State with CanEnterFileUpload {
       final def fileUploadsOpt: Option[FileUploads] =
         if (fileUploads.isEmpty) None else Some(fileUploads)
     }
 
     final case class UploadFile(
-      config: FileUploadSessionConfig,
+      context: FileUploadContext,
       reference: String,
       uploadRequest: UploadRequest,
       fileUploads: FileUploads,
@@ -74,7 +72,7 @@ object FileUploadJourneyModel extends JourneyModel {
     ) extends FileUploadState
 
     final case class WaitingForFileVerification(
-      config: FileUploadSessionConfig,
+      context: FileUploadContext,
       reference: String,
       uploadRequest: UploadRequest,
       currentFileUpload: FileUpload,
@@ -82,13 +80,13 @@ object FileUploadJourneyModel extends JourneyModel {
     ) extends FileUploadState with IsTransient
 
     final case class FileUploaded(
-      config: FileUploadSessionConfig,
+      context: FileUploadContext,
       fileUploads: FileUploads,
       acknowledged: Boolean = false
     ) extends FileUploadState
 
     final case class UploadMultipleFiles(
-      config: FileUploadSessionConfig,
+      context: FileUploadContext,
       fileUploads: FileUploads
     ) extends FileUploadState
 
@@ -100,7 +98,7 @@ object FileUploadJourneyModel extends JourneyModel {
 
   /** Common file upload initialization helper. */
   private[journeys] final def gotoFileUploadOrUploaded(
-    config: FileUploadSessionConfig,
+    context: FileUploadContext,
     upscanRequest: String => UpscanInitiateRequest,
     upscanInitiate: UpscanInitiateApi,
     fileUploadsOpt: Option[FileUploads],
@@ -109,14 +107,14 @@ object FileUploadJourneyModel extends JourneyModel {
     val fileUploads = fileUploadsOpt.getOrElse(FileUploads())
     if ((showUploadSummaryIfAny && fileUploads.nonEmpty) || fileUploads.acceptedCount >= maxFileUploadsNumber)
       goto(
-        State.FileUploaded(config, fileUploads)
+        State.FileUploaded(context, fileUploads)
       )
     else {
       val nonce = Nonce.random
       for {
-        upscanResponse <- upscanInitiate(config.serviceId, upscanRequest(nonce.toString()))
+        upscanResponse <- upscanInitiate(context.config.serviceId, upscanRequest(nonce.toString()))
       } yield State.UploadFile(
-        config,
+        context,
         upscanResponse.reference,
         upscanResponse.uploadRequest,
         fileUploads + FileUpload.Initiated(nonce, Timestamp.now, upscanResponse.reference, None, None)
@@ -127,14 +125,19 @@ object FileUploadJourneyModel extends JourneyModel {
   object Transitions {
     import State._
 
-    final def initialize(request: FileUploadInitializationRequest) =
+    final def initialize(callbackAuthOpt: Option[CallbackAuth])(request: FileUploadInitializationRequest) =
       Transition { case _ =>
-        goto(Initialized(request.config, request.toFileUploads))
+        goto(
+          Initialized(
+            FileUploadContext(request.config, callbackAuthOpt.getOrElse(CallbackAuth.Any)),
+            request.toFileUploads
+          )
+        )
       }
 
     final val continueToHost =
       Transition {
-        case s: FileUploadState                  => goto(ContinueToHost(s.config, s.fileUploads))
+        case s: FileUploadState                  => goto(ContinueToHost(s.context, s.fileUploads))
         case Initialized(config, fileUploads)    => goto(ContinueToHost(config, fileUploads))
         case ContinueToHost(config, fileUploads) => goto(ContinueToHost(config, fileUploads))
       }
@@ -154,13 +157,13 @@ object FileUploadJourneyModel extends JourneyModel {
         case state: CanEnterFileUpload =>
           goto(
             UploadMultipleFiles(
-              config = state.config,
+              context = state.context,
               fileUploads = state.fileUploadsOpt.map(_.onlyAccepted).getOrElse(FileUploads())
             )
           )
 
         case state: FileUploadState =>
-          goto(UploadMultipleFiles(state.config, state.fileUploads.onlyAccepted))
+          goto(UploadMultipleFiles(state.context, state.fileUploads.onlyAccepted))
 
       }
 
@@ -173,7 +176,7 @@ object FileUploadJourneyModel extends JourneyModel {
           state.fileUploads.initiatedOrAcceptedCount < maxFileUploadsNumber
         ) {
           val nonce = Nonce.random
-          upscanInitiate(state.config.serviceId, upscanRequest(nonce.toString()))
+          upscanInitiate(state.context.config.serviceId, upscanRequest(nonce.toString()))
             .flatMap { upscanResponse =>
               goto(
                 state.copy(fileUploads =
@@ -197,7 +200,7 @@ object FileUploadJourneyModel extends JourneyModel {
       Transition {
         case state: CanEnterFileUpload =>
           gotoFileUploadOrUploaded(
-            state.config,
+            state.context,
             upscanRequest,
             upscanInitiate,
             state.fileUploadsOpt,
@@ -286,7 +289,7 @@ object FileUploadJourneyModel extends JourneyModel {
 
     /** Common transition helper based on the file upload status. */
     final def commonFileUploadStatusHandler(
-      config: FileUploadSessionConfig,
+      config: FileUploadContext,
       fileUploads: FileUploads,
       reference: String,
       uploadRequest: UploadRequest,
@@ -413,7 +416,7 @@ object FileUploadJourneyModel extends JourneyModel {
     /** Transition when async notification arrives from the Upscan. */
     final def upscanCallbackArrived(
       pushfileUploadResult: FileUploadResultPushApi
-    )(requestNonce: Nonce)(notification: UpscanNotification) = {
+    )(requestNonce: Nonce)(notification: UpscanNotification)(implicit ec: ExecutionContext) = {
       val now = Timestamp.now
 
       def updateFileUploads(fileUploads: FileUploads, allowStatusOverwrite: Boolean): (FileUploads, Boolean) = {
@@ -478,43 +481,61 @@ object FileUploadJourneyModel extends JourneyModel {
               fileUploads
             ) =>
           val (updatedFileUploads, newlyAccepted) = updateFileUploads(fileUploads, allowStatusOverwrite = false)
-          if (newlyAccepted)
-            pushfileUploadResult(FileUploadResultPushConnector.Request.from(current.config, updatedFileUploads))
-          val currentUpload = updatedFileUploads.files.find(_.reference == reference)
-          commonFileUploadStatusHandler(
-            config,
-            updatedFileUploads,
-            reference,
-            uploadRequest,
-            current.copy(fileUploads = updatedFileUploads)
-          )
-            .apply(currentUpload)
+          (if (newlyAccepted)
+             pushfileUploadResult(FileUploadResultPushConnector.Request.from(config, updatedFileUploads))
+           else Future.successful(Right(())))
+            .flatMap {
+              case Left(e) => fail(new Exception(s"$e"))
+              case Right(()) =>
+                val currentUpload = updatedFileUploads.files.find(_.reference == reference)
+                commonFileUploadStatusHandler(
+                  config,
+                  updatedFileUploads,
+                  reference,
+                  uploadRequest,
+                  current.copy(fileUploads = updatedFileUploads)
+                )
+                  .apply(currentUpload)
+            }
 
         case current @ UploadFile(config, reference, uploadRequest, fileUploads, errorOpt) =>
           val (updatedFileUploads, newlyAccepted) = updateFileUploads(fileUploads, allowStatusOverwrite = false)
-          if (newlyAccepted)
-            pushfileUploadResult(FileUploadResultPushConnector.Request.from(config, updatedFileUploads))
-          val currentUpload = updatedFileUploads.files.find(_.reference == reference)
-          commonFileUploadStatusHandler(
-            config,
-            updatedFileUploads,
-            reference,
-            uploadRequest,
-            current.copy(fileUploads = updatedFileUploads)
-          )
-            .apply(currentUpload)
+          (if (newlyAccepted)
+             pushfileUploadResult(FileUploadResultPushConnector.Request.from(config, updatedFileUploads))
+           else Future.successful(Right(())))
+            .flatMap {
+              case Left(e) => fail(new Exception(s"$e"))
+              case Right(()) =>
+                val currentUpload = updatedFileUploads.files.find(_.reference == reference)
+                commonFileUploadStatusHandler(
+                  config,
+                  updatedFileUploads,
+                  reference,
+                  uploadRequest,
+                  current.copy(fileUploads = updatedFileUploads)
+                )
+                  .apply(currentUpload)
+            }
 
         case current @ UploadMultipleFiles(config, fileUploads) =>
           val (updatedFileUploads, newlyAccepted) = updateFileUploads(fileUploads, allowStatusOverwrite = true)
-          if (newlyAccepted)
-            pushfileUploadResult(FileUploadResultPushConnector.Request.from(config, updatedFileUploads))
-          goto(current.copy(fileUploads = updatedFileUploads))
+          (if (newlyAccepted)
+             pushfileUploadResult(FileUploadResultPushConnector.Request.from(config, updatedFileUploads))
+           else Future.successful(Right(())))
+            .flatMap {
+              case Left(e)   => fail(new Exception(s"$e"))
+              case Right(()) => goto(current.copy(fileUploads = updatedFileUploads))
+            }
 
         case current @ ContinueToHost(config, fileUploads) =>
           val (updatedFileUploads, newlyAccepted) = updateFileUploads(fileUploads, allowStatusOverwrite = true)
-          if (newlyAccepted)
-            pushfileUploadResult(FileUploadResultPushConnector.Request.from(config, updatedFileUploads))
-          goto(current.copy(fileUploads = updatedFileUploads))
+          (if (newlyAccepted)
+             pushfileUploadResult(FileUploadResultPushConnector.Request.from(config, updatedFileUploads))
+           else Future.successful(Right(())))
+            .flatMap {
+              case Left(e)   => fail(new Exception(s"$e"))
+              case Right(()) => goto(current.copy(fileUploads = updatedFileUploads))
+            }
       }
     }
 
@@ -546,7 +567,7 @@ object FileUploadJourneyModel extends JourneyModel {
           val updatedFileUploads = current.fileUploads
             .copy(files = current.fileUploads.files.filterNot(_.reference == reference))
           if (updatedFileUploads.acceptedCount != current.fileUploads.acceptedCount) {
-            pushfileUploadResult(FileUploadResultPushConnector.Request.from(current.config, updatedFileUploads))
+            Try(pushfileUploadResult(FileUploadResultPushConnector.Request.from(current.context, updatedFileUploads)))
           }
           val updatedCurrentState = current.copy(fileUploads = updatedFileUploads)
           if (updatedFileUploads.isEmpty)
@@ -559,7 +580,7 @@ object FileUploadJourneyModel extends JourneyModel {
           val updatedFileUploads = current.fileUploads
             .copy(files = current.fileUploads.files.filterNot(_.reference == reference))
           if (updatedFileUploads.acceptedCount != current.fileUploads.acceptedCount) {
-            pushfileUploadResult(FileUploadResultPushConnector.Request.from(current.config, updatedFileUploads))
+            Try(pushfileUploadResult(FileUploadResultPushConnector.Request.from(current.context, updatedFileUploads)))
           }
           val updatedCurrentState = current.copy(fileUploads = updatedFileUploads)
           goto(updatedCurrentState)
@@ -569,13 +590,13 @@ object FileUploadJourneyModel extends JourneyModel {
       Transition {
         case s: FileUploadState =>
           if (s.fileUploads.nonEmpty)
-            goto(FileUploaded(s.config, s.fileUploads, acknowledged = true))
+            goto(FileUploaded(s.context, s.fileUploads, acknowledged = true))
           else
             Transitions.continueToHost.apply(s)
 
         case s: CanEnterFileUpload =>
           if (s.fileUploadsOpt.exists(_.nonEmpty))
-            goto(FileUploaded(s.config, s.fileUploadsOpt.get, acknowledged = true))
+            goto(FileUploaded(s.context, s.fileUploadsOpt.get, acknowledged = true))
           else
             Transitions.continueToHost.apply(s)
 

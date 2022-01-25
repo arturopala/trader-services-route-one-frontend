@@ -19,19 +19,17 @@ package uk.gov.hmrc.uploaddocuments.connectors
 import akka.actor.ActorSystem
 import com.codahale.metrics.MetricRegistry
 import com.kenshoo.play.metrics.Metrics
-import play.api.libs.json.{Format, Json}
+import play.api.Logger
+import play.api.libs.json.{Format, JsValue, Json, Writes}
 import uk.gov.hmrc.http.HttpReads.Implicits._
 import uk.gov.hmrc.http._
-import uk.gov.hmrc.uploaddocuments.models.{Nonce, UploadedFile}
+import uk.gov.hmrc.uploaddocuments.models.{CallbackAuth, FileUploadContext, FileUploads, Nonce, UploadedFile}
 import uk.gov.hmrc.uploaddocuments.wiring.AppConfig
 
 import java.net.URL
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
-import uk.gov.hmrc.uploaddocuments.models.FileUploadSessionConfig
-import uk.gov.hmrc.uploaddocuments.models.FileUploads
-import play.api.libs.json.JsValue
 
 /** Connector to push the results of the file uploads back to the host service. */
 @Singleton
@@ -49,18 +47,35 @@ class FileUploadResultPushConnector @Inject() (
   def push(request: Request)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Response] =
     retry(appConfig.fileUploadResultPushRetryIntervals: _*)(shouldRetry, errorMessage) {
       monitor(s"ConsumedAPI-push-file-uploads-${request.hostServiceId}-POST") {
-        val endpointUrl = new URL(request.url).toExternalForm
-        http
-          .POST[Payload, HttpResponse](endpointUrl, Payload.from(request))
-          .transformWith[Response] {
-            case Success(response) =>
-              Future.successful(
-                if (response.status == 204) SuccessResponse
-                else Left(Error(response.status, s"Failure to push to ${request.url}: ${response.body}"))
-              )
-            case Failure(exception) =>
-              Future.successful(Left(Error(0, exception.getMessage())))
+        Try(new URL(request.url).toExternalForm).fold(
+          e => {
+            val msg = s"${e.getClass().getName()} ${e.getMessage()}"
+            Logger(getClass).error(msg)
+            Future.successful(Left(Error(0, msg)))
+          },
+          endpointUrl => {
+            val wts = implicitly[Writes[FileUploadResultPushConnector.Payload]]
+            val rds = implicitly[HttpReads[HttpResponse]]
+            val ehc = request.callbackAuth.populate(hc)
+            http
+              .POST[Payload, HttpResponse](endpointUrl, Payload.from(request))(wts, rds, ehc, ec)
+              .transformWith[Response] {
+                case Success(response) =>
+                  Future.successful(
+                    if (response.status == 204) SuccessResponse
+                    else {
+                      val msg =
+                        s"Failure pushing uploaded files to ${request.url}: ${response.body.take(1024)} ${request.callbackAuth}"
+                      Logger(getClass).error(msg)
+                      Left(Error(response.status, msg))
+                    }
+                  )
+                case Failure(exception) =>
+                  Logger(getClass).error(exception.getMessage())
+                  Future.successful(Left(Error(0, exception.getMessage())))
+              }
           }
+        )
       }
     }
 
@@ -73,7 +88,8 @@ object FileUploadResultPushConnector {
     url: String,
     nonce: Nonce,
     uploadedFiles: Seq[UploadedFile],
-    context: Option[JsValue]
+    context: Option[JsValue],
+    callbackAuth: CallbackAuth = CallbackAuth.Any
   )
   case class Payload(nonce: Nonce, uploadedFiles: Seq[UploadedFile], context: Option[JsValue])
 
@@ -86,8 +102,15 @@ object FileUploadResultPushConnector {
   }
 
   object Request {
-    def from(config: FileUploadSessionConfig, fileUploads: FileUploads): Request =
-      Request(config.serviceId, config.resultPostUrl, config.nonce, fileUploads.toUploadedFiles, config.cargo)
+    def from(context: FileUploadContext, fileUploads: FileUploads): Request =
+      Request(
+        context.config.serviceId,
+        context.config.resultPostUrl,
+        context.config.nonce,
+        fileUploads.toUploadedFiles,
+        context.config.cargo,
+        context.callbackAuth
+      )
 
     implicit val format: Format[Request] = Json.format[Request]
   }
@@ -96,7 +119,7 @@ object FileUploadResultPushConnector {
     def from(request: Request): Payload =
       Payload(request.nonce, request.uploadedFiles, request.context)
 
-    def from(config: FileUploadSessionConfig, fileUploads: FileUploads): Payload =
+    def from(config: FileUploadContext, fileUploads: FileUploads): Payload =
       Payload.from(Request.from(config, fileUploads))
 
     implicit val format: Format[Payload] = Json.format[Payload]

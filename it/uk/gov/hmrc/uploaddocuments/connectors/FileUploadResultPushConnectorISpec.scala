@@ -68,7 +68,7 @@ class FileUploadResultPushConnectorISpec extends FileUploadResultPushConnectorIS
           val url = s"$wireMockBaseUrlAsString$path"
           givenHostPushEndpoint(path, Payload.from(request(url)), status)
           val result: Response = await(connector.push(request(url)))
-          result shouldBe Left(Error(status, s"Failure to push to $url: "))
+          result shouldBe Left(Error(status, s"Failure pushing uploaded files to $url:  CallbackAuth.Any"))
           verifyHostPushEndpointHasHappened(path, 1)
         }
       }
@@ -90,7 +90,7 @@ class FileUploadResultPushConnectorISpec extends FileUploadResultPushConnectorIS
           val url = s"$wireMockBaseUrlAsString$path"
           givenHostPushEndpoint(path, Payload.from(request(url)), status)
           val result: Response = await(connector.push(request(url)))
-          result shouldBe Left(Error(status, s"Failure to push to $url: "))
+          result shouldBe Left(Error(status, s"Failure pushing uploaded files to $url:  CallbackAuth.Any"))
           verifyHostPushEndpointHasHappened(path, 3)
         }
       }

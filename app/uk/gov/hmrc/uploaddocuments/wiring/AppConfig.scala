@@ -78,7 +78,7 @@ trait AppConfig {
 
   val fileUploadResultPushRetryIntervals: Seq[FiniteDuration]
 
-  val requireEnrolmentFeature: Boolean = true
+  val requireEnrolmentFeature: Boolean = false
 
 }
 

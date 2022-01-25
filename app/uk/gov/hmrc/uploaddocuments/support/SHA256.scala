@@ -14,19 +14,23 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.uploaddocuments.models
+package uk.gov.hmrc.uploaddocuments.support
 
-import play.api.libs.json.{Format, JsValue, Json}
+import java.security.MessageDigest
 
-final case class FileUploadSessionConfig(
-  serviceId: String,
-  nonce: Nonce,
-  continueUrl: String,
-  backlinkUrl: String,
-  resultPostUrl: String,
-  cargo: Option[JsValue] = None // data carried through, from and to host service
-)
+object SHA256 {
 
-object FileUploadSessionConfig {
-  implicit val format: Format[FileUploadSessionConfig] = Json.format[FileUploadSessionConfig]
+  final def compute(value: String): String = {
+    val digest = MessageDigest.getInstance("SHA-256")
+    digest.update(value.toCharArray().map(_.toByte))
+    convertBytesToHex(digest.digest())
+  }
+
+  private def convertBytesToHex(bytes: Array[Byte]): String = {
+    val sb = new StringBuilder
+    for (b <- bytes)
+      sb.append(String.format("%02x", Byte.box(b)))
+    sb.toString
+  }
+
 }

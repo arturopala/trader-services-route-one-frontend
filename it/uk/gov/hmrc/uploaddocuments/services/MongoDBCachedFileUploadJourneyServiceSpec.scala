@@ -1,12 +1,11 @@
 package uk.gov.hmrc.uploaddocuments.services
 
 import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.uploaddocuments.models.{FileUploadInitializationRequest, FileUploadSessionConfig, FileUploads}
-import uk.gov.hmrc.uploaddocuments.support.AppISpec
+import uk.gov.hmrc.uploaddocuments.models.{FileUploadContext, FileUploadInitializationRequest, FileUploadSessionConfig, FileUploads, Nonce}
+import uk.gov.hmrc.uploaddocuments.support.{AppISpec, SHA256}
 
 import java.util.UUID
 import scala.concurrent.ExecutionContext.Implicits.global
-import uk.gov.hmrc.uploaddocuments.models.Nonce
 
 class MongoDBCachedFileUploadJourneyServiceSpec extends AppISpec {
 
@@ -17,17 +16,18 @@ class MongoDBCachedFileUploadJourneyServiceSpec extends AppISpec {
 
   implicit val hc: HeaderCarrier =
     HeaderCarrier()
-      .withExtraHeaders("FileUploadJourney" -> UUID.randomUUID.toString)
+      .withExtraHeaders("FileUploadJourney" -> SHA256.compute(UUID.randomUUID.toString))
 
-  val fileUploadConfig = FileUploadSessionConfig("dummy-id", Nonce.random, "/foo", "/bar", "/zoo")
+  val fileUploadContext =
+    FileUploadContext(config = FileUploadSessionConfig("dummy-id", Nonce.random, "/foo", "/bar", "/zoo"))
   val request =
-    FileUploadInitializationRequest(config = fileUploadConfig, existingFiles = Seq.empty)
+    FileUploadInitializationRequest(config = fileUploadContext.config, existingFiles = Seq.empty)
 
   "MongoDBCachedFileUploadJourneyService" should {
     "apply initialize transition" in {
-      await(service.apply(Transitions.initialize(request))) shouldBe (
+      await(service.apply(Transitions.initialize(None)(request))) shouldBe (
         (
-          State.Initialized(fileUploadConfig, FileUploads()),
+          State.Initialized(fileUploadContext, FileUploads()),
           List(State.Uninitialized)
         )
       )
@@ -35,27 +35,27 @@ class MongoDBCachedFileUploadJourneyServiceSpec extends AppISpec {
 
     "keep breadcrumbs when no change in state" in {
       service.updateBreadcrumbs(
-        State.Initialized(fileUploadConfig, FileUploads()),
-        State.Initialized(fileUploadConfig, FileUploads()),
+        State.Initialized(fileUploadContext, FileUploads()),
+        State.Initialized(fileUploadContext, FileUploads()),
         Nil
       ) shouldBe Nil
     }
 
     "update breadcrumbs when new state" in {
       service.updateBreadcrumbs(
-        State.Initialized(fileUploadConfig, FileUploads()),
-        State.ContinueToHost(fileUploadConfig, FileUploads()),
+        State.Initialized(fileUploadContext, FileUploads()),
+        State.ContinueToHost(fileUploadContext, FileUploads()),
         Nil
       ) shouldBe List(
-        State.ContinueToHost(fileUploadConfig, FileUploads(List()))
+        State.ContinueToHost(fileUploadContext, FileUploads(List()))
       )
     }
 
     "trim breadcrumbs when returning back to the previous state" in {
       service.updateBreadcrumbs(
-        State.Initialized(fileUploadConfig, FileUploads()),
-        State.ContinueToHost(fileUploadConfig, FileUploads()),
-        List(State.Initialized(fileUploadConfig, FileUploads()))
+        State.Initialized(fileUploadContext, FileUploads()),
+        State.ContinueToHost(fileUploadContext, FileUploads()),
+        List(State.Initialized(fileUploadContext, FileUploads()))
       ) shouldBe Nil
     }
   }

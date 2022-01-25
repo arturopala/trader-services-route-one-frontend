@@ -36,12 +36,14 @@ class FileUploadJourneyModelSpec
 
   override val model = FileUploadJourneyModel
 
-  val fileUploadSessionConfig = FileUploadSessionConfig(
-    serviceId = "dummy-hmrc-service",
-    nonce = Nonce.random,
-    continueUrl = "/continue-url",
-    backlinkUrl = "/backlink-url",
-    resultPostUrl = "/result-post-url"
+  val fileUploadContext = FileUploadContext(
+    config = FileUploadSessionConfig(
+      serviceId = "dummy-hmrc-service",
+      nonce = Nonce.random,
+      continueUrl = "/continue-url",
+      backlinkUrl = "/backlink-url",
+      resultPostUrl = "/result-post-url"
+    )
   )
 
   "FileUploadJourneyModel" when {
@@ -64,10 +66,10 @@ class FileUploadJourneyModelSpec
             Some(10 * 1024 * 1024)
           )
         given(
-          Initialized(fileUploadSessionConfig, FileUploads())
+          Initialized(fileUploadContext, FileUploads())
         ) when initiateFileUpload(upscanRequest)(mockUpscanInitiate) should thenGo(
           UploadFile(
-            fileUploadSessionConfig,
+            fileUploadContext,
             "foo-bar-ref",
             UploadRequest(href = "https://s3.bucket", fields = Map("callbackUrl" -> "https://foo.bar/callback")),
             FileUploads(files = Seq(FileUpload.Initiated(Nonce.Any, Timestamp.Any, "foo-bar-ref")))
@@ -76,11 +78,11 @@ class FileUploadJourneyModelSpec
       }
 
       "go back to FileUploaded when backToFileUploaded and non-empty file uploads" in {
-        given(Initialized(fileUploadSessionConfig, nonEmptyFileUploads))
+        given(Initialized(fileUploadContext, nonEmptyFileUploads))
           .when(backToFileUploaded)
           .thenGoes(
             FileUploaded(
-              fileUploadSessionConfig,
+              fileUploadContext,
               nonEmptyFileUploads,
               acknowledged = true
             )
@@ -88,39 +90,43 @@ class FileUploadJourneyModelSpec
       }
 
       "go back to ContinueToHost when backToFileUploaded and empty file uploads" in {
-        given(Initialized(fileUploadSessionConfig, FileUploads()))
+        given(Initialized(fileUploadContext, FileUploads()))
           .when(backToFileUploaded)
-          .thenGoes(ContinueToHost(fileUploadSessionConfig, FileUploads()))
+          .thenGoes(ContinueToHost(fileUploadContext, FileUploads()))
       }
 
     }
 
     "at state UploadMultipleFiles" should {
       "go back to Initialized when initialize" in {
-        given(UploadMultipleFiles(fileUploadSessionConfig, nonEmptyFileUploads))
+        given(UploadMultipleFiles(fileUploadContext, nonEmptyFileUploads))
           .when(
-            initialize(FileUploadInitializationRequest(fileUploadSessionConfig, nonEmptyFileUploads.toUploadedFiles))
+            initialize(None)(
+              FileUploadInitializationRequest(fileUploadContext.config, nonEmptyFileUploads.toUploadedFiles)
+            )
           )
-          .thenGoes(Initialized(fileUploadSessionConfig, nonEmptyFileUploads))
+          .thenGoes(
+            Initialized(fileUploadContext, nonEmptyFileUploads)
+          )
       }
 
       "go to ContinueToHost when non-empty file uploads and continueToHost" in {
         given(
-          UploadMultipleFiles(fileUploadSessionConfig, nonEmptyFileUploads)
+          UploadMultipleFiles(fileUploadContext, nonEmptyFileUploads)
         ) when continueToHost should thenGo(
-          ContinueToHost(fileUploadSessionConfig, nonEmptyFileUploads)
+          ContinueToHost(fileUploadContext, nonEmptyFileUploads)
         )
       }
 
       "go to ContinueToHost when empty file uploads and continueToHost transition" in {
         given(
           UploadMultipleFiles(
-            fileUploadSessionConfig,
+            fileUploadContext,
             FileUploads()
           )
         ) when continueToHost should thenGo(
           ContinueToHost(
-            fileUploadSessionConfig,
+            fileUploadContext,
             FileUploads()
           )
         )
@@ -129,7 +135,7 @@ class FileUploadJourneyModelSpec
       "stay and filter accepted uploads when export and toUploadMultipleFiles transition" in {
         given(
           UploadMultipleFiles(
-            fileUploadSessionConfig,
+            fileUploadContext,
             nonEmptyFileUploads + FileUpload.Initiated(Nonce.Any, Timestamp.Any, "foo-2") + FileUpload
               .Posted(Nonce.Any, Timestamp.Any, "foo-3") + FileUpload.Accepted(
               Nonce(4),
@@ -145,7 +151,7 @@ class FileUploadJourneyModelSpec
           )
         ) when toUploadMultipleFiles should thenGo(
           UploadMultipleFiles(
-            fileUploadSessionConfig,
+            fileUploadContext,
             nonEmptyFileUploads + FileUpload.Accepted(
               Nonce(4),
               Timestamp.Any,
@@ -164,7 +170,7 @@ class FileUploadJourneyModelSpec
       "stay and filter accepted uploads when import and toUploadMultipleFiles transition" in {
         given(
           UploadMultipleFiles(
-            fileUploadSessionConfig,
+            fileUploadContext,
             nonEmptyFileUploads + FileUpload.Initiated(Nonce.Any, Timestamp.Any, "foo-2") + FileUpload
               .Posted(Nonce.Any, Timestamp.Any, "foo-3") + FileUpload.Accepted(
               Nonce(4),
@@ -180,7 +186,7 @@ class FileUploadJourneyModelSpec
           )
         ) when toUploadMultipleFiles should thenGo(
           UploadMultipleFiles(
-            fileUploadSessionConfig,
+            fileUploadContext,
             nonEmptyFileUploads + FileUpload.Accepted(
               Nonce(4),
               Timestamp.Any,
@@ -199,12 +205,12 @@ class FileUploadJourneyModelSpec
       "initiate new file upload when initiateNextFileUpload transition and empty uploads" in {
         given(
           UploadMultipleFiles(
-            fileUploadSessionConfig,
+            fileUploadContext,
             FileUploads()
           )
         ) when initiateNextFileUpload("001")(testUpscanRequest)(mockUpscanInitiate) should thenGo(
           UploadMultipleFiles(
-            fileUploadSessionConfig,
+            fileUploadContext,
             FileUploads() +
               FileUpload.Initiated(
                 Nonce.Any,
@@ -224,12 +230,12 @@ class FileUploadJourneyModelSpec
         ) + FileUpload.Rejected(Nonce(9), Timestamp.Any, "foo-bar-ref-9", S3UploadError("a", "b", "c"))
         given(
           UploadMultipleFiles(
-            fileUploadSessionConfig,
+            fileUploadContext,
             fileUploads
           )
         ) when initiateNextFileUpload("001")(testUpscanRequest)(mockUpscanInitiate) should thenGo(
           UploadMultipleFiles(
-            fileUploadSessionConfig,
+            fileUploadContext,
             fileUploads +
               FileUpload.Initiated(
                 Nonce.Any,
@@ -245,13 +251,13 @@ class FileUploadJourneyModelSpec
       "do nothing when initiateNextFileUpload with existing uploadId" in {
         given(
           UploadMultipleFiles(
-            fileUploadSessionConfig,
+            fileUploadContext,
             nonEmptyFileUploads +
               FileUpload.Initiated(Nonce.Any, Timestamp.Any, "foo-bar-ref", uploadId = Some("101"))
           )
         ) when initiateNextFileUpload("101")(testUpscanRequest)(mockUpscanInitiate) should thenGo(
           UploadMultipleFiles(
-            fileUploadSessionConfig,
+            fileUploadContext,
             nonEmptyFileUploads +
               FileUpload.Initiated(Nonce.Any, Timestamp.Any, "foo-bar-ref", uploadId = Some("101"))
           )
@@ -265,12 +271,12 @@ class FileUploadJourneyModelSpec
         )
         given(
           UploadMultipleFiles(
-            fileUploadSessionConfig,
+            fileUploadContext,
             fileUploads
           )
         ) when initiateNextFileUpload("101")(testUpscanRequest)(mockUpscanInitiate) should thenGo(
           UploadMultipleFiles(
-            fileUploadSessionConfig,
+            fileUploadContext,
             fileUploads
           )
         )
@@ -279,7 +285,7 @@ class FileUploadJourneyModelSpec
       "mark file upload as POSTED when markUploadAsPosted transition" in {
         given(
           UploadMultipleFiles(
-            fileUploadSessionConfig,
+            fileUploadContext,
             FileUploads(files =
               Seq(
                 FileUpload.Posted(Nonce(1), Timestamp.Any, "foo-bar-ref-1"),
@@ -290,7 +296,7 @@ class FileUploadJourneyModelSpec
           )
         ) when markUploadAsPosted(S3UploadSuccess("foo-bar-ref-2", Some("bucket-123"))) should thenGo(
           UploadMultipleFiles(
-            fileUploadSessionConfig,
+            fileUploadContext,
             FileUploads(files =
               Seq(
                 FileUpload.Posted(Nonce(1), Timestamp.Any, "foo-bar-ref-1"),
@@ -304,7 +310,7 @@ class FileUploadJourneyModelSpec
 
       "do nothing when markUploadAsPosted transition and already in POSTED state" in {
         val state = UploadMultipleFiles(
-          fileUploadSessionConfig,
+          fileUploadContext,
           FileUploads(files =
             Seq(
               FileUpload.Posted(Nonce(1), Timestamp.Any, "foo-bar-ref-1"),
@@ -319,7 +325,7 @@ class FileUploadJourneyModelSpec
       "overwrite upload status when markUploadAsPosted transition and already in ACCEPTED state" in {
         given(
           UploadMultipleFiles(
-            fileUploadSessionConfig,
+            fileUploadContext,
             FileUploads(files =
               Seq(
                 FileUpload.Posted(Nonce(1), Timestamp.Any, "foo-bar-ref-1"),
@@ -341,7 +347,7 @@ class FileUploadJourneyModelSpec
           )
         ) when markUploadAsPosted(S3UploadSuccess("foo-bar-ref-4", Some("bucket-123"))) should thenGo(
           UploadMultipleFiles(
-            fileUploadSessionConfig,
+            fileUploadContext,
             FileUploads(files =
               Seq(
                 FileUpload.Posted(Nonce(1), Timestamp.Any, "foo-bar-ref-1"),
@@ -356,7 +362,7 @@ class FileUploadJourneyModelSpec
 
       "do not overwrite upload status when markUploadAsPosted transition and already in ACCEPTED state but timestamp gap is too small" in {
         val state = UploadMultipleFiles(
-          fileUploadSessionConfig,
+          fileUploadContext,
           FileUploads(files =
             Seq(
               FileUpload.Posted(Nonce(1), Timestamp.Any, "foo-bar-ref-1"),
@@ -381,7 +387,7 @@ class FileUploadJourneyModelSpec
 
       "do nothing when markUploadAsPosted transition and none matching upload exist" in {
         val state = UploadMultipleFiles(
-          fileUploadSessionConfig,
+          fileUploadContext,
           FileUploads(files =
             Seq(
               FileUpload.Posted(Nonce(1), Timestamp.Any, "foo-bar-ref-1"),
@@ -396,7 +402,7 @@ class FileUploadJourneyModelSpec
       "mark file upload as REJECTED when markUploadAsRejected transition" in {
         given(
           UploadMultipleFiles(
-            fileUploadSessionConfig,
+            fileUploadContext,
             FileUploads(files =
               Seq(
                 FileUpload.Posted(Nonce(1), Timestamp.Any, "foo-bar-ref-1"),
@@ -409,7 +415,7 @@ class FileUploadJourneyModelSpec
           S3UploadError("foo-bar-ref-2", "errorCode1", "errorMessage2")
         ) should thenGo(
           UploadMultipleFiles(
-            fileUploadSessionConfig,
+            fileUploadContext,
             FileUploads(files =
               Seq(
                 FileUpload.Posted(Nonce(1), Timestamp.Any, "foo-bar-ref-1"),
@@ -429,7 +435,7 @@ class FileUploadJourneyModelSpec
       "overwrite upload status when markUploadAsRejected transition and already in REJECTED state" in {
         given(
           UploadMultipleFiles(
-            fileUploadSessionConfig,
+            fileUploadContext,
             FileUploads(files =
               Seq(
                 FileUpload.Posted(Nonce(1), Timestamp.Any, "foo-bar-ref-1"),
@@ -442,7 +448,7 @@ class FileUploadJourneyModelSpec
           S3UploadError("foo-bar-ref-3", "errorCode1", "errorMessage2")
         ) should thenGo(
           UploadMultipleFiles(
-            fileUploadSessionConfig,
+            fileUploadContext,
             FileUploads(files =
               Seq(
                 FileUpload.Posted(Nonce(1), Timestamp.Any, "foo-bar-ref-1"),
@@ -462,7 +468,7 @@ class FileUploadJourneyModelSpec
       "overwrite upload status when markUploadAsRejected transition and already in ACCEPTED state" in {
         given(
           UploadMultipleFiles(
-            fileUploadSessionConfig,
+            fileUploadContext,
             FileUploads(files =
               Seq(
                 FileUpload.Posted(Nonce(1), Timestamp.Any, "foo-bar-ref-1"),
@@ -486,7 +492,7 @@ class FileUploadJourneyModelSpec
           S3UploadError("foo-bar-ref-4", "errorCode1", "errorMessage2")
         ) should thenGo(
           UploadMultipleFiles(
-            fileUploadSessionConfig,
+            fileUploadContext,
             FileUploads(files =
               Seq(
                 FileUpload.Posted(Nonce(1), Timestamp.Any, "foo-bar-ref-1"),
@@ -506,7 +512,7 @@ class FileUploadJourneyModelSpec
 
       "do nothing when markUploadAsRejected transition and none matching file upload found" in {
         val state = UploadMultipleFiles(
-          fileUploadSessionConfig,
+          fileUploadContext,
           FileUploads(files =
             Seq(
               FileUpload.Posted(Nonce(1), Timestamp.Any, "foo-bar-ref-1"),
@@ -525,7 +531,7 @@ class FileUploadJourneyModelSpec
           _ => Future.successful(FileUploadResultPushConnector.SuccessResponse)
         given(
           UploadMultipleFiles(
-            fileUploadSessionConfig,
+            fileUploadContext,
             FileUploads(files =
               Seq(
                 FileUpload.Posted(Nonce(1), Timestamp.Any, "foo-bar-ref-1"),
@@ -548,7 +554,7 @@ class FileUploadJourneyModelSpec
           )
         ) should thenGo(
           UploadMultipleFiles(
-            fileUploadSessionConfig,
+            fileUploadContext,
             FileUploads(files =
               Seq(
                 acceptedFileUpload,
@@ -560,12 +566,12 @@ class FileUploadJourneyModelSpec
         )
       }
 
-      "update file upload status to ACCEPTED and ignore push failure" in {
+      "do not update file upload status to ACCEPTED if push failure" in {
         val mockPushFileUploadResult: FileUploadResultPushApi =
           _ => Future.successful(Left(FileUploadResultPushConnector.Error(500, "")))
         given(
           UploadMultipleFiles(
-            fileUploadSessionConfig,
+            fileUploadContext,
             FileUploads(files =
               Seq(
                 FileUpload.Posted(Nonce(1), Timestamp.Any, "foo-bar-ref-1"),
@@ -574,30 +580,21 @@ class FileUploadJourneyModelSpec
               )
             )
           )
-        ) when upscanCallbackArrived(mockPushFileUploadResult)(Nonce(1))(
-          UpscanFileReady(
-            reference = "foo-bar-ref-1",
-            downloadUrl = "https://bucketName.s3.eu-west-2.amazonaws.com?1235676",
-            uploadDetails = UpscanNotification.UploadDetails(
-              uploadTimestamp = ZonedDateTime.parse("2018-04-24T09:30:00Z"),
-              checksum = "396f101dd52e8b2ace0dcf5ed09b1d1f030e608938510ce46e7a5c7a4e775100",
-              fileName = "test.pdf",
-              fileMimeType = "application/pdf",
-              size = 4567890
-            )
-          )
-        ) should thenGo(
-          UploadMultipleFiles(
-            fileUploadSessionConfig,
-            FileUploads(files =
-              Seq(
-                acceptedFileUpload,
-                FileUpload.Initiated(Nonce(2), Timestamp.Any, "foo-bar-ref-2"),
-                FileUpload.Rejected(Nonce(3), Timestamp.Any, "foo-bar-ref-3", S3UploadError("a", "b", "c"))
+        ).when(
+          upscanCallbackArrived(mockPushFileUploadResult)(Nonce(1))(
+            UpscanFileReady(
+              reference = "foo-bar-ref-1",
+              downloadUrl = "https://bucketName.s3.eu-west-2.amazonaws.com?1235676",
+              uploadDetails = UpscanNotification.UploadDetails(
+                uploadTimestamp = ZonedDateTime.parse("2018-04-24T09:30:00Z"),
+                checksum = "396f101dd52e8b2ace0dcf5ed09b1d1f030e608938510ce46e7a5c7a4e775100",
+                fileName = "test.pdf",
+                fileMimeType = "application/pdf",
+                size = 4567890
               )
             )
           )
-        )
+        ).thenFailsWith[Exception]
       }
 
       "update file upload status to ACCEPTED with sanitized name of the file" in {
@@ -605,7 +602,7 @@ class FileUploadJourneyModelSpec
           _ => Future.successful(FileUploadResultPushConnector.SuccessResponse)
         given(
           UploadMultipleFiles(
-            fileUploadSessionConfig,
+            fileUploadContext,
             FileUploads(files =
               Seq(
                 FileUpload.Posted(Nonce(1), Timestamp.Any, "foo-bar-ref-1"),
@@ -628,7 +625,7 @@ class FileUploadJourneyModelSpec
           )
         ) should thenGo(
           UploadMultipleFiles(
-            fileUploadSessionConfig,
+            fileUploadContext,
             FileUploads(files =
               Seq(
                 FileUpload.Accepted(
@@ -654,7 +651,7 @@ class FileUploadJourneyModelSpec
         val mockPushFileUploadResult: FileUploadResultPushApi =
           _ => Future.successful(FileUploadResultPushConnector.SuccessResponse)
         val state = UploadMultipleFiles(
-          fileUploadSessionConfig,
+          fileUploadContext,
           FileUploads(files =
             Seq(
               FileUpload.Posted(Nonce(1), Timestamp.Any, "foo-bar-ref-1"),
@@ -683,7 +680,7 @@ class FileUploadJourneyModelSpec
           _ => Future.successful(FileUploadResultPushConnector.SuccessResponse)
         given(
           UploadMultipleFiles(
-            fileUploadSessionConfig,
+            fileUploadContext,
             FileUploads(files =
               Seq(
                 FileUpload.Accepted(
@@ -716,7 +713,7 @@ class FileUploadJourneyModelSpec
           )
         ) should thenGo(
           UploadMultipleFiles(
-            fileUploadSessionConfig,
+            fileUploadContext,
             FileUploads(files =
               Seq(
                 acceptedFileUpload,
@@ -733,7 +730,7 @@ class FileUploadJourneyModelSpec
         val mockPushFileUploadResult: FileUploadResultPushApi =
           _ => Future.successful(FileUploadResultPushConnector.SuccessResponse)
         val state = UploadMultipleFiles(
-          fileUploadSessionConfig,
+          fileUploadContext,
           FileUploads(files =
             Seq(
               FileUpload.Accepted(
@@ -772,7 +769,7 @@ class FileUploadJourneyModelSpec
           _ => Future.successful(FileUploadResultPushConnector.SuccessResponse)
         given(
           UploadMultipleFiles(
-            fileUploadSessionConfig,
+            fileUploadContext,
             FileUploads(files =
               Seq(
                 FileUpload.Rejected(Nonce(1), Timestamp.Any, "foo-bar-ref-1", S3UploadError("a", "b", "c")),
@@ -795,7 +792,7 @@ class FileUploadJourneyModelSpec
           )
         ) should thenGo(
           UploadMultipleFiles(
-            fileUploadSessionConfig,
+            fileUploadContext,
             FileUploads(files =
               Seq(
                 acceptedFileUpload,
@@ -812,7 +809,7 @@ class FileUploadJourneyModelSpec
           _ => Future.successful(FileUploadResultPushConnector.SuccessResponse)
         given(
           UploadMultipleFiles(
-            fileUploadSessionConfig,
+            fileUploadContext,
             FileUploads(files =
               Seq(
                 FileUpload.Failed(
@@ -843,7 +840,7 @@ class FileUploadJourneyModelSpec
           )
         ) should thenGo(
           UploadMultipleFiles(
-            fileUploadSessionConfig,
+            fileUploadContext,
             FileUploads(files =
               Seq(
                 acceptedFileUpload,
@@ -860,7 +857,7 @@ class FileUploadJourneyModelSpec
           _ => Future.successful(FileUploadResultPushConnector.SuccessResponse)
         given(
           UploadMultipleFiles(
-            fileUploadSessionConfig,
+            fileUploadContext,
             FileUploads(files =
               Seq(
                 FileUpload.Posted(Nonce(1), Timestamp.Any, "foo-bar-ref-1"),
@@ -879,7 +876,7 @@ class FileUploadJourneyModelSpec
           )
         ) should thenGo(
           UploadMultipleFiles(
-            fileUploadSessionConfig,
+            fileUploadContext,
             FileUploads(files =
               Seq(
                 FileUpload.Failed(
@@ -903,7 +900,7 @@ class FileUploadJourneyModelSpec
         val mockPushFileUploadResult: FileUploadResultPushApi =
           _ => Future.successful(FileUploadResultPushConnector.SuccessResponse)
         val state = UploadMultipleFiles(
-          fileUploadSessionConfig,
+          fileUploadContext,
           FileUploads(files =
             Seq(
               FileUpload.Posted(Nonce(1), Timestamp.Any, "foo-bar-ref-1"),
@@ -928,7 +925,7 @@ class FileUploadJourneyModelSpec
           _ => Future.successful(FileUploadResultPushConnector.SuccessResponse)
         given(
           UploadMultipleFiles(
-            fileUploadSessionConfig,
+            fileUploadContext,
             FileUploads(files =
               Seq(
                 FileUpload.Failed(
@@ -955,7 +952,7 @@ class FileUploadJourneyModelSpec
           )
         ) should thenGo(
           UploadMultipleFiles(
-            fileUploadSessionConfig,
+            fileUploadContext,
             FileUploads(files =
               Seq(
                 FileUpload.Failed(
@@ -980,7 +977,7 @@ class FileUploadJourneyModelSpec
           _ => Future.successful(FileUploadResultPushConnector.SuccessResponse)
         given(
           UploadMultipleFiles(
-            fileUploadSessionConfig,
+            fileUploadContext,
             FileUploads(files =
               Seq(
                 FileUpload.Accepted(
@@ -1009,7 +1006,7 @@ class FileUploadJourneyModelSpec
           )
         ) should thenGo(
           UploadMultipleFiles(
-            fileUploadSessionConfig,
+            fileUploadContext,
             FileUploads(files =
               Seq(
                 FileUpload.Failed(
@@ -1034,7 +1031,7 @@ class FileUploadJourneyModelSpec
           _ => Future.successful(FileUploadResultPushConnector.SuccessResponse)
         given(
           UploadMultipleFiles(
-            fileUploadSessionConfig,
+            fileUploadContext,
             FileUploads(files =
               Seq(
                 FileUpload.Posted(Nonce(1), Timestamp.Any, "foo-bar-ref-1"),
@@ -1058,7 +1055,7 @@ class FileUploadJourneyModelSpec
           mockPushFileUploadResult
         ) should thenGo(
           UploadMultipleFiles(
-            fileUploadSessionConfig,
+            fileUploadContext,
             FileUploads(files =
               Seq(
                 FileUpload.Posted(Nonce(1), Timestamp.Any, "foo-bar-ref-1"),
@@ -1074,7 +1071,7 @@ class FileUploadJourneyModelSpec
         val mockPushFileUploadResult: FileUploadResultPushApi =
           _ => Future.successful(FileUploadResultPushConnector.SuccessResponse)
         val state = UploadMultipleFiles(
-          fileUploadSessionConfig,
+          fileUploadContext,
           FileUploads(files =
             Seq(
               FileUpload.Posted(Nonce(1), Timestamp.Any, "foo-bar-ref-1"),
@@ -1104,7 +1101,7 @@ class FileUploadJourneyModelSpec
       "go to WaitingForFileVerification when waitForFileVerification and not verified yet" in {
         given(
           UploadFile(
-            fileUploadSessionConfig,
+            fileUploadContext,
             "foo-bar-ref-2",
             UploadRequest(
               href = "https://s3.bucket",
@@ -1140,7 +1137,7 @@ class FileUploadJourneyModelSpec
           )
         ) when waitForFileVerification should thenGo(
           WaitingForFileVerification(
-            fileUploadSessionConfig,
+            fileUploadContext,
             "foo-bar-ref-2",
             UploadRequest(
               href = "https://s3.bucket",
@@ -1181,7 +1178,7 @@ class FileUploadJourneyModelSpec
       "go to FileUploaded when waitForFileVerification and accepted already" in {
         given(
           UploadFile(
-            fileUploadSessionConfig,
+            fileUploadContext,
             "foo-bar-ref-3",
             UploadRequest(
               href = "https://s3.bucket",
@@ -1217,7 +1214,7 @@ class FileUploadJourneyModelSpec
           )
         ) when waitForFileVerification should thenGo(
           FileUploaded(
-            fileUploadSessionConfig,
+            fileUploadContext,
             FileUploads(files =
               Seq(
                 FileUpload.Posted(Nonce(1), Timestamp.Any, "foo-bar-ref-1"),
@@ -1248,7 +1245,7 @@ class FileUploadJourneyModelSpec
       "go to UploadFile when waitForFileVerification and file upload already rejected" in {
         given(
           UploadFile(
-            fileUploadSessionConfig,
+            fileUploadContext,
             "foo-bar-ref-4",
             UploadRequest(
               href = "https://s3.bucket",
@@ -1284,7 +1281,7 @@ class FileUploadJourneyModelSpec
           )
         ) when waitForFileVerification should thenGo(
           UploadFile(
-            fileUploadSessionConfig,
+            fileUploadContext,
             "foo-bar-ref-4",
             UploadRequest(
               href = "https://s3.bucket",
@@ -1331,7 +1328,7 @@ class FileUploadJourneyModelSpec
           _ => Future.successful(FileUploadResultPushConnector.SuccessResponse)
         given(
           UploadFile(
-            fileUploadSessionConfig,
+            fileUploadContext,
             "foo-bar-ref-1",
             UploadRequest(
               href = "https://s3.bucket",
@@ -1357,7 +1354,7 @@ class FileUploadJourneyModelSpec
           )
         ) should thenGo(
           FileUploaded(
-            fileUploadSessionConfig,
+            fileUploadContext,
             FileUploads(files = Seq(acceptedFileUpload))
           )
         )
@@ -1368,7 +1365,7 @@ class FileUploadJourneyModelSpec
           _ => Future.successful(FileUploadResultPushConnector.SuccessResponse)
         given(
           UploadFile(
-            fileUploadSessionConfig,
+            fileUploadContext,
             "foo-bar-ref-1",
             UploadRequest(
               href = "https://s3.bucket",
@@ -1409,7 +1406,7 @@ class FileUploadJourneyModelSpec
           )
         ) should thenGo(
           UploadFile(
-            fileUploadSessionConfig,
+            fileUploadContext,
             "foo-bar-ref-1",
             UploadRequest(
               href = "https://s3.bucket",
@@ -1458,7 +1455,7 @@ class FileUploadJourneyModelSpec
           _ => Future.successful(FileUploadResultPushConnector.SuccessResponse)
         given(
           UploadFile(
-            fileUploadSessionConfig,
+            fileUploadContext,
             "foo-bar-ref-1",
             UploadRequest(
               href = "https://s3.bucket",
@@ -1480,7 +1477,7 @@ class FileUploadJourneyModelSpec
           )
         ) should thenGo(
           UploadFile(
-            fileUploadSessionConfig,
+            fileUploadContext,
             "foo-bar-ref-1",
             UploadRequest(
               href = "https://s3.bucket",
@@ -1512,7 +1509,7 @@ class FileUploadJourneyModelSpec
       "go to UploadFile with error when fileUploadWasRejected" in {
         val state =
           UploadFile(
-            fileUploadSessionConfig,
+            fileUploadContext,
             "foo-bar-ref-1",
             UploadRequest(
               href = "https://s3.bucket",
@@ -1569,7 +1566,7 @@ class FileUploadJourneyModelSpec
       "switch over to UploadMultipleFiles when toUploadMultipleFiles" in {
         given(
           UploadFile(
-            fileUploadSessionConfig,
+            fileUploadContext,
             "foo-bar-ref-4",
             UploadRequest(
               href = "https://s3.bucket",
@@ -1586,14 +1583,14 @@ class FileUploadJourneyModelSpec
           .when(toUploadMultipleFiles)
           .thenGoes(
             UploadMultipleFiles(
-              fileUploadSessionConfig,
+              fileUploadContext,
               nonEmptyFileUploads
             )
           )
       }
 
       "go to UploadFile when initiateFileUpload and number of uploaded files below the limit" in {
-        val hostData = fileUploadSessionConfig
+        val hostData = fileUploadContext
         val fileUploads = FileUploads(files =
           for (i <- 0 until (maxFileUploadsNumber - 1))
             yield FileUpload.Accepted(
@@ -1621,7 +1618,7 @@ class FileUploadJourneyModelSpec
       }
 
       "go to FileUploaded when initiateFileUpload and number of uploaded files above the limit" in {
-        val hostData = fileUploadSessionConfig
+        val hostData = fileUploadContext
         val fileUploads = FileUploads(files =
           for (i <- 0 until maxFileUploadsNumber)
             yield FileUpload.Accepted(
@@ -1650,7 +1647,7 @@ class FileUploadJourneyModelSpec
     "at state WaitingForFileVerification" should {
       "stay when waitForFileVerification and not verified yet" in {
         val state = WaitingForFileVerification(
-          fileUploadSessionConfig,
+          fileUploadContext,
           "foo-bar-ref-1",
           UploadRequest(
             href = "https://s3.bucket",
@@ -1673,7 +1670,7 @@ class FileUploadJourneyModelSpec
       "go to UploadFile when waitForFileVerification and reference unknown" in {
         given(
           WaitingForFileVerification(
-            fileUploadSessionConfig,
+            fileUploadContext,
             "foo-bar-ref-2",
             UploadRequest(
               href = "https://s3.bucket",
@@ -1692,7 +1689,7 @@ class FileUploadJourneyModelSpec
           )
         ) when waitForFileVerification should thenGo(
           UploadFile(
-            fileUploadSessionConfig,
+            fileUploadContext,
             "foo-bar-ref-2",
             UploadRequest(
               href = "https://s3.bucket",
@@ -1714,7 +1711,7 @@ class FileUploadJourneyModelSpec
       "go to FileUploaded when waitForFileVerification and file already accepted" in {
         given(
           WaitingForFileVerification(
-            fileUploadSessionConfig,
+            fileUploadContext,
             "foo-bar-ref-1",
             UploadRequest(
               href = "https://s3.bucket",
@@ -1739,7 +1736,7 @@ class FileUploadJourneyModelSpec
           )
         ) when waitForFileVerification should thenGo(
           FileUploaded(
-            fileUploadSessionConfig,
+            fileUploadContext,
             FileUploads(files = Seq(acceptedFileUpload))
           )
         )
@@ -1748,7 +1745,7 @@ class FileUploadJourneyModelSpec
       "go to UploadFile when waitForFileVerification and file already failed" in {
         given(
           WaitingForFileVerification(
-            fileUploadSessionConfig,
+            fileUploadContext,
             "foo-bar-ref-1",
             UploadRequest(
               href = "https://s3.bucket",
@@ -1777,7 +1774,7 @@ class FileUploadJourneyModelSpec
           )
         ) when waitForFileVerification should thenGo(
           UploadFile(
-            fileUploadSessionConfig,
+            fileUploadContext,
             "foo-bar-ref-1",
             UploadRequest(
               href = "https://s3.bucket",
@@ -1809,7 +1806,7 @@ class FileUploadJourneyModelSpec
           _ => Future.successful(FileUploadResultPushConnector.SuccessResponse)
         given(
           WaitingForFileVerification(
-            fileUploadSessionConfig,
+            fileUploadContext,
             "foo-bar-ref-1",
             UploadRequest(
               href = "https://s3.bucket",
@@ -1836,7 +1833,7 @@ class FileUploadJourneyModelSpec
           )
         ) should thenGo(
           FileUploaded(
-            fileUploadSessionConfig,
+            fileUploadContext,
             FileUploads(files = Seq(acceptedFileUpload))
           )
         )
@@ -1847,7 +1844,7 @@ class FileUploadJourneyModelSpec
           _ => Future.successful(FileUploadResultPushConnector.SuccessResponse)
         given(
           WaitingForFileVerification(
-            fileUploadSessionConfig,
+            fileUploadContext,
             "foo-bar-ref-1",
             UploadRequest(
               href = "https://s3.bucket",
@@ -1870,7 +1867,7 @@ class FileUploadJourneyModelSpec
           )
         ) should thenGo(
           UploadFile(
-            fileUploadSessionConfig,
+            fileUploadContext,
             "foo-bar-ref-1",
             UploadRequest(
               href = "https://s3.bucket",
@@ -1904,7 +1901,7 @@ class FileUploadJourneyModelSpec
           _ => Future.successful(FileUploadResultPushConnector.SuccessResponse)
         given(
           WaitingForFileVerification(
-            fileUploadSessionConfig,
+            fileUploadContext,
             "foo-bar-ref-1",
             UploadRequest(
               href = "https://s3.bucket",
@@ -1932,7 +1929,7 @@ class FileUploadJourneyModelSpec
           )
         ) should thenGo(
           WaitingForFileVerification(
-            fileUploadSessionConfig,
+            fileUploadContext,
             "foo-bar-ref-1",
             UploadRequest(
               href = "https://s3.bucket",
@@ -1961,7 +1958,7 @@ class FileUploadJourneyModelSpec
       "retreat to FileUploaded when some files has been uploaded already" in {
         given(
           WaitingForFileVerification(
-            fileUploadSessionConfig,
+            fileUploadContext,
             "foo-bar-ref-1",
             UploadRequest(
               href = "https://s3.bucket",
@@ -1991,7 +1988,7 @@ class FileUploadJourneyModelSpec
           )
         ) when backToFileUploaded should thenGo(
           FileUploaded(
-            fileUploadSessionConfig,
+            fileUploadContext,
             FileUploads(files =
               Seq(
                 FileUpload.Posted(Nonce(1), Timestamp.Any, "foo-bar-ref-1"),
@@ -2016,7 +2013,7 @@ class FileUploadJourneyModelSpec
       "retreat to ContinueToHost when none file has been uploaded and none accepted yet" in {
         given(
           WaitingForFileVerification(
-            fileUploadSessionConfig,
+            fileUploadContext,
             "foo-bar-ref-1",
             UploadRequest(
               href = "https://s3.bucket",
@@ -2036,7 +2033,7 @@ class FileUploadJourneyModelSpec
           )
         ) when backToFileUploaded should thenGo(
           ContinueToHost(
-            fileUploadSessionConfig,
+            fileUploadContext,
             FileUploads(files =
               Seq(
                 FileUpload.Posted(Nonce(1), Timestamp.Any, "foo-bar-ref-1"),
@@ -2048,7 +2045,7 @@ class FileUploadJourneyModelSpec
       }
 
       "go to UploadFile when initiateFileUpload" in {
-        val hostData = fileUploadSessionConfig
+        val hostData = fileUploadContext
         val uploadRequest = UploadRequest(
           href = "https://s3.bucket",
           fields = Map(
@@ -2078,7 +2075,7 @@ class FileUploadJourneyModelSpec
     "at state FileUploaded" should {
       "go to acknowledged FileUploaded when waitForFileVerification" in {
         val state = FileUploaded(
-          fileUploadSessionConfig,
+          fileUploadContext,
           FileUploads(files =
             Seq(
               FileUpload.Accepted(
@@ -2102,7 +2099,7 @@ class FileUploadJourneyModelSpec
       }
 
       "go to UploadFile when initiateFileUpload and number of uploads below the limit" in {
-        val hostData = fileUploadSessionConfig
+        val hostData = fileUploadContext
         val fileUploads = FileUploads(files =
           for (i <- 0 until (maxFileUploadsNumber - 1))
             yield FileUpload.Accepted(
@@ -2136,7 +2133,7 @@ class FileUploadJourneyModelSpec
       }
 
       "stay when initiateFileUpload and number of uploads above the limit" in {
-        val hostData = fileUploadSessionConfig
+        val hostData = fileUploadContext
         val fileUploads = FileUploads(files =
           for (i <- 0 until maxFileUploadsNumber)
             yield FileUpload.Accepted(
@@ -2163,7 +2160,7 @@ class FileUploadJourneyModelSpec
       }
 
       "go to UploadFile when submitedUploadAnotherFileChoice with yes and number of uploads below the limit" in {
-        val hostData = fileUploadSessionConfig
+        val hostData = fileUploadContext
         val fileUploads = FileUploads(files =
           for (i <- 0 until (maxFileUploadsNumber - 1))
             yield fileUploadAccepted.copy(reference = s"file-$i")
@@ -2183,7 +2180,7 @@ class FileUploadJourneyModelSpec
       }
 
       "apply follow-up transition when submitedUploadAnotherFileChoice with yes and number of uploads above the limit" in {
-        val hostData = fileUploadSessionConfig
+        val hostData = fileUploadContext
         val fileUploads = FileUploads(files =
           for (i <- 0 until maxFileUploadsNumber)
             yield fileUploadAccepted.copy(reference = s"file-$i")
@@ -2193,12 +2190,12 @@ class FileUploadJourneyModelSpec
         )
           .when(submitedUploadAnotherFileChoice(testUpscanRequest)(mockUpscanInitiate)(continueToHost)(true))
           .thenGoes(
-            ContinueToHost(fileUploadSessionConfig, fileUploads)
+            ContinueToHost(fileUploadContext, fileUploads)
           )
       }
 
       "apply follow-up transition when submitedUploadAnotherFileChoice with no" in {
-        val hostData = fileUploadSessionConfig
+        val hostData = fileUploadContext
         val fileUploads = FileUploads(files =
           for (i <- 0 until (maxFileUploadsNumber - 1))
             yield fileUploadAccepted.copy(reference = s"file-$i")
@@ -2208,12 +2205,12 @@ class FileUploadJourneyModelSpec
         )
           .when(submitedUploadAnotherFileChoice(testUpscanRequest)(mockUpscanInitiate)(continueToHost)(false))
           .thenGoes(
-            ContinueToHost(fileUploadSessionConfig, fileUploads)
+            ContinueToHost(fileUploadContext, fileUploads)
           )
       }
 
       "go to UploadFile when removeFileUploadByReference leaving no files" in {
-        val hostData = fileUploadSessionConfig
+        val hostData = fileUploadContext
         val fileUploads = FileUploads(Seq(fileUploadAccepted))
         val mockPushFileUploadResult: FileUploadResultPushApi =
           _ => Future.successful(FileUploadResultPushConnector.SuccessResponse)

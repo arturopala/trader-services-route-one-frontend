@@ -20,39 +20,66 @@ trait AuthStubs {
 
   case class Enrolment(serviceName: String, identifierName: String, identifierValue: String)
 
-  def givenAuthorisedForEnrolment(enrolment: Enrolment): AuthStubs = {
-    stubFor(
-      post(urlEqualTo("/auth/authorise"))
-        .atPriority(1)
-        .withRequestBody(
-          equalToJson(
-            s"""
-              |{
-              |  "authorise": [
-              |    { "identifiers":[], "state":"Activated", "enrolment": "${enrolment.serviceName}" },
-              |    { "authProviders": ["GovernmentGateway"] }
-              |  ],
-              |  "retrieve":["optionalCredentials","authorisedEnrolments"]
-              |}
+  def givenAuthorisedForEnrolment(enrolment: Enrolment, required: Boolean = false): AuthStubs = {
+    if (required) {
+      stubFor(
+        post(urlEqualTo("/auth/authorise"))
+          .atPriority(1)
+          .withRequestBody(
+            equalToJson(
+              s"""
+                |{
+                |  "authorise": [
+                |    { "identifiers":[], "state":"Activated", "enrolment": "${enrolment.serviceName}" },
+                |    { "authProviders": ["GovernmentGateway"] }
+                |  ],
+                |  "retrieve":["optionalCredentials","authorisedEnrolments"]
+                |}
            """.stripMargin,
-            true,
-            true
+              true,
+              true
+            )
           )
-        )
-        .willReturn(
-          aResponse()
-            .withStatus(200)
-            .withBody(s"""
-              |{
-              |"optionalCredentials": {"providerId": "12345-credId", "providerType": "GovernmentGateway"},
-              |"authorisedEnrolments": [
-              |  { "key":"${enrolment.serviceName}", "identifiers": [
-              |    {"key":"${enrolment.identifierName}", "value": "${enrolment.identifierValue}"}
-              |  ]}
-              |]}
+          .willReturn(
+            aResponse()
+              .withStatus(200)
+              .withBody(s"""
+                |{
+                |"optionalCredentials": {"providerId": "12345-credId", "providerType": "GovernmentGateway"},
+                |"authorisedEnrolments": [
+                |  { "key":"${enrolment.serviceName}", "identifiers": [
+                |    {"key":"${enrolment.identifierName}", "value": "${enrolment.identifierValue}"}
+                |  ]}
+                |]}
           """.stripMargin)
-        )
-    )
+          )
+      )
+    } else
+      stubFor(
+        post(urlEqualTo("/auth/authorise"))
+          .atPriority(1)
+          .withRequestBody(
+            equalToJson(
+              s"""
+                |{
+                |  "authorise": [
+                |    { "authProviders": ["GovernmentGateway"] }
+                |  ],
+                |  "retrieve":["optionalCredentials"]
+                |}
+           """.stripMargin,
+              true,
+              true
+            )
+          )
+          .willReturn(
+            aResponse()
+              .withStatus(200)
+              .withBody(
+                s"""{"optionalCredentials": {"providerId": "12345-credId", "providerType": "GovernmentGateway"}, "authorisedEnrolments": []}""".stripMargin
+              )
+          )
+      )
 
     stubFor(
       post(urlEqualTo("/auth/authorise"))

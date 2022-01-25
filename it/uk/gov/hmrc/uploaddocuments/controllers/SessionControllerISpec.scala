@@ -11,7 +11,7 @@ class SessionControllerISpec extends SessionControllerISpecSetup() {
 
     "GET /timedout" should {
       "display the timed out page" in {
-        val result = await(requestWithoutJourneyId("/timedout").get())
+        val result = await(requestWithoutSessionId("/timedout").get())
         result.status shouldBe 200
         result.body should include(htmlEscapedMessage("view.timedout.title"))
       }
@@ -20,7 +20,7 @@ class SessionControllerISpec extends SessionControllerISpecSetup() {
     "GET /sign-out/timeout" should {
       "redirect to the timed out page" in {
         givenSignOutWithContinueToTimedOut()
-        val result = await(requestWithoutJourneyId("/sign-out/timeout").get())
+        val result = await(requestWithoutSessionId("/sign-out/timeout").get())
         result.status shouldBe 200
       }
     }
@@ -28,7 +28,7 @@ class SessionControllerISpec extends SessionControllerISpecSetup() {
     "GET /sign-out" should {
       "redirect to the feedback survey" in {
         givenSignOutWithContinueToFeedbackSurvey()
-        val result = await(requestWithoutJourneyId("/sign-out").get())
+        val result = await(requestWithoutSessionId("/sign-out").get())
         result.status shouldBe 200
       }
     }
@@ -36,14 +36,14 @@ class SessionControllerISpec extends SessionControllerISpecSetup() {
     "GET /sign-out-no-survey" should {
       "redirect to the feedback survey" in {
         givenSignOut()
-        val result = await(requestWithoutJourneyId("/sign-out-no-survey").get())
+        val result = await(requestWithoutSessionId("/sign-out-no-survey").get())
         result.status shouldBe 200
       }
     }
 
     "GET /keep-alive" should {
       "respond with an empty json body" in {
-        val result = await(requestWithoutJourneyId("/keep-alive").get())
+        val result = await(requestWithoutSessionId("/keep-alive").get())
         result.status shouldBe 200
         result.body shouldBe "{}"
       }
