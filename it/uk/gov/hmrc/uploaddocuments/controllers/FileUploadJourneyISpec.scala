@@ -416,7 +416,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
       }
     }
 
-    "GET /file-upload" should {
+    "GET /choose-file" should {
       "show the upload page of first document" in {
         val state = Initialized(FileUploadContext(fileUploadSessionConfig), FileUploads())
         journey.setState(state)
@@ -425,7 +425,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
           appConfig.baseInternalCallbackUrl + s"/upload-documents/journey/${SHA256.compute(journeyId.value)}/callback-from-upscan"
         givenUpscanInitiateSucceeds(callbackUrl, hostServiceId)
 
-        val result = await(request("/file-upload").get())
+        val result = await(request("/choose-file").get())
 
         result.status shouldBe 200
         result.body should include(htmlEscapedPageTitle("view.upload-file.first.title"))
@@ -481,7 +481,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
           appConfig.baseInternalCallbackUrl + s"/upload-documents/journey/${SHA256.compute(journeyId.value)}/callback-from-upscan"
         givenUpscanInitiateSucceeds(callbackUrl, hostServiceId)
 
-        val result = await(request("/file-upload").get())
+        val result = await(request("/choose-file").get())
 
         result.status shouldBe 200
         result.body should include(htmlEscapedPageTitle("view.file-uploaded.singular.title", "1"))
@@ -543,7 +543,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
           appConfig.baseInternalCallbackUrl + s"/upload-documents/journey/${SHA256.compute(journeyId.value)}/callback-from-upscan"
         givenUpscanInitiateSucceeds(callbackUrl, hostServiceId)
 
-        val result = await(request("/file-upload").get())
+        val result = await(request("/choose-file").get())
 
         result.status shouldBe 200
         result.body should include(htmlEscapedPageTitle("view.file-uploaded.plural.title", "2"))

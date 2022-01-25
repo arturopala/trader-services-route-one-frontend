@@ -145,7 +145,7 @@ class FileUploadJourneyController @Inject() (
       }
       .displayUsing(renderUploadRequestJson(uploadId))
 
-  // GET /file-upload
+  // GET /choose-file
   final val showFileUpload: Action[AnyContent] =
     whenAuthenticated
       .applyWithRequest { implicit request =>

@@ -10,7 +10,7 @@ GET        /                                                        @uk.gov.hmrc
 + nocsrf
 POST       /initialize-upscan/:uploadId                             @uk.gov.hmrc.uploaddocuments.controllers.FileUploadJourneyController.initiateNextFileUpload(uploadId: String)
 
-GET        /file-upload                                             @uk.gov.hmrc.uploaddocuments.controllers.FileUploadJourneyController.showFileUpload
+GET        /choose-file                                             @uk.gov.hmrc.uploaddocuments.controllers.FileUploadJourneyController.showFileUpload
 GET        /file-rejected                                           @uk.gov.hmrc.uploaddocuments.controllers.FileUploadJourneyController.markFileUploadAsRejected
 + nocsrf
 POST       /file-rejected                                           @uk.gov.hmrc.uploaddocuments.controllers.FileUploadJourneyController.markFileUploadAsRejectedAsync
