@@ -130,10 +130,12 @@ class FileUploadJourneyController @Inject() (
 
   // GET /
   final val start: Action[AnyContent] =
-    action { _ =>
+    action { implicit request =>
       Future.successful(
-        Redirect(routes.FileUploadJourneyController.showUploadMultipleFiles)
-          .withCookies(Cookie(COOKIE_JSENABLED, "true"))
+        if (preferUploadMultipleFiles)
+          Redirect(routes.FileUploadJourneyController.showUploadMultipleFiles)
+        else
+          Ok(views.startView(routes.FileUploadJourneyController.showUploadMultipleFiles))
       )
     }
 

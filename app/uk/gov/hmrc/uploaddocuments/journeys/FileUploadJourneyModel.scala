@@ -164,13 +164,15 @@ object FileUploadJourneyModel extends JourneyModel {
                 fileUploads = state.fileUploadsOpt.map(_.onlyAccepted).getOrElse(FileUploads())
               )
             )
-          else
+          else {
+            println("SwitchToSingleFileUpload")
             goto(
               SwitchToSingleFileUpload(
                 context = state.context,
                 fileUploadsOpt = state.fileUploadsOpt
               )
             )
+          }
 
         case state: FileUploadState =>
           goto(UploadMultipleFiles(state.context, state.fileUploads.onlyAccepted))

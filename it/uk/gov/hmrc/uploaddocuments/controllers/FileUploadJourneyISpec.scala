@@ -175,7 +175,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
     }
 
     "GET /" should {
-      "show the upload multiple files page when cookie set" in {
+      "show the start page when no cookie set" in {
         val state = Initialized(
           FileUploadContext(fileUploadSessionConfig),
           fileUploads = FileUploads()
@@ -183,70 +183,18 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
         journey.setState(state)
         givenAuthorisedForEnrolment(Enrolment("HMRC-XYZ", "EORINumber", "foo"))
 
-        val result = await(requestWithCookies("/", controller.COOKIE_JSENABLED -> "true").get())
-
-        result.status shouldBe 200
-        result.body should include(htmlEscapedPageTitle("view.upload-multiple-files.title"))
-        result.body should include(htmlEscapedMessage("view.upload-multiple-files.heading"))
-        journey.getState shouldBe UploadMultipleFiles(
-          FileUploadContext(fileUploadSessionConfig),
-          fileUploads = FileUploads()
-        )
-      }
-
-      "show the upload multiple files page when cookie NOT set but supported" in {
-        val state = Initialized(
-          FileUploadContext(fileUploadSessionConfig),
-          fileUploads = FileUploads()
-        )
-        journey.setState(state)
-        givenAuthorisedForEnrolment(Enrolment("HMRC-XYZ", "EORINumber", "foo"))
-
-        val result = await(requestWithCookies("/").get())
-
-        result.status shouldBe 200
-        result.body should include(htmlEscapedPageTitle("view.upload-multiple-files.title"))
-        result.body should include(htmlEscapedMessage("view.upload-multiple-files.heading"))
-        journey.getState shouldBe UploadMultipleFiles(
-          FileUploadContext(fileUploadSessionConfig),
-          fileUploads = FileUploads()
-        )
-      }
-
-      "reload the upload multiple files page " in {
-        val state = UploadMultipleFiles(
-          FileUploadContext(fileUploadSessionConfig),
-          fileUploads = FileUploads()
-        )
-        journey.setState(state)
-        givenAuthorisedForEnrolment(Enrolment("HMRC-XYZ", "EORINumber", "foo"))
+        val callbackUrl =
+          appConfig.baseInternalCallbackUrl + s"/upload-documents/journey/${SHA256.compute(journeyId.value)}/callback-from-upscan"
+        givenUpscanInitiateSucceeds(callbackUrl, hostServiceId)
 
         val result = await(request("/").get())
 
         result.status shouldBe 200
-        result.body should include(htmlEscapedPageTitle("view.upload-multiple-files.title"))
-        result.body should include(htmlEscapedMessage("view.upload-multiple-files.heading"))
+        result.body should include("url=/upload-documents/choose-files")
+
         journey.getState shouldBe state
       }
 
-      "retreat from finished to the upload multiple files page " in {
-        val state = ContinueToHost(
-          FileUploadContext(fileUploadSessionConfig),
-          FileUploads()
-        )
-        journey.setState(state)
-        givenAuthorisedForEnrolment(Enrolment("HMRC-XYZ", "EORINumber", "foo"))
-
-        val result = await(requestWithCookies("/", controller.COOKIE_JSENABLED -> "true").get())
-
-        result.status shouldBe 200
-        result.body should include(htmlEscapedPageTitle("view.upload-multiple-files.title"))
-        result.body should include(htmlEscapedMessage("view.upload-multiple-files.heading"))
-        journey.getState shouldBe UploadMultipleFiles(
-          FileUploadContext(fileUploadSessionConfig),
-          fileUploads = FileUploads()
-        )
-      }
     }
 
     "GET /choose-files" should {
@@ -309,6 +257,41 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
           fileUploads = FileUploads(files =
             Seq(FileUpload.Initiated(Nonce.Any, Timestamp.Any, "11370e18-6e24-453e-b45a-76d3e32ea33d"))
           )
+        )
+      }
+
+      "reload the upload multiple files page " in {
+        val state = UploadMultipleFiles(
+          FileUploadContext(fileUploadSessionConfig),
+          fileUploads = FileUploads()
+        )
+        journey.setState(state)
+        givenAuthorisedForEnrolment(Enrolment("HMRC-XYZ", "EORINumber", "foo"))
+
+        val result = await(request("/choose-files").get())
+
+        result.status shouldBe 200
+        result.body should include(htmlEscapedPageTitle("view.upload-multiple-files.title"))
+        result.body should include(htmlEscapedMessage("view.upload-multiple-files.heading"))
+        journey.getState shouldBe state
+      }
+
+      "retreat from finished to the upload multiple files page " in {
+        val state = ContinueToHost(
+          FileUploadContext(fileUploadSessionConfig),
+          FileUploads()
+        )
+        journey.setState(state)
+        givenAuthorisedForEnrolment(Enrolment("HMRC-XYZ", "EORINumber", "foo"))
+
+        val result = await(requestWithCookies("/choose-files", controller.COOKIE_JSENABLED -> "true").get())
+
+        result.status shouldBe 200
+        result.body should include(htmlEscapedPageTitle("view.upload-multiple-files.title"))
+        result.body should include(htmlEscapedMessage("view.upload-multiple-files.heading"))
+        journey.getState shouldBe UploadMultipleFiles(
+          FileUploadContext(fileUploadSessionConfig),
+          fileUploads = FileUploads()
         )
       }
     }
