@@ -64,7 +64,8 @@ export class MultiFileUpload extends Component {
       fileNumber: 'multi-file-upload__number',
       progressBar: 'multi-file-upload__progress-bar',
       uploadMore: 'multi-file-upload__upload-more-message',
-      notifications: 'multi-file-upload__notifications'
+      notifications: 'multi-file-upload__notifications',
+      description: 'multi-file-upload__description'
     };
 
     this.errorManager = new ErrorManager();
@@ -130,6 +131,7 @@ export class MultiFileUpload extends Component {
 
     this.setItemState(item, UploadState.Uploaded);
     this.getFileNameElement(item).textContent = fileName;
+    this.getDescriptionElement(item).textContent = fileData['description'];
 
     filePreview.textContent = fileName;
     filePreview.href = fileData['previewUrl'];
@@ -582,6 +584,10 @@ export class MultiFileUpload extends Component {
 
   private getFilePreviewElement(item: HTMLElement): HTMLLinkElement {
     return item.querySelector(`.${this.classes.filePreview}`);
+  }
+
+  private getDescriptionElement(item: HTMLElement): HTMLElement {
+    return item.querySelector(`.${this.classes.description}`);
   }
 
   private extractFileName(fileName: string): string {

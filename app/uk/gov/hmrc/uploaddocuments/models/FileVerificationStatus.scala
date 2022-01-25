@@ -29,7 +29,8 @@ case class FileVerificationStatus(
   fileSize: Option[Int] = None,
   previewUrl: Option[String] = None,
   errorMessage: Option[String] = None,
-  uploadRequest: Option[UploadRequest] = None
+  uploadRequest: Option[UploadRequest] = None,
+  description: Option[String] = None
 )
 
 object FileVerificationStatus {
@@ -56,7 +57,8 @@ object FileVerificationStatus {
           fileMimeType = Some(f.fileMimeType),
           fileName = Some(f.fileName),
           fileSize = Some(f.fileSize),
-          previewUrl = Some(s"${filePreviewUrl(f.reference, f.fileName).url}")
+          previewUrl = Some(s"${filePreviewUrl(f.reference, f.fileName).url}"),
+          description = f.description
         )
 
       case f: FileUpload.Failed =>

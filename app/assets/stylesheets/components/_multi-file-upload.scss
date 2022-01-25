@@ -26,7 +26,8 @@
 }
 
 .multi-file-upload__file-name,
-.multi-file-upload__file-preview {
+.multi-file-upload__file-preview,
+.multi-file-upload__description {
   display: none;
   word-break: break-all;
   margin-bottom: 10px;
@@ -162,6 +163,10 @@
 
   .multi-file-upload__uploaded-tag {
     visibility: visible;
+  }
+
+  .multi-file-upload__description {
+    display: inline-block;
   }
 }
 

@@ -56,7 +56,8 @@ case class FileUploads(
         f.fileName,
         f.fileMimeType,
         f.fileSize,
-        f.cargo
+        f.cargo,
+        f.description
       )
     }
 
@@ -157,7 +158,8 @@ object FileUpload extends SealedTraitFormats[FileUpload] {
     fileName: String,
     fileMimeType: String,
     fileSize: Int,
-    cargo: Option[JsValue] = None // data carried through, from and to host service
+    cargo: Option[JsValue] = None, // data carried through, from and to host service
+    description: Option[String] = None
   ) extends FileUpload {
 
     override def isReady: Boolean = true
