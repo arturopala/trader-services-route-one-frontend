@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.uploaddocuments.models
 
-import play.api.libs.json.{Format, JsValue, Json}
+import play.api.libs.json.{Format, JsPath, JsValue}
 
 final case class FileUploadSessionConfig(
   serviceId: String, // client ID used by upscan configuration
@@ -24,10 +24,28 @@ final case class FileUploadSessionConfig(
   continueUrl: String, // url to continue after uploading the files
   backlinkUrl: String, // backlink url
   callbackUrl: String, // url where to post uploaded files
-  cargo: Option[JsValue] = None // opaque data carried through, from and to the host service
+  cargo: Option[JsValue] = None, // opaque data carried through, from and to the host service
+  javascriptDisabled: Boolean = false
 )
 
 object FileUploadSessionConfig {
+  import play.api.libs.functional.syntax._
+
   implicit val format: Format[FileUploadSessionConfig] =
-    Json.format[FileUploadSessionConfig]
+    Format(
+      ((JsPath \ "serviceId").read[String]
+        and (JsPath \ "nonce").read[Nonce]
+        and (JsPath \ "continueUrl").read[String]
+        and (JsPath \ "backlinkUrl").read[String]
+        and (JsPath \ "callbackUrl").read[String]
+        and (JsPath \ "cargo").readNullable[JsValue]
+        and (JsPath \ "javascriptDisabled").readWithDefault[Boolean](false))(FileUploadSessionConfig.apply _),
+      ((JsPath \ "serviceId").write[String]
+        and (JsPath \ "nonce").write[Nonce]
+        and (JsPath \ "continueUrl").write[String]
+        and (JsPath \ "backlinkUrl").write[String]
+        and (JsPath \ "callbackUrl").write[String]
+        and (JsPath \ "cargo").writeNullable[JsValue]
+        and (JsPath \ "javascriptDisabled").write[Boolean])(unlift(FileUploadSessionConfig.unapply(_)))
+    )
 }

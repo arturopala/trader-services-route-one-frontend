@@ -133,14 +133,14 @@ class FileUploadJourneyController @Inject() (
     action { implicit request =>
       Future.successful(
         if (preferUploadMultipleFiles)
-          Redirect(routes.FileUploadJourneyController.showUploadMultipleFiles)
+          Redirect(routes.FileUploadJourneyController.showChooseMultipleFiles)
         else
-          Ok(views.startView(routes.FileUploadJourneyController.showUploadMultipleFiles))
+          Ok(views.startView(routes.FileUploadJourneyController.showChooseMultipleFiles))
       )
     }
 
   // GET /choose-files
-  final val showUploadMultipleFiles: Action[AnyContent] =
+  final val showChooseMultipleFiles: Action[AnyContent] =
     whenAuthenticated
       .applyWithRequest(implicit request => Transitions.toUploadMultipleFiles(preferUploadMultipleFiles))
       .redirectOrDisplayIf[State.UploadMultipleFiles]
@@ -157,7 +157,7 @@ class FileUploadJourneyController @Inject() (
       .displayUsing(renderUploadRequestJson(uploadId))
 
   // GET /choose-file
-  final val showFileUpload: Action[AnyContent] =
+  final val showChooseFile: Action[AnyContent] =
     whenAuthenticated
       .applyWithRequest { implicit request =>
         Transitions
@@ -286,10 +286,10 @@ class FileUploadJourneyController @Inject() (
         controller.continueToHost
 
       case _: State.UploadMultipleFiles =>
-        controller.showUploadMultipleFiles
+        controller.showChooseMultipleFiles
 
       case _: State.UploadFile =>
-        controller.showFileUpload
+        controller.showChooseFile
 
       case _: State.WaitingForFileVerification =>
         controller.showWaitingForFileVerification
@@ -298,7 +298,7 @@ class FileUploadJourneyController @Inject() (
         controller.showFileUploaded
 
       case _: State.SwitchToSingleFileUpload =>
-        controller.showFileUpload
+        controller.showChooseFile
 
       case _ =>
         Call("GET", appConfig.govukStartUrl)
@@ -317,9 +317,9 @@ class FileUploadJourneyController @Inject() (
 
       case State.Initialized(config, fileUploads) =>
         if (preferUploadMultipleFiles)
-          Redirect(controller.showUploadMultipleFiles)
+          Redirect(controller.showChooseMultipleFiles)
         else
-          Redirect(controller.showFileUpload)
+          Redirect(controller.showChooseFile)
 
       case State.ContinueToHost(context, fileUploads) =>
         Redirect(context.config.continueUrl)
@@ -346,7 +346,7 @@ class FileUploadJourneyController @Inject() (
             fileUploads,
             maybeUploadError,
             successAction = controller.showFileUploaded,
-            failureAction = controller.showFileUpload,
+            failureAction = controller.showChooseFile,
             checkStatusAction = controller.checkFileVerificationStatus(reference),
             backLink = backLinkFor(breadcrumbs)
           )
@@ -356,7 +356,7 @@ class FileUploadJourneyController @Inject() (
         Ok(
           views.waitingForFileVerificationView(
             successAction = controller.showFileUploaded,
-            failureAction = controller.showFileUpload,
+            failureAction = controller.showChooseFile,
             checkStatusAction = controller.checkFileVerificationStatus(reference),
             backLink = backLinkFor(breadcrumbs)
           )
@@ -434,8 +434,17 @@ class FileUploadJourneyController @Inject() (
 
   private def renderInitializationResponse =
     Renderer.simple {
-      case s: State.Initialized => Created
-      case _                    => BadRequest
+      case State.Initialized(context, _) =>
+        Created.withHeaders(
+          HeaderNames.LOCATION ->
+            (
+              if (context.config.javascriptDisabled)
+                routes.FileUploadJourneyController.showChooseFile
+              else
+                routes.FileUploadJourneyController.start
+            ).url
+        )
+      case _ => BadRequest
     }
 
   private def renderFileRemovalStatus =

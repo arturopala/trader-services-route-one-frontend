@@ -7,8 +7,8 @@ GET        /                                                        @uk.gov.hmrc
 + nocsrf
 POST       /initialize                                              @uk.gov.hmrc.uploaddocuments.controllers.FileUploadJourneyController.initialize
 
-GET        /choose-files                                            @uk.gov.hmrc.uploaddocuments.controllers.FileUploadJourneyController.showUploadMultipleFiles
-GET        /choose-file                                             @uk.gov.hmrc.uploaddocuments.controllers.FileUploadJourneyController.showFileUpload
+GET        /choose-files                                            @uk.gov.hmrc.uploaddocuments.controllers.FileUploadJourneyController.showChooseMultipleFiles
+GET        /choose-file                                             @uk.gov.hmrc.uploaddocuments.controllers.FileUploadJourneyController.showChooseFile
 
 + nocsrf
 POST       /initialize-upscan/:uploadId                             @uk.gov.hmrc.uploaddocuments.controllers.FileUploadJourneyController.initiateNextFileUpload(uploadId: String)
