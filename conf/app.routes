@@ -2,34 +2,40 @@
 
 ->         /hmrc-frontend                                           hmrcfrontend.Routes 
 
+GET        /                                                        @uk.gov.hmrc.uploaddocuments.controllers.FileUploadJourneyController.start
+
 + nocsrf
 POST       /initialize                                              @uk.gov.hmrc.uploaddocuments.controllers.FileUploadJourneyController.initialize
-GET        /continue-to-host                                        @uk.gov.hmrc.uploaddocuments.controllers.FileUploadJourneyController.continueToHost
 
-GET        /                                                        @uk.gov.hmrc.uploaddocuments.controllers.FileUploadJourneyController.showUploadMultipleFiles
+GET        /choose-files                                            @uk.gov.hmrc.uploaddocuments.controllers.FileUploadJourneyController.showUploadMultipleFiles
+GET        /choose-file                                             @uk.gov.hmrc.uploaddocuments.controllers.FileUploadJourneyController.showFileUpload
+
 + nocsrf
 POST       /initialize-upscan/:uploadId                             @uk.gov.hmrc.uploaddocuments.controllers.FileUploadJourneyController.initiateNextFileUpload(uploadId: String)
 
-GET        /choose-file                                             @uk.gov.hmrc.uploaddocuments.controllers.FileUploadJourneyController.showFileUpload
 GET        /file-rejected                                           @uk.gov.hmrc.uploaddocuments.controllers.FileUploadJourneyController.markFileUploadAsRejected
 + nocsrf
 POST       /file-rejected                                           @uk.gov.hmrc.uploaddocuments.controllers.FileUploadJourneyController.markFileUploadAsRejectedAsync
+
 GET        /journey/:journeyId/file-posted                          @uk.gov.hmrc.uploaddocuments.controllers.FileUploadJourneyController.asyncMarkFileUploadAsPosted(journeyId: String)
 OPTIONS    /journey/:journeyId/file-posted                          @uk.gov.hmrc.uploaddocuments.controllers.FileUploadJourneyController.preflightUpload(journeyId: String)
 GET        /journey/:journeyId/file-rejected                        @uk.gov.hmrc.uploaddocuments.controllers.FileUploadJourneyController.asyncMarkFileUploadAsRejected(journeyId: String)
 OPTIONS    /journey/:journeyId/file-rejected                        @uk.gov.hmrc.uploaddocuments.controllers.FileUploadJourneyController.preflightUpload(journeyId: String)
-GET        /file-verification                                       @uk.gov.hmrc.uploaddocuments.controllers.FileUploadJourneyController.showWaitingForFileVerification
 GET        /journey/:journeyId/file-verification                    @uk.gov.hmrc.uploaddocuments.controllers.FileUploadJourneyController.asyncWaitingForFileVerification(journeyId: String)
-GET        /file-verification/:reference/status                     @uk.gov.hmrc.uploaddocuments.controllers.FileUploadJourneyController.checkFileVerificationStatus(reference: String)
-GET        /uploaded                                           @uk.gov.hmrc.uploaddocuments.controllers.FileUploadJourneyController.showFileUploaded
-POST       /uploaded                                           @uk.gov.hmrc.uploaddocuments.controllers.FileUploadJourneyController.submitUploadAnotherFileChoice
-GET        /uploaded/:reference/remove                         @uk.gov.hmrc.uploaddocuments.controllers.FileUploadJourneyController.removeFileUploadByReference(reference: String)
-+ nocsrf
-POST       /uploaded/:reference/remove                         @uk.gov.hmrc.uploaddocuments.controllers.FileUploadJourneyController.removeFileUploadByReferenceAsync(reference: String)
-GET        /uploaded/:reference/:fileName                      @uk.gov.hmrc.uploaddocuments.controllers.FileUploadJourneyController.previewFileUploadByReference(reference: String, fileName: String)
 + nocsrf
 POST       /journey/:journeyId/callback-from-upscan/:nonce          @uk.gov.hmrc.uploaddocuments.controllers.FileUploadJourneyController.callbackFromUpscan(journeyId: String, nonce: String)
 
+GET        /file-verification                                       @uk.gov.hmrc.uploaddocuments.controllers.FileUploadJourneyController.showWaitingForFileVerification
+GET        /file-verification/:reference/status                     @uk.gov.hmrc.uploaddocuments.controllers.FileUploadJourneyController.checkFileVerificationStatus(reference: String)
+
+GET        /uploaded                                                @uk.gov.hmrc.uploaddocuments.controllers.FileUploadJourneyController.showFileUploaded
+POST       /uploaded                                                @uk.gov.hmrc.uploaddocuments.controllers.FileUploadJourneyController.submitUploadAnotherFileChoice
+GET        /uploaded/:reference/remove                              @uk.gov.hmrc.uploaddocuments.controllers.FileUploadJourneyController.removeFileUploadByReference(reference: String)
++ nocsrf
+POST       /uploaded/:reference/remove                              @uk.gov.hmrc.uploaddocuments.controllers.FileUploadJourneyController.removeFileUploadByReferenceAsync(reference: String)
+GET        /uploaded/:reference/:fileName                           @uk.gov.hmrc.uploaddocuments.controllers.FileUploadJourneyController.previewFileUploadByReference(reference: String, fileName: String)
+
+GET        /continue-to-host                                        @uk.gov.hmrc.uploaddocuments.controllers.FileUploadJourneyController.continueToHost
 
 GET        /timedout                                                @uk.gov.hmrc.uploaddocuments.controllers.SessionController.showTimeoutPage
 GET        /keep-alive                                              @uk.gov.hmrc.uploaddocuments.controllers.SessionController.keepAlive

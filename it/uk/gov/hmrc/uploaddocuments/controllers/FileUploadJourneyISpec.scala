@@ -175,7 +175,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
     }
 
     "GET /" should {
-      "show the upload multiple files page" in {
+      "show the upload multiple files page when cookie set" in {
         val state = Initialized(
           FileUploadContext(fileUploadSessionConfig),
           fileUploads = FileUploads()
@@ -194,7 +194,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
         )
       }
 
-      "show the upload single file per page when no cookie set" in {
+      "show the upload multiple files page when cookie NOT set but supported" in {
         val state = Initialized(
           FileUploadContext(fileUploadSessionConfig),
           fileUploads = FileUploads()
@@ -202,38 +202,14 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
         journey.setState(state)
         givenAuthorisedForEnrolment(Enrolment("HMRC-XYZ", "EORINumber", "foo"))
 
-        val callbackUrl =
-          appConfig.baseInternalCallbackUrl + s"/upload-documents/journey/${SHA256.compute(journeyId.value)}/callback-from-upscan"
-        givenUpscanInitiateSucceeds(callbackUrl, hostServiceId)
-
-        val result = await(request("/").get())
+        val result = await(requestWithCookies("/").get())
 
         result.status shouldBe 200
-        result.body should include(htmlEscapedPageTitle("view.upload-file.first.title"))
-        result.body should include(htmlEscapedMessage("view.upload-file.first.heading"))
-
-        journey.getState shouldBe UploadFile(
+        result.body should include(htmlEscapedPageTitle("view.upload-multiple-files.title"))
+        result.body should include(htmlEscapedMessage("view.upload-multiple-files.heading"))
+        journey.getState shouldBe UploadMultipleFiles(
           FileUploadContext(fileUploadSessionConfig),
-          reference = "11370e18-6e24-453e-b45a-76d3e32ea33d",
-          uploadRequest = UploadRequest(
-            href = "https://bucketName.s3.eu-west-2.amazonaws.com",
-            fields = Map(
-              "Content-Type"            -> "application/xml",
-              "acl"                     -> "private",
-              "key"                     -> "xxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
-              "policy"                  -> "xxxxxxxx==",
-              "x-amz-algorithm"         -> "AWS4-HMAC-SHA256",
-              "x-amz-credential"        -> "ASIAxxxxxxxxx/20180202/eu-west-2/s3/aws4_request",
-              "x-amz-date"              -> "yyyyMMddThhmmssZ",
-              "x-amz-meta-callback-url" -> callbackUrl,
-              "x-amz-signature"         -> "xxxx",
-              "success_action_redirect" -> "https://myservice.com/nextPage",
-              "error_action_redirect"   -> "https://myservice.com/errorPage"
-            )
-          ),
-          fileUploads = FileUploads(files =
-            Seq(FileUpload.Initiated(Nonce.Any, Timestamp.Any, "11370e18-6e24-453e-b45a-76d3e32ea33d"))
-          )
+          fileUploads = FileUploads()
         )
       }
 
@@ -269,6 +245,70 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
         journey.getState shouldBe UploadMultipleFiles(
           FileUploadContext(fileUploadSessionConfig),
           fileUploads = FileUploads()
+        )
+      }
+    }
+
+    "GET /choose-files" should {
+      "show the upload multiple files page when cookie set" in {
+        val state = Initialized(
+          FileUploadContext(fileUploadSessionConfig),
+          fileUploads = FileUploads()
+        )
+        journey.setState(state)
+        givenAuthorisedForEnrolment(Enrolment("HMRC-XYZ", "EORINumber", "foo"))
+
+        val result = await(requestWithCookies("/choose-files", controller.COOKIE_JSENABLED -> "true").get())
+
+        result.status shouldBe 200
+        result.body should include(htmlEscapedPageTitle("view.upload-multiple-files.title"))
+        result.body should include(htmlEscapedMessage("view.upload-multiple-files.heading"))
+        journey.getState shouldBe UploadMultipleFiles(
+          FileUploadContext(fileUploadSessionConfig),
+          fileUploads = FileUploads()
+        )
+      }
+
+      "show the upload single file per page when no cookie set" in {
+        val state = Initialized(
+          FileUploadContext(fileUploadSessionConfig),
+          fileUploads = FileUploads()
+        )
+        journey.setState(state)
+        givenAuthorisedForEnrolment(Enrolment("HMRC-XYZ", "EORINumber", "foo"))
+
+        val callbackUrl =
+          appConfig.baseInternalCallbackUrl + s"/upload-documents/journey/${SHA256.compute(journeyId.value)}/callback-from-upscan"
+        givenUpscanInitiateSucceeds(callbackUrl, hostServiceId)
+
+        val result = await(request("/choose-files").get())
+
+        result.status shouldBe 200
+        result.body should include(htmlEscapedPageTitle("view.upload-file.first.title"))
+        result.body should include(htmlEscapedMessage("view.upload-file.first.heading"))
+
+        journey.getState shouldBe UploadFile(
+          FileUploadContext(fileUploadSessionConfig),
+          reference = "11370e18-6e24-453e-b45a-76d3e32ea33d",
+          uploadRequest = UploadRequest(
+            href = "https://bucketName.s3.eu-west-2.amazonaws.com",
+            fields = Map(
+              "Content-Type"            -> "application/xml",
+              "acl"                     -> "private",
+              "key"                     -> "xxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+              "policy"                  -> "xxxxxxxx==",
+              "x-amz-algorithm"         -> "AWS4-HMAC-SHA256",
+              "x-amz-credential"        -> "ASIAxxxxxxxxx/20180202/eu-west-2/s3/aws4_request",
+              "x-amz-date"              -> "yyyyMMddThhmmssZ",
+              "x-amz-meta-callback-url" -> callbackUrl,
+              "x-amz-signature"         -> "xxxx",
+              "success_action_redirect" -> "https://myservice.com/nextPage",
+              "error_action_redirect"   -> "https://myservice.com/errorPage"
+            )
+          ),
+          fileUploads = FileUploads(files =
+            Seq(FileUpload.Initiated(Nonce.Any, Timestamp.Any, "11370e18-6e24-453e-b45a-76d3e32ea33d"))
+          )
         )
       }
     }
