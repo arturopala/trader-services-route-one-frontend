@@ -21,6 +21,7 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.http.HeaderNames
 import uk.gov.hmrc.play.http.HeaderCarrierConverter
 import play.api.mvc.Headers
+import play.api.mvc.RequestHeader
 
 final case class FileUploadContext(
   config: FileUploadSessionConfig,
@@ -33,7 +34,7 @@ sealed trait CallbackAuth {
 
 object CallbackAuth {
 
-  final case class FromHeaderCarrier(
+  final case class HostHeaders(
     headers: Seq[(String, String)]
   ) extends CallbackAuth {
     def populate(hc: HeaderCarrier): HeaderCarrier =
@@ -41,18 +42,18 @@ object CallbackAuth {
 
     final override def equals(obj: scala.Any): Boolean =
       if (obj.isInstanceOf[Any]) true
-      else if (obj.isInstanceOf[FromHeaderCarrier])
-        obj.asInstanceOf[FromHeaderCarrier].headers.equals(this.headers)
+      else if (obj.isInstanceOf[HostHeaders])
+        obj.asInstanceOf[HostHeaders].headers.equals(this.headers)
       else false
 
     override def hashCode(): Int = 0
     override def toString(): String =
-      s"CallbackAuth.FromHeaderCarrier(${headers.map(h => s"${h._1}=${h._2}").mkString(", ")})"
+      s"CallbackAuth.HostHeaders(${headers.map(h => s"${h._1}=${h._2}").mkString(", ")})"
   }
 
-  object FromHeaderCarrier {
-    implicit val reads: Reads[FromHeaderCarrier] = Json.reads[FromHeaderCarrier]
-    implicit val writes: Writes[FromHeaderCarrier] = Json.writes[FromHeaderCarrier]
+  object HostHeaders {
+    implicit val reads: Reads[HostHeaders] = Json.reads[HostHeaders]
+    implicit val writes: Writes[HostHeaders] = Json.writes[HostHeaders]
   }
 
   object Any extends CallbackAuth {
@@ -62,15 +63,17 @@ object CallbackAuth {
     override def toString(): String = "CallbackAuth.Any"
   }
 
-  def from(hc: HeaderCarrier): Option[CallbackAuth] =
-    Some(FromHeaderCarrier(hc.headers(HeaderNames.explicitlyIncludedHeaders)))
+  def from(rh: RequestHeader): Option[CallbackAuth] = {
+    val headers = HeaderCarrierConverter.fromRequest(rh).headers(HeaderNames.explicitlyIncludedHeaders)
+    Some(HostHeaders(headers))
+  }
 
   implicit val format: Format[CallbackAuth] =
     Format(
-      Reads(value => FromHeaderCarrier.reads.reads(value).orElse(JsSuccess(Any))),
+      Reads(value => HostHeaders.reads.reads(value).orElse(JsSuccess(Any))),
       Writes.apply {
-        case value: FromHeaderCarrier => FromHeaderCarrier.writes.writes(value)
-        case _                        => JsString("Any")
+        case value: HostHeaders => HostHeaders.writes.writes(value)
+        case _                  => JsString("Any")
       }
     )
 }

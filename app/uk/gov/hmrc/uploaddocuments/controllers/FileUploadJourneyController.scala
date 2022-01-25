@@ -66,14 +66,16 @@ class FileUploadJourneyController @Inject() (
   final val initialize: Action[AnyContent] =
     actions
       .parseJsonWithFallback[FileUploadInitializationRequest](BadRequest)
-      .applyWithRequest(implicit request => Transitions.initialize(CallbackAuth.from(hc(request))))
+      .applyWithRequest { implicit request =>
+        Transitions.initialize(CallbackAuth.from(request))
+      }
       .displayUsing(renderInitializationResponse)
       .recover {
         case e: JsonParseException => BadRequest(e.getMessage())
         case e                     => InternalServerError
       }
 
-  // POST /continue-to-host
+  // GET /continue-to-host
   final val continueToHost: Action[AnyContent] =
     whenAuthorisedAsUser
       .show[State.ContinueToHost]

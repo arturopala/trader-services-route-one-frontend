@@ -4,7 +4,7 @@
 
 + nocsrf
 POST       /initialize                                              @uk.gov.hmrc.uploaddocuments.controllers.FileUploadJourneyController.initialize
-POST       /continue-to-host                                        @uk.gov.hmrc.uploaddocuments.controllers.FileUploadJourneyController.continueToHost
+GET        /continue-to-host                                        @uk.gov.hmrc.uploaddocuments.controllers.FileUploadJourneyController.continueToHost
 
 GET        /                                                        @uk.gov.hmrc.uploaddocuments.controllers.FileUploadJourneyController.showUploadMultipleFiles
 + nocsrf

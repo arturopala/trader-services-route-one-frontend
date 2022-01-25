@@ -30,6 +30,7 @@ import java.net.URL
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
+import play.api.Configuration
 
 /** Connector to push the results of the file uploads back to the host service. */
 @Singleton
@@ -37,7 +38,8 @@ class FileUploadResultPushConnector @Inject() (
   appConfig: AppConfig,
   http: HttpPost,
   metrics: Metrics,
-  val actorSystem: ActorSystem
+  val actorSystem: ActorSystem,
+  configuration: Configuration
 ) extends HttpAPIMonitor with Retries {
 
   override val kenshooRegistry: MetricRegistry = metrics.defaultRegistry
@@ -91,7 +93,7 @@ object FileUploadResultPushConnector {
     context: Option[JsValue],
     callbackAuth: CallbackAuth = CallbackAuth.Any
   )
-  case class Payload(nonce: Nonce, uploadedFiles: Seq[UploadedFile], context: Option[JsValue])
+  case class Payload(nonce: Nonce, uploadedFiles: Seq[UploadedFile], cargo: Option[JsValue])
 
   type Response = Either[FileUploadResultPushConnector.Error, Unit]
 
