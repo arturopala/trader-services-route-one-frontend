@@ -107,7 +107,7 @@ object FileUploadResultPushConnector {
     def from(context: FileUploadContext, fileUploads: FileUploads): Request =
       Request(
         context.config.serviceId,
-        context.config.resultPostUrl,
+        context.config.callbackUrl,
         context.config.nonce,
         fileUploads.toUploadedFiles,
         context.config.cargo,

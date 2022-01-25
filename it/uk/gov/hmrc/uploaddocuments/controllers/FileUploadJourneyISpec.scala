@@ -36,7 +36,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
       nonce = Nonce.random,
       continueUrl = s"$wireMockBaseUrlAsString/continue-url",
       backlinkUrl = s"$wireMockBaseUrlAsString/backlink-url",
-      resultPostUrl = s"$wireMockBaseUrlAsString/result-post-url"
+      callbackUrl = s"$wireMockBaseUrlAsString/result-post-url"
     )
 
   "FileUploadJourneyController" when {

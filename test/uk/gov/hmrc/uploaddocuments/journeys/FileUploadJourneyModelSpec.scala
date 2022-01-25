@@ -42,7 +42,7 @@ class FileUploadJourneyModelSpec
       nonce = Nonce.random,
       continueUrl = "/continue-url",
       backlinkUrl = "/backlink-url",
-      resultPostUrl = "/result-post-url"
+      callbackUrl = "/result-post-url"
     )
   )
 

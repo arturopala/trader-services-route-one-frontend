@@ -19,14 +19,15 @@ package uk.gov.hmrc.uploaddocuments.models
 import play.api.libs.json.{Format, JsValue, Json}
 
 final case class FileUploadSessionConfig(
-  serviceId: String,
-  nonce: Nonce,
-  continueUrl: String,
-  backlinkUrl: String,
-  resultPostUrl: String,
-  cargo: Option[JsValue] = None // data carried through, from and to host service
+  serviceId: String, // client ID used by upscan configuration
+  nonce: Nonce, // unique secret shared by the host and upload microservices
+  continueUrl: String, // url to continue after uploading the files
+  backlinkUrl: String, // backlink url
+  callbackUrl: String, // url where to post uploaded files
+  cargo: Option[JsValue] = None // opaque data carried through, from and to the host service
 )
 
 object FileUploadSessionConfig {
-  implicit val format: Format[FileUploadSessionConfig] = Json.format[FileUploadSessionConfig]
+  implicit val format: Format[FileUploadSessionConfig] =
+    Json.format[FileUploadSessionConfig]
 }
