@@ -219,13 +219,13 @@ class FileUploadJourneyController @Inject() (
         InternalServerError
       }
 
-  // GET /file-uploaded
+  // GET /uploaded
   final val showFileUploaded: Action[AnyContent] =
     whenAuthenticated
       .show[State.FileUploaded]
       .orApply(Transitions.backToFileUploaded)
 
-  // POST /file-uploaded
+  // POST /uploaded
   final val submitUploadAnotherFileChoice: Action[AnyContent] =
     whenAuthenticated
       .bindForm[Boolean](UploadAnotherFileChoiceForm)
@@ -235,7 +235,7 @@ class FileUploadJourneyController @Inject() (
         )
       }
 
-  // GET /file-uploaded/:reference/remove
+  // GET /uploaded/:reference/remove
   final def removeFileUploadByReference(reference: String): Action[AnyContent] =
     whenAuthenticated
       .applyWithRequest { implicit request =>
@@ -244,7 +244,7 @@ class FileUploadJourneyController @Inject() (
         )(fileUploadResultPushConnector.push(_))
       }
 
-  // POST /file-uploaded/:reference/remove
+  // POST /uploaded/:reference/remove
   final def removeFileUploadByReferenceAsync(reference: String): Action[AnyContent] =
     whenAuthenticated
       .applyWithRequest { implicit request =>
@@ -254,7 +254,7 @@ class FileUploadJourneyController @Inject() (
       }
       .displayUsing(renderFileRemovalStatus)
 
-  // GET /file-uploaded/:reference/:fileName
+  // GET /uploaded/:reference/:fileName
   final def previewFileUploadByReference(reference: String, fileName: String): Action[AnyContent] =
     whenAuthenticated.showCurrentState
       .displayAsyncUsing(streamFileFromUspcan(reference))

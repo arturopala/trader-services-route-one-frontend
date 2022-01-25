@@ -787,7 +787,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
         val result3 =
           await(request("/file-verification/f029444f-415c-4dec-9cf2-36774ec63ab8/status").get())
         result3.status shouldBe 200
-        result3.body shouldBe """{"reference":"f029444f-415c-4dec-9cf2-36774ec63ab8","fileStatus":"ACCEPTED","fileMimeType":"application/pdf","fileName":"test.pdf","fileSize":4567890,"previewUrl":"/upload-documents/file-uploaded/f029444f-415c-4dec-9cf2-36774ec63ab8/test.pdf"}"""
+        result3.body shouldBe """{"reference":"f029444f-415c-4dec-9cf2-36774ec63ab8","fileStatus":"ACCEPTED","fileMimeType":"application/pdf","fileName":"test.pdf","fileSize":4567890,"previewUrl":"/upload-documents/uploaded/f029444f-415c-4dec-9cf2-36774ec63ab8/test.pdf"}"""
         journey.getState shouldBe state
 
         val result4 =
@@ -815,7 +815,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
       }
     }
 
-    "GET /file-uploaded" should {
+    "GET /uploaded" should {
       "show uploaded singular file view" in {
         val state = FileUploaded(
           FileUploadContext(fileUploadSessionConfig),
@@ -824,7 +824,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
         journey.setState(state)
         givenAuthorisedForEnrolment(Enrolment("HMRC-XYZ", "EORINumber", "foo"))
 
-        val result = await(request("/file-uploaded").get())
+        val result = await(request("/uploaded").get())
 
         result.status shouldBe 200
         result.body should include(htmlEscapedPageTitle("view.file-uploaded.singular.title", "1"))
@@ -865,7 +865,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
         journey.setState(state)
         givenAuthorisedForEnrolment(Enrolment("HMRC-XYZ", "EORINumber", "foo"))
 
-        val result = await(request("/file-uploaded").get())
+        val result = await(request("/uploaded").get())
 
         result.status shouldBe 200
         result.body should include(htmlEscapedPageTitle("view.file-uploaded.plural.title", "2"))
@@ -881,7 +881,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
         journey.setState(state)
         givenAuthorisedForEnrolment(Enrolment("HMRC-XYZ", "EORINumber", "foo"))
 
-        val result = await(request("/file-uploaded").get())
+        val result = await(request("/uploaded").get())
 
         result.status shouldBe 200
         result.body should include(htmlEscapedPageTitle("view.file-uploaded.plural.title", "10"))
@@ -890,7 +890,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
       }
     }
 
-    "POST /file-uploaded" should {
+    "POST /uploaded" should {
 
       val FILES_LIMIT = 10
 
@@ -908,7 +908,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
         givenUpscanInitiateSucceeds(callbackUrl, hostServiceId)
 
         val result = await(
-          request("/file-uploaded")
+          request("/uploaded")
             .post(Map("uploadAnotherFile" -> "yes"))
         )
 
@@ -955,7 +955,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
         givenUpscanInitiateSucceeds(callbackUrl, hostServiceId)
 
         val result = await(
-          request("/file-uploaded")
+          request("/uploaded")
             .post(Map("uploadAnotherFile" -> "yes"))
         )
 
@@ -1000,7 +1000,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
         givenSomePage(200, "/continue-url", "Welcome back at host 1!")
 
         val result = await(
-          request("/file-uploaded")
+          request("/uploaded")
             .post(Map("uploadAnotherFile" -> "yes"))
         )
 
@@ -1025,7 +1025,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
         givenSomePage(200, "/continue-url", "Welcome back at host 2!")
 
         val result = await(
-          request("/file-uploaded")
+          request("/uploaded")
             .post(Map("uploadAnotherFile" -> "no"))
         )
 
@@ -1050,7 +1050,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
         givenSomePage(200, "/continue-url", "Welcome back at host 3!")
 
         val result = await(
-          request("/file-uploaded")
+          request("/uploaded")
             .post(Map("uploadAnotherFile" -> "no"))
         )
 
@@ -1153,7 +1153,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
       }
     }
 
-    "GET /file-uploaded/:reference/remove" should {
+    "GET /uploaded/:reference/remove" should {
       "remove file from upload list by reference" in {
         givenHostPushEndpoint(
           "/result-post-url",
@@ -1209,7 +1209,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
         journey.setState(state)
         givenAuthorisedForEnrolment(Enrolment("HMRC-XYZ", "EORINumber", "foo"))
 
-        val result = await(request("/file-uploaded/11370e18-6e24-453e-b45a-76d3e32ea33d/remove").get())
+        val result = await(request("/uploaded/11370e18-6e24-453e-b45a-76d3e32ea33d/remove").get())
 
         result.status shouldBe 200
         result.body should include(htmlEscapedPageTitle("view.file-uploaded.singular.title", "1"))
@@ -1238,7 +1238,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
       }
     }
 
-    "POST /file-uploaded/:reference/remove" should {
+    "POST /uploaded/:reference/remove" should {
       "remove file from upload list by reference" in {
         givenHostPushEndpoint(
           "/result-post-url",
@@ -1294,7 +1294,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
         journey.setState(state)
         givenAuthorisedForEnrolment(Enrolment("HMRC-XYZ", "EORINumber", "foo"))
 
-        val result = await(request("/file-uploaded/11370e18-6e24-453e-b45a-76d3e32ea33d/remove").post(""))
+        val result = await(request("/uploaded/11370e18-6e24-453e-b45a-76d3e32ea33d/remove").post(""))
 
         result.status shouldBe 204
 
@@ -1322,7 +1322,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
       }
     }
 
-    "GET /file-uploaded/:reference" should {
+    "GET /uploaded/:reference" should {
       "stream the uploaded file content back if it exists" in {
         val bytes = Array.ofDim[Byte](1024 * 1024)
         Random.nextBytes(bytes)
@@ -1360,7 +1360,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
 
         val result =
           await(
-            request("/file-uploaded/f029444f-415c-4dec-9cf2-36774ec63ab8/test.pdf")
+            request("/uploaded/f029444f-415c-4dec-9cf2-36774ec63ab8/test.pdf")
               .get()
           )
         result.status shouldBe 200
@@ -1406,7 +1406,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
 
         val result =
           await(
-            request("/file-uploaded/f029444f-415c-4dec-9cf2-36774ec63ab8/test.pdf")
+            request("/uploaded/f029444f-415c-4dec-9cf2-36774ec63ab8/test.pdf")
               .get()
           )
         result.status shouldBe 200
