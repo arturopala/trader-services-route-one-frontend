@@ -412,7 +412,7 @@ export class MultiFileUpload extends Component {
 
     switch (response['fileStatus']) {
       case 'ACCEPTED':
-        this.handleFileStatusSuccessful(file, response['previewUrl']);
+        this.handleFileStatusSuccessful(file, response['previewUrl'], response['description']);
         this.uploadNext();
         break;
 
@@ -442,7 +442,7 @@ export class MultiFileUpload extends Component {
     }
   }
 
-  private handleFileStatusSuccessful(file: HTMLInputElement, previewUrl: string) {
+  private handleFileStatusSuccessful(file: HTMLInputElement, previewUrl: string, description: string) {
     const item = this.getItemFromFile(file);
 
     this.addNotification(parseTemplate(this.messages.documentUploaded, {
@@ -450,6 +450,7 @@ export class MultiFileUpload extends Component {
     }));
 
     this.getFilePreviewElement(item).href = previewUrl;
+    this.getDescriptionElement(item).textContent = description;
     this.setItemState(item, UploadState.Uploaded);
     this.updateButtonVisibility();
     this.updateFormStatusVisibility();

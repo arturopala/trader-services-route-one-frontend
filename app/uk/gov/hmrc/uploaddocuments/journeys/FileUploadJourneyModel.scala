@@ -431,7 +431,11 @@ object FileUploadJourneyModel extends JourneyModel {
     )(requestNonce: Nonce)(notification: UpscanNotification)(implicit ec: ExecutionContext) = {
       val now = Timestamp.now
 
-      def updateFileUploads(fileUploads: FileUploads, allowStatusOverwrite: Boolean): (FileUploads, Boolean) = {
+      def updateFileUploads(
+        fileUploads: FileUploads,
+        allowStatusOverwrite: Boolean,
+        config: FileUploadSessionConfig
+      ): (FileUploads, Boolean) = {
         val modifiedFileUploads = fileUploads.copy(files = fileUploads.files.map {
           // update status of the file with matching nonce
           case fileUpload @ FileUpload(nonce, reference, _)
@@ -466,7 +470,8 @@ object FileUploadJourneyModel extends JourneyModel {
                       uploadDetails.checksum,
                       FileUpload.sanitizeFileName(uploadDetails.fileName),
                       uploadDetails.fileMimeType,
-                      uploadDetails.size
+                      uploadDetails.size,
+                      description = config.newFileDescription
                     )
                 }
                 modifiedFileUpload
@@ -486,22 +491,23 @@ object FileUploadJourneyModel extends JourneyModel {
 
       Transition {
         case current @ WaitingForFileVerification(
-              config,
+              context,
               reference,
               uploadRequest,
               currentFileUpload,
               fileUploads
             ) =>
-          val (updatedFileUploads, newlyAccepted) = updateFileUploads(fileUploads, allowStatusOverwrite = false)
+          val (updatedFileUploads, newlyAccepted) =
+            updateFileUploads(fileUploads, allowStatusOverwrite = false, config = context.config)
           (if (newlyAccepted)
-             pushfileUploadResult(FileUploadResultPushConnector.Request.from(config, updatedFileUploads))
+             pushfileUploadResult(FileUploadResultPushConnector.Request.from(context, updatedFileUploads))
            else Future.successful(Right(())))
             .flatMap {
               case Left(e) => fail(new Exception(s"$e"))
               case Right(()) =>
                 val currentUpload = updatedFileUploads.files.find(_.reference == reference)
                 commonFileUploadStatusHandler(
-                  config,
+                  context,
                   updatedFileUploads,
                   reference,
                   uploadRequest,
@@ -510,17 +516,18 @@ object FileUploadJourneyModel extends JourneyModel {
                   .apply(currentUpload)
             }
 
-        case current @ UploadFile(config, reference, uploadRequest, fileUploads, errorOpt) =>
-          val (updatedFileUploads, newlyAccepted) = updateFileUploads(fileUploads, allowStatusOverwrite = false)
+        case current @ UploadFile(context, reference, uploadRequest, fileUploads, errorOpt) =>
+          val (updatedFileUploads, newlyAccepted) =
+            updateFileUploads(fileUploads, allowStatusOverwrite = false, config = context.config)
           (if (newlyAccepted)
-             pushfileUploadResult(FileUploadResultPushConnector.Request.from(config, updatedFileUploads))
+             pushfileUploadResult(FileUploadResultPushConnector.Request.from(context, updatedFileUploads))
            else Future.successful(Right(())))
             .flatMap {
               case Left(e) => fail(new Exception(s"$e"))
               case Right(()) =>
                 val currentUpload = updatedFileUploads.files.find(_.reference == reference)
                 commonFileUploadStatusHandler(
-                  config,
+                  context,
                   updatedFileUploads,
                   reference,
                   uploadRequest,
@@ -529,20 +536,22 @@ object FileUploadJourneyModel extends JourneyModel {
                   .apply(currentUpload)
             }
 
-        case current @ UploadMultipleFiles(config, fileUploads) =>
-          val (updatedFileUploads, newlyAccepted) = updateFileUploads(fileUploads, allowStatusOverwrite = true)
+        case current @ UploadMultipleFiles(context, fileUploads) =>
+          val (updatedFileUploads, newlyAccepted) =
+            updateFileUploads(fileUploads, allowStatusOverwrite = true, config = context.config)
           (if (newlyAccepted)
-             pushfileUploadResult(FileUploadResultPushConnector.Request.from(config, updatedFileUploads))
+             pushfileUploadResult(FileUploadResultPushConnector.Request.from(context, updatedFileUploads))
            else Future.successful(Right(())))
             .flatMap {
               case Left(e)   => fail(new Exception(s"$e"))
               case Right(()) => goto(current.copy(fileUploads = updatedFileUploads))
             }
 
-        case current @ ContinueToHost(config, fileUploads) =>
-          val (updatedFileUploads, newlyAccepted) = updateFileUploads(fileUploads, allowStatusOverwrite = true)
+        case current @ ContinueToHost(context, fileUploads) =>
+          val (updatedFileUploads, newlyAccepted) =
+            updateFileUploads(fileUploads, allowStatusOverwrite = true, config = context.config)
           (if (newlyAccepted)
-             pushfileUploadResult(FileUploadResultPushConnector.Request.from(config, updatedFileUploads))
+             pushfileUploadResult(FileUploadResultPushConnector.Request.from(context, updatedFileUploads))
            else Future.successful(Right(())))
             .flatMap {
               case Left(e)   => fail(new Exception(s"$e"))
