@@ -28,7 +28,8 @@ final case class FileUploadSessionConfig(
   continueUrl: String, // url to continue after uploading the files
   backlinkUrl: String, // backlink url
   callbackUrl: String, // url where to post uploaded files
-  cargo: Option[JsValue] = None, // opaque data carried through, from and to the host service
+  cargo: Option[JsValue] = None, // opaque data carried through, from and to the host service,
+  newFileDescription: Option[String] = None, // description of the new file added
   features: Features = Features(), // feature switches
   content: Content = Content() // page content customizations
 )
@@ -59,6 +60,7 @@ object FileUploadSessionConfig {
         and (JsPath \ "backlinkUrl").read[String]
         and (JsPath \ "callbackUrl").read[String]
         and (JsPath \ "cargo").readNullable[JsValue]
+        and (JsPath \ "newFileDescription").readNullable[String]
         and (JsPath \ "features").readWithDefault[Features](Features())
         and (JsPath \ "content").readWithDefault[Content](Content()))(FileUploadSessionConfig.apply _),
       ((JsPath \ "serviceId").write[String]
@@ -67,6 +69,7 @@ object FileUploadSessionConfig {
         and (JsPath \ "backlinkUrl").write[String]
         and (JsPath \ "callbackUrl").write[String]
         and (JsPath \ "cargo").writeNullable[JsValue]
+        and (JsPath \ "newFileDescription").writeNullable[String]
         and (JsPath \ "features").write[Features]
         and (JsPath \ "content").write[Content])(unlift(FileUploadSessionConfig.unapply(_)))
     )
