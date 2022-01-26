@@ -18,6 +18,10 @@ package uk.gov.hmrc.uploaddocuments.models
 
 import play.api.libs.json.{Format, JsPath, JsValue}
 
+import FileUploadSessionConfig._
+import play.api.libs.json.Json
+import play.api.libs.functional.syntax._
+
 final case class FileUploadSessionConfig(
   serviceId: String, // client ID used by upscan configuration
   nonce: Nonce, // unique secret shared by the host and upload microservices
@@ -25,11 +29,27 @@ final case class FileUploadSessionConfig(
   backlinkUrl: String, // backlink url
   callbackUrl: String, // url where to post uploaded files
   cargo: Option[JsValue] = None, // opaque data carried through, from and to the host service
-  javascriptDisabled: Boolean = false
+  features: Features = Features(), // feature switches
+  content: Content = Content() // page content customizations
 )
 
 object FileUploadSessionConfig {
-  import play.api.libs.functional.syntax._
+
+  case class Features(
+    javascriptDisabled: Boolean = false
+  )
+
+  case class Content(
+    title: Option[String] = None,
+    description: Option[String] = None
+  )
+
+  implicit val contentFormat: Format[Content] = Json.format[Content]
+
+  implicit val featuresFormat: Format[Features] = Format(
+    ((JsPath \ "javascriptDisabled").readWithDefault[Boolean](false)).map(Features.apply _),
+    ((JsPath \ "javascriptDisabled").write[Boolean]).contramap(unlift(Features.unapply(_)))
+  )
 
   implicit val format: Format[FileUploadSessionConfig] =
     Format(
@@ -39,13 +59,15 @@ object FileUploadSessionConfig {
         and (JsPath \ "backlinkUrl").read[String]
         and (JsPath \ "callbackUrl").read[String]
         and (JsPath \ "cargo").readNullable[JsValue]
-        and (JsPath \ "javascriptDisabled").readWithDefault[Boolean](false))(FileUploadSessionConfig.apply _),
+        and (JsPath \ "features").readWithDefault[Features](Features())
+        and (JsPath \ "content").readWithDefault[Content](Content()))(FileUploadSessionConfig.apply _),
       ((JsPath \ "serviceId").write[String]
         and (JsPath \ "nonce").write[Nonce]
         and (JsPath \ "continueUrl").write[String]
         and (JsPath \ "backlinkUrl").write[String]
         and (JsPath \ "callbackUrl").write[String]
         and (JsPath \ "cargo").writeNullable[JsValue]
-        and (JsPath \ "javascriptDisabled").write[Boolean])(unlift(FileUploadSessionConfig.unapply(_)))
+        and (JsPath \ "features").write[Features]
+        and (JsPath \ "content").write[Content])(unlift(FileUploadSessionConfig.unapply(_)))
     )
 }

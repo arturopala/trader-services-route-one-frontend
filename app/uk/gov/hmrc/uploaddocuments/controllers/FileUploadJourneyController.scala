@@ -438,7 +438,7 @@ class FileUploadJourneyController @Inject() (
         Created.withHeaders(
           HeaderNames.LOCATION ->
             (
-              if (context.config.javascriptDisabled)
+              if (context.config.features.javascriptDisabled)
                 routes.FileUploadJourneyController.showChooseFile
               else
                 routes.FileUploadJourneyController.start
