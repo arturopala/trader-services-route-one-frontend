@@ -36,7 +36,7 @@
 }
 
 @govukLayout(
-  pageWithFormTitle(if(fileUploads.isSingle) "view.file-uploaded.singular.title" else "view.file-uploaded.plural.title", form, fileUploads.acceptedCount),
+  pageTitle = pageWithFormTitle(if(fileUploads.isSingle) "view.file-uploaded.singular.title" else "view.file-uploaded.plural.title", form, fileUploads.acceptedCount)(messages, CustomizedServiceContent()),
   backLink = Some(backLink.url)) {
 
   @forms.errorSummary(form.errors)
@@ -45,7 +45,7 @@
 
     @html.h1(
       messages(if(fileUploads.isSingle) "view.file-uploaded.singular.heading" else "view.file-uploaded.plural.heading", fileUploads.acceptedCount),
-      classes = "govuk-heading-l"
+      classes = serviceContent.pageTitleClasses.getOrElse("govuk-heading-l")
     )
 
     @html.h2(messages("view.file-uploaded.list.heading"), classes = "govuk-heading-m")

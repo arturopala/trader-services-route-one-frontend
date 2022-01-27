@@ -29,10 +29,10 @@
 @(fileUploads: FileUploads, postAction: Call, previewFileCall: (String,String) => Call, removeFileCall: String => Call, backLink: Call)(implicit request: Request[_], messages: Messages, serviceContent: CustomizedServiceContent)
 
 @govukLayout(
-  pageTitle = Some(messages("view.file-uploaded.plural.title", fileUploads.acceptedCount)),
+  pageTitle = pageTitle("view.file-uploaded.plural.title", fileUploads.acceptedCount)(messages, CustomizedServiceContent()),
   backLink = Some(backLink.url)) {
 
-  @html.h1(messages("view.file-uploaded.plural.heading", fileUploads.acceptedCount), classes = "govuk-heading-l")
+  @html.h1(messages("view.file-uploaded.plural.heading", fileUploads.acceptedCount), classes = serviceContent.pageTitleClasses.getOrElse("govuk-heading-l"))
 
   @html.h2(messages("view.file-uploaded.list.heading"), classes = "govuk-heading-m")
 

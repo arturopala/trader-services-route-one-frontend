@@ -27,10 +27,10 @@
 @(successAction: Call, failureAction: Call, checkStatusAction: Call, backLink: Call)(implicit request: Request[_], messages: Messages, serviceContent: CustomizedServiceContent)
 
 @govukLayout(
-  pageTitle("view.upload-file.waiting"),
+  pageTitle = pageTitle("view.upload-file.waiting")(messages, CustomizedServiceContent()),
   backLink = Some(backLink.url),
   refresh = 3) {
 
-    <h1 class="govuk-heading-l">@messages("view.upload-file.waiting")</h1>
+    <h1 class="@serviceContent.pageTitleClasses.getOrElse("govuk-heading-l")">@messages("view.upload-file.waiting")</h1>
     <div class="ccms-loader"></div>
 }

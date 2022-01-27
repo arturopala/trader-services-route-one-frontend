@@ -32,7 +32,7 @@ context: UploadFileViewContext
 @(uploadRequest: UploadRequest, fileUploads: FileUploads, maybeUploadError: Option[FileUploadError], successAction: Call, failureAction: Call, checkStatusAction: Call, backLink: Call)(implicit request: Request[_], messages: Messages, serviceContent: CustomizedServiceContent)
 
 @govukLayout(
-  pageTitle(if(fileUploads.isEmpty) "view.upload-file.first.title" else "view.upload-file.next.title", maybeUploadError.isDefined),
+  pageTitle = pageTitle(if(fileUploads.isEmpty) "view.upload-file.first.title" else "view.upload-file.next.title", maybeUploadError.isDefined),
   backLink = Some(backLink.url)
 ) {
 
@@ -40,7 +40,7 @@ context: UploadFileViewContext
     @forms.errorSummary(Seq(context.toFormError(fileUploadError)))
   }
 
-  @html.h1(pageHeading(if(fileUploads.isEmpty) "view.upload-file.first.heading" else "view.upload-file.next.heading"), classes = "govuk-heading-l")
+  @html.h1(pageHeading(if(fileUploads.isEmpty) "view.upload-file.first.heading" else "view.upload-file.next.heading"), classes = serviceContent.pageTitleClasses.getOrElse("govuk-heading-l"))
 
   <form action="@uploadRequest.href" method="POST" enctype="multipart/form-data" class="js-form file-upload" novalidate
   data-file-upload-redirect-success-url="@successAction.url"

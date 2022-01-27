@@ -42,7 +42,7 @@ context: UploadFileViewContext
   backLink: Call)(implicit request: Request[_], messages: Messages, serviceContent: CustomizedServiceContent)
 
 @govukLayout(
-  pageTitle("view.upload-multiple-files.title"),
+  pageTitle = pageTitle("view.upload-multiple-files.title"),
   backLink = Some(backLink.url)
 ) {
 
