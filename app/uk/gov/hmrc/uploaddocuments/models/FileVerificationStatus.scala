@@ -39,7 +39,7 @@ object FileVerificationStatus {
     fileUpload: FileUpload,
     uploadFileViewContext: UploadFileViewContext,
     filePreviewUrl: (String, String) => Call,
-    maxFileSizeMb: Int
+    maximumFileSizeBytes: Long
   )(implicit
     messages: Messages
   ): FileVerificationStatus =
@@ -72,7 +72,8 @@ object FileVerificationStatus {
         FileVerificationStatus(
           fileUpload.reference,
           "REJECTED",
-          errorMessage = Some(messages(uploadFileViewContext.toMessageKey(f.details), maxFileSizeMb))
+          errorMessage =
+            Some(messages(uploadFileViewContext.toMessageKey(f.details), (maximumFileSizeBytes / (1024 * 1024))))
         )
 
       case f: FileUpload.Duplicate =>

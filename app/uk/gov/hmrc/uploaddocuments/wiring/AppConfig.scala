@@ -29,7 +29,7 @@ import uk.gov.hmrc.uploaddocuments.connectors.Retries
 import play.api.Configuration
 
 object AppConfig {
-  case class FileFormats(maxFileSizeMb: Int, approvedFileTypes: String, approvedFileExtensions: String)
+  case class FileFormats(approvedFileTypes: String, approvedFileExtensions: String)
 }
 
 @ImplementedBy(classOf[AppConfigImpl])
@@ -94,7 +94,6 @@ class AppConfigImpl @Inject() (config: ServicesConfig, configuration: Configurat
   override val countdown: Int = config.getInt("session.countdownInSeconds")
 
   val fileFormats: AppConfig.FileFormats = AppConfig.FileFormats(
-    maxFileSizeMb = config.getInt("file-formats.max-file-size-mb"),
     approvedFileExtensions = config.getString("file-formats.approved-file-extensions"),
     approvedFileTypes = config.getString("file-formats.approved-file-types")
   )

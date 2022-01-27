@@ -29,7 +29,7 @@ appConfig: AppConfig,
 context: UploadFileViewContext
 )
 
-@(maxFileUploadsNumber: Int, uploadRequest: UploadRequest, fileUploads: FileUploads, maybeUploadError: Option[FileUploadError], successAction: Call, failureAction: Call, checkStatusAction: Call, backLink: Call)(implicit request: Request[_], messages: Messages, serviceContent: CustomizedServiceContent)
+@(maxFileUploadsNumber: Int, maximumFileSizeBytes: Long, uploadRequest: UploadRequest, fileUploads: FileUploads, maybeUploadError: Option[FileUploadError], successAction: Call, failureAction: Call, checkStatusAction: Call, backLink: Call)(implicit request: Request[_], messages: Messages, serviceContent: CustomizedServiceContent)
 
 @govukLayout(
   pageTitle = pageTitle(if(fileUploads.isEmpty) "view.upload-file.first.title" else "view.upload-file.next.title", maybeUploadError.isDefined),
@@ -37,7 +37,7 @@ context: UploadFileViewContext
 ) {
 
   @maybeUploadError.map { fileUploadError =>
-    @forms.errorSummary(Seq(context.toFormError(fileUploadError)))
+    @forms.errorSummary(Seq(context.toFormError(fileUploadError, maximumFileSizeBytes)))
   }
 
   @html.h1(pageHeading(if(fileUploads.isEmpty) "view.upload-file.first.heading" else "view.upload-file.next.heading"), classes = serviceContent.pageTitleClasses.getOrElse("govuk-heading-l"))
@@ -66,13 +66,13 @@ context: UploadFileViewContext
         content = Text(messages(if(fileUploads.isEmpty) "view.upload-file.first.fileLabel" else "view.upload-file.next.fileLabel"))
       ),
       hint = None,
-      errorMessage = maybeUploadError.map(context.toFormError).map(err => ErrorMessage(content = Text(messages(err.message, err.args: _*)))),
+      errorMessage = maybeUploadError.map(context.toFormError(_, maximumFileSizeBytes)).map(err => ErrorMessage(content = Text(messages(err.message, err.args: _*)))),
       formGroupClasses = "",
       classes = "",
       attributes = Map(
         "accept" -> appConfig.fileFormats.approvedFileExtensions,
         "data-msg-required" -> messages("error.file-upload.required"),
-        "data-msg-filesize" -> messages("error.file-upload.invalid-size-large",appConfig.fileFormats.maxFileSizeMb),
+        "data-msg-filesize" -> messages("error.file-upload.invalid-size-large",(maximumFileSizeBytes / (1024 * 1024))),
         "data-msg-accept" -> messages("error.upload-file.other")
       ))
     )

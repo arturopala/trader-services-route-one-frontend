@@ -20,7 +20,7 @@ case class TestAppConfig(
   override val authorisedServiceName: String = "HMRC-XYZ"
   override val authorisedIdentifierKey: String = "EORINumber"
 
-  val fileFormats: AppConfig.FileFormats = AppConfig.FileFormats(10, "", "")
+  val fileFormats: AppConfig.FileFormats = AppConfig.FileFormats("", "")
 
   override val timeout: Int = 10
   override val countdown: Int = 2

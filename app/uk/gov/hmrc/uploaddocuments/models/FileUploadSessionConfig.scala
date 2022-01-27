@@ -30,6 +30,7 @@ final case class FileUploadSessionConfig(
   continueWhenFullUrl: Option[String] = None, // optional url to continue after all possible files has been uploaded
   maximumNumberOfFiles: Int = defaultMaximumNumberOfFiles,
   initialNumberOfEmptyRows: Int = defaultInitialNumberOfEmptyRows,
+  maximumFileSizeBytes: Long = defaultMaximumFileSizeBytes,
   cargo: Option[JsValue] = None, // opaque data carried through, from and to the host service,
   newFileDescription: Option[String] = None, // description of the new file added,
   features: Features = Features(), // upload feature switches
@@ -42,6 +43,7 @@ object FileUploadSessionConfig {
 
   val defaultMaximumNumberOfFiles: Int = 100
   val defaultInitialNumberOfEmptyRows: Int = 3
+  val defaultMaximumFileSizeBytes = 100 * 1024 * 1024
 
   implicit val format: Format[FileUploadSessionConfig] =
     Format(
@@ -53,6 +55,7 @@ object FileUploadSessionConfig {
         and (JsPath \ "continueWhenFullUrl").readNullable[String]
         and (JsPath \ "maximumNumberOfFiles").readWithDefault[Int](defaultMaximumNumberOfFiles)
         and (JsPath \ "initialNumberOfEmptyRows").readWithDefault[Int](defaultInitialNumberOfEmptyRows)
+        and (JsPath \ "maximumFileSizeBytes").readWithDefault[Long](defaultMaximumFileSizeBytes)
         and (JsPath \ "cargo").readNullable[JsValue]
         and (JsPath \ "newFileDescription").readNullable[String]
         and (JsPath \ "features").readWithDefault[Features](Features())
@@ -66,6 +69,7 @@ object FileUploadSessionConfig {
         and (JsPath \ "continueWhenFullUrl").writeNullable[String]
         and (JsPath \ "maximumNumberOfFiles").write[Int]
         and (JsPath \ "initialNumberOfEmptyRows").write[Int]
+        and (JsPath \ "maximumFileSizeBytes").write[Long]
         and (JsPath \ "cargo").writeNullable[JsValue]
         and (JsPath \ "newFileDescription").writeNullable[String]
         and (JsPath \ "features").write[Features]

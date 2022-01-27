@@ -55,14 +55,14 @@ trait TestData {
       )
     )
 
-  val testUpscanRequest: String => UpscanInitiateRequest =
-    nonce =>
+  val testUpscanRequest: (String, Long) => UpscanInitiateRequest =
+    (nonce, maxFileSize) =>
       UpscanInitiateRequest(
         callbackUrl = "https://foo.bar/callback",
         successRedirect = Some("https://foo.bar/success"),
         errorRedirect = Some("https://foo.bar/failure"),
         minimumFileSize = Some(0),
-        maximumFileSize = Some(10 * 1024 * 1024),
+        maximumFileSize = Some(maxFileSize.toInt),
         expectedContentType = Some("image/jpeg,image/png")
       )
 

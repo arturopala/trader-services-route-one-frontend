@@ -35,21 +35,25 @@ import play.api.i18n.Messages
 @Singleton
 class UploadFileViewContext @Inject() (appConfig: AppConfig) {
 
-  def initialScriptStateFrom(initialFileUploads: Seq[FileUpload], previewFile: (String, String) => Call)(implicit
+  def initialScriptStateFrom(
+    initialFileUploads: Seq[FileUpload],
+    previewFile: (String, String) => Call,
+    maximumFileSizeBytes: Long
+  )(implicit
     messages: Messages
   ): String =
     Json.stringify(
       Json.toJson(
         initialFileUploads.map(file =>
-          FileVerificationStatus(file, this, previewFile, appConfig.fileFormats.maxFileSizeMb)
+          FileVerificationStatus(file, this, previewFile, (maximumFileSizeBytes / (1024 * 1024)))
         )
       )
     )
 
-  def toFormError(error: FileUploadError): FormError =
+  def toFormError(error: FileUploadError, maximumFileSizeBytes: Long): FormError =
     error match {
       case FileTransmissionFailed(error) =>
-        FormError("file", Seq(toMessageKey(error)), Seq(appConfig.fileFormats.maxFileSizeMb))
+        FormError("file", Seq(toMessageKey(error)), Seq((maximumFileSizeBytes / (1024 * 1024))))
 
       case FileVerificationFailed(details) =>
         FormError("file", Seq(toMessageKey(details)))

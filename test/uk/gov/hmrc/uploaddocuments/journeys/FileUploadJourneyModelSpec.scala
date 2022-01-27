@@ -42,11 +42,14 @@ class FileUploadJourneyModelSpec
       nonce = Nonce.random,
       continueUrl = "/continue-url",
       backlinkUrl = "/backlink-url",
-      callbackUrl = "/result-post-url"
+      callbackUrl = "/result-post-url",
+      maximumNumberOfFiles = 13,
+      maximumFileSizeBytes = 13 * 1024
     )
   )
 
   val maxFileUploadsNumber = fileUploadContext.config.maximumNumberOfFiles
+  val maximumFileSizeBytes = fileUploadContext.config.maximumFileSizeBytes
 
   "FileUploadJourneyModel" when {
     "at state Initialized" should {
@@ -60,12 +63,12 @@ class FileUploadJourneyModelSpec
                   UploadRequest(href = "https://s3.bucket", fields = Map("callbackUrl" -> request.callbackUrl))
               )
             )
-        val upscanRequest = (nonce: String) =>
+        val upscanRequest = (nonce: String, maxFileSize: Long) =>
           UpscanInitiateRequest(
             "https://foo.bar/callback",
             Some("https://foo.bar/success"),
             Some("https://foo.bar/failure"),
-            Some(10 * 1024 * 1024)
+            Some(maxFileSize.toInt)
           )
         given(
           Initialized(fileUploadContext, FileUploads())
@@ -211,7 +214,7 @@ class FileUploadJourneyModelSpec
                 Timestamp.Any,
                 "foo-bar-ref",
                 uploadId = Some("001"),
-                uploadRequest = Some(someUploadRequest(testUpscanRequest("")))
+                uploadRequest = Some(someUploadRequest(testUpscanRequest("", maximumFileSizeBytes)))
               )
           )
         )
@@ -236,7 +239,7 @@ class FileUploadJourneyModelSpec
                 Timestamp.Any,
                 "foo-bar-ref",
                 uploadId = Some("001"),
-                uploadRequest = Some(someUploadRequest(testUpscanRequest("")))
+                uploadRequest = Some(someUploadRequest(testUpscanRequest("", maximumFileSizeBytes)))
               )
           )
         )
@@ -1605,7 +1608,7 @@ class FileUploadJourneyModelSpec
             UploadFile(
               hostData,
               "foo-bar-ref",
-              someUploadRequest(testUpscanRequest("foo")),
+              someUploadRequest(testUpscanRequest("foo", maximumFileSizeBytes)),
               fileUploads + FileUpload.Initiated(Nonce.Any, Timestamp.Any, "foo-bar-ref")
             )
           )
@@ -2120,7 +2123,7 @@ class FileUploadJourneyModelSpec
             UploadFile(
               hostData,
               "foo-bar-ref",
-              someUploadRequest(testUpscanRequest("foo")),
+              someUploadRequest(testUpscanRequest("foo", maximumFileSizeBytes)),
               fileUploads + FileUpload.Initiated(Nonce.Any, Timestamp.Any, "foo-bar-ref")
             )
           )
@@ -2167,7 +2170,7 @@ class FileUploadJourneyModelSpec
             UploadFile(
               hostData,
               "foo-bar-ref",
-              someUploadRequest(testUpscanRequest("foo")),
+              someUploadRequest(testUpscanRequest("foo", maximumFileSizeBytes)),
               fileUploads + FileUpload.Initiated(Nonce.Any, Timestamp.Any, "foo-bar-ref")
             )
           )
@@ -2220,7 +2223,7 @@ class FileUploadJourneyModelSpec
             UploadFile(
               hostData,
               "foo-bar-ref",
-              someUploadRequest(testUpscanRequest("foo")),
+              someUploadRequest(testUpscanRequest("foo", maximumFileSizeBytes)),
               FileUploads(Seq(FileUpload.Initiated(Nonce.Any, Timestamp.Any, "foo-bar-ref")))
             )
           )

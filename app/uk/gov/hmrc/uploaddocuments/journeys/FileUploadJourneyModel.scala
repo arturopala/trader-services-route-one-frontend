@@ -93,6 +93,7 @@ object FileUploadJourneyModel extends JourneyModel {
 
   }
 
+  type UpscanRequestBuilder = (String, Long) => UpscanInitiateRequest
   type UpscanInitiateApi = (String, UpscanInitiateRequest) => Future[UpscanInitiateResponse]
   type FileUploadResultPushApi =
     FileUploadResultPushConnector.Request => Future[FileUploadResultPushConnector.Response]
@@ -100,7 +101,7 @@ object FileUploadJourneyModel extends JourneyModel {
   /** Common file upload initialization helper. */
   private[journeys] final def gotoFileUploadOrUploaded(
     context: FileUploadContext,
-    upscanRequest: String => UpscanInitiateRequest,
+    upscanRequest: UpscanRequestBuilder,
     upscanInitiate: UpscanInitiateApi,
     fileUploadsOpt: Option[FileUploads],
     showUploadSummaryIfAny: Boolean
@@ -115,7 +116,8 @@ object FileUploadJourneyModel extends JourneyModel {
     else {
       val nonce = Nonce.random
       for {
-        upscanResponse <- upscanInitiate(context.config.serviceId, upscanRequest(nonce.toString()))
+        upscanResponse <-
+          upscanInitiate(context.config.serviceId, upscanRequest(nonce.toString(), context.config.maximumFileSizeBytes))
       } yield State.UploadFile(
         context,
         upscanResponse.reference,
@@ -179,7 +181,7 @@ object FileUploadJourneyModel extends JourneyModel {
       }
 
     final def initiateNextFileUpload(uploadId: String)(
-      upscanRequest: String => UpscanInitiateRequest
+      upscanRequest: UpscanRequestBuilder
     )(upscanInitiate: UpscanInitiateApi)(implicit ec: ExecutionContext) =
       Transition { case state: UploadMultipleFiles =>
         if (
@@ -187,7 +189,10 @@ object FileUploadJourneyModel extends JourneyModel {
           state.fileUploads.initiatedOrAcceptedCount < state.context.config.maximumNumberOfFiles
         ) {
           val nonce = Nonce.random
-          upscanInitiate(state.context.config.serviceId, upscanRequest(nonce.toString()))
+          upscanInitiate(
+            state.context.config.serviceId,
+            upscanRequest(nonce.toString(), state.context.config.maximumFileSizeBytes)
+          )
             .flatMap { upscanResponse =>
               goto(
                 state.copy(fileUploads =
@@ -206,7 +211,7 @@ object FileUploadJourneyModel extends JourneyModel {
       }
 
     final def initiateFileUpload(
-      upscanRequest: String => UpscanInitiateRequest
+      upscanRequest: UpscanRequestBuilder
     )(upscanInitiate: UpscanInitiateApi)(implicit ec: ExecutionContext) =
       Transition {
         case state: CanEnterFileUpload =>
@@ -560,7 +565,7 @@ object FileUploadJourneyModel extends JourneyModel {
     }
 
     final def submitedUploadAnotherFileChoice(
-      upscanRequest: String => UpscanInitiateRequest
+      upscanRequest: UpscanRequestBuilder
     )(
       upscanInitiate: UpscanInitiateApi
     )(exitFileUpload: Transition)(uploadAnotherFile: Boolean)(implicit ec: ExecutionContext) =
@@ -583,7 +588,7 @@ object FileUploadJourneyModel extends JourneyModel {
       }
 
     final def removeFileUploadByReference(reference: String)(
-      upscanRequest: String => UpscanInitiateRequest
+      upscanRequest: UpscanRequestBuilder
     )(upscanInitiate: UpscanInitiateApi)(
       pushfileUploadResult: FileUploadResultPushApi
     )(implicit ec: ExecutionContext) =

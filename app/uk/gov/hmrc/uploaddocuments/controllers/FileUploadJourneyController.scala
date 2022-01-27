@@ -108,23 +108,25 @@ class FileUploadJourneyController @Inject() (
       case None    => controller.markFileUploadAsRejected
     })
 
-  final def upscanRequest(nonce: String)(implicit rh: RequestHeader) =
+  final def upscanRequest(nonce: String, maximumFileSizeBytes: Long)(implicit rh: RequestHeader) =
     UpscanInitiateRequest(
       callbackUrl = appConfig.baseInternalCallbackUrl + controller.callbackFromUpscan(currentJourneyId, nonce).url,
       successRedirect = Some(successRedirect),
       errorRedirect = Some(errorRedirect),
       minimumFileSize = Some(1),
-      maximumFileSize = Some(appConfig.fileFormats.maxFileSizeMb * 1024 * 1024),
+      maximumFileSize = Some(maximumFileSizeBytes.toInt),
       expectedContentType = Some(appConfig.fileFormats.approvedFileTypes)
     )
 
-  final def upscanRequestWhenUploadingMultipleFiles(nonce: String)(implicit rh: RequestHeader) =
+  final def upscanRequestWhenUploadingMultipleFiles(nonce: String, maximumFileSizeBytes: Long)(implicit
+    rh: RequestHeader
+  ) =
     UpscanInitiateRequest(
       callbackUrl = appConfig.baseInternalCallbackUrl + controller.callbackFromUpscan(currentJourneyId, nonce).url,
       successRedirect = Some(successRedirectWhenUploadingMultipleFiles),
       errorRedirect = Some(errorRedirect),
       minimumFileSize = Some(1),
-      maximumFileSize = Some(appConfig.fileFormats.maxFileSizeMb * 1024 * 1024),
+      maximumFileSize = Some(maximumFileSizeBytes.toInt),
       expectedContentType = Some(appConfig.fileFormats.approvedFileTypes)
     )
 
@@ -332,6 +334,7 @@ class FileUploadJourneyController @Inject() (
           views.uploadMultipleFilesView(
             context.config.maximumNumberOfFiles,
             context.config.initialNumberOfEmptyRows,
+            context.config.maximumFileSizeBytes,
             fileUploads.files,
             initiateNextFileUpload = controller.initiateNextFileUpload,
             checkFileVerificationStatus = controller.checkFileVerificationStatus,
@@ -348,6 +351,7 @@ class FileUploadJourneyController @Inject() (
         Ok(
           views.uploadFileView(
             context.config.maximumNumberOfFiles,
+            context.config.maximumFileSizeBytes,
             uploadRequest,
             fileUploads,
             maybeUploadError,
@@ -431,7 +435,7 @@ class FileUploadJourneyController @Inject() (
                     file,
                     uploadFileViewContext,
                     controller.previewFileUploadByReference(_, _),
-                    appConfig.fileFormats.maxFileSizeMb
+                    s.context.config.maximumFileSizeBytes.toInt
                   )
                 )
               )
