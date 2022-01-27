@@ -46,6 +46,8 @@ class FileUploadJourneyModelSpec
     )
   )
 
+  val maxFileUploadsNumber = fileUploadContext.config.maximumNumberOfFiles
+
   "FileUploadJourneyModel" when {
     "at state Initialized" should {
       "go to UploadFile when initiateFileUpload" in {

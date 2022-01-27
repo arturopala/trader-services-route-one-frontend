@@ -26,7 +26,7 @@
         context: FileUploadedViewContext
 )
 
-@(fileUploads: FileUploads, postAction: Call, previewFileCall: (String,String) => Call, removeFileCall: String => Call, backLink: Call)(implicit request: Request[_], messages: Messages, serviceContent: CustomizedServiceContent)
+@(maxFileUploadsNumber: Int, fileUploads: FileUploads, postAction: Call, previewFileCall: (String,String) => Call, removeFileCall: String => Call, backLink: Call)(implicit request: Request[_], messages: Messages, serviceContent: CustomizedServiceContent)
 
 @govukLayout(
   pageTitle = pageTitle("view.file-uploaded.plural.title", fileUploads.acceptedCount)(messages, CustomizedServiceContent()),
@@ -41,7 +41,7 @@
   @forms.formWithCSRF(action = postAction) {
 
     @html.p {
-      @messages("view.file-uploaded.maximum")
+      @messages("view.file-uploaded.maximum",maxFileUploadsNumber)
     }
 
     @html.button("form.file-uploaded.continue")

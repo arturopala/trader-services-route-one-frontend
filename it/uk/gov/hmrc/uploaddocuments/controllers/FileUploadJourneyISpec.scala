@@ -39,6 +39,8 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
       callbackUrl = s"$wireMockBaseUrlAsString/result-post-url"
     )
 
+  val FILES_LIMIT = fileUploadSessionConfig.maximumNumberOfFiles
+
   "FileUploadJourneyController" when {
 
     "preferUploadMultipleFiles" should {
@@ -899,7 +901,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
       "show file upload summary view" in {
         val state = FileUploaded(
           FileUploadContext(fileUploadSessionConfig),
-          fileUploads = FileUploads(files = for (i <- 1 to 10) yield TestData.acceptedFileUpload)
+          fileUploads = FileUploads(files = for (i <- 1 to FILES_LIMIT) yield TestData.acceptedFileUpload)
         )
         journey.setState(state)
         givenAuthorisedForEnrolment(Enrolment("HMRC-XYZ", "EORINumber", "foo"))
@@ -907,15 +909,13 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
         val result = await(request("/uploaded").get())
 
         result.status shouldBe 200
-        result.body should include(htmlEscapedPageTitle("view.file-uploaded.plural.title", "10"))
-        result.body should include(htmlEscapedMessage("view.file-uploaded.plural.heading", "10"))
+        result.body should include(htmlEscapedPageTitle("view.file-uploaded.plural.title", FILES_LIMIT.toString))
+        result.body should include(htmlEscapedMessage("view.file-uploaded.plural.heading", FILES_LIMIT.toString))
         journey.getState shouldBe state
       }
     }
 
     "POST /uploaded" should {
-
-      val FILES_LIMIT = 10
 
       "show upload a file view for export when yes and number of files below the limit" in {
 

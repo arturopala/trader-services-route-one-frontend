@@ -30,8 +30,6 @@ object FileUploadJourneyModel extends JourneyModel {
 
   override val root: State = State.Uninitialized
 
-  final val maxFileUploadsNumber: Int = 10
-
   /** Minimum time gap to allow overwriting upload status. */
   final val minStatusOverwriteGapInMilliseconds: Long = 1000
 
@@ -108,7 +106,9 @@ object FileUploadJourneyModel extends JourneyModel {
     showUploadSummaryIfAny: Boolean
   )(implicit ec: ExecutionContext): Future[State] = {
     val fileUploads = fileUploadsOpt.getOrElse(FileUploads())
-    if ((showUploadSummaryIfAny && fileUploads.nonEmpty) || fileUploads.acceptedCount >= maxFileUploadsNumber)
+    if (
+      (showUploadSummaryIfAny && fileUploads.nonEmpty) || fileUploads.acceptedCount >= context.config.maximumNumberOfFiles
+    )
       goto(
         State.FileUploaded(context, fileUploads)
       )
@@ -184,7 +184,7 @@ object FileUploadJourneyModel extends JourneyModel {
       Transition { case state: UploadMultipleFiles =>
         if (
           !state.fileUploads.hasUploadId(uploadId) &&
-          state.fileUploads.initiatedOrAcceptedCount < maxFileUploadsNumber
+          state.fileUploads.initiatedOrAcceptedCount < state.context.config.maximumNumberOfFiles
         ) {
           val nonce = Nonce.random
           upscanInitiate(state.context.config.serviceId, upscanRequest(nonce.toString()))
@@ -218,7 +218,7 @@ object FileUploadJourneyModel extends JourneyModel {
             showUploadSummaryIfAny = true
           )
 
-        case current @ UploadFile(config, reference, uploadRequest, fileUploads, maybeUploadError) =>
+        case current @ UploadFile(context, reference, uploadRequest, fileUploads, maybeUploadError) =>
           if (maybeUploadError.isDefined)
             goto(
               current
@@ -236,21 +236,21 @@ object FileUploadJourneyModel extends JourneyModel {
             ) =>
           goto(UploadFile(config, reference, uploadRequest, fileUploads))
 
-        case current @ FileUploaded(config, fileUploads, _) =>
-          if (fileUploads.acceptedCount >= maxFileUploadsNumber)
+        case current @ FileUploaded(context, fileUploads, _) =>
+          if (fileUploads.acceptedCount >= context.config.maximumNumberOfFiles)
             goto(current)
           else
             gotoFileUploadOrUploaded(
-              config,
+              context,
               upscanRequest,
               upscanInitiate,
               Some(fileUploads),
               showUploadSummaryIfAny = false
             )
 
-        case UploadMultipleFiles(config, fileUploads) =>
+        case UploadMultipleFiles(context, fileUploads) =>
           gotoFileUploadOrUploaded(
-            config,
+            context,
             upscanRequest,
             upscanInitiate,
             Some(fileUploads),
@@ -262,7 +262,7 @@ object FileUploadJourneyModel extends JourneyModel {
     final def markUploadAsRejected(error: S3UploadError) =
       Transition {
         case current @ UploadFile(
-              config,
+              context,
               reference,
               uploadRequest,
               fileUploads,
@@ -277,7 +277,7 @@ object FileUploadJourneyModel extends JourneyModel {
           })
           goto(current.copy(fileUploads = updatedFileUploads, maybeUploadError = Some(FileTransmissionFailed(error))))
 
-        case current @ UploadMultipleFiles(config, fileUploads) =>
+        case current @ UploadMultipleFiles(context, fileUploads) =>
           val updatedFileUploads = fileUploads.copy(files = fileUploads.files.map {
             case FileUpload(nonce, ref, _) if ref == error.key =>
               FileUpload.Rejected(nonce, Timestamp.now, ref, error)
@@ -287,7 +287,7 @@ object FileUploadJourneyModel extends JourneyModel {
       }
 
     final def markUploadAsPosted(receipt: S3UploadSuccess) =
-      Transition { case current @ UploadMultipleFiles(config, fileUploads) =>
+      Transition { case current @ UploadMultipleFiles(context, fileUploads) =>
         val now = Timestamp.now
         val updatedFileUploads =
           fileUploads.copy(files = fileUploads.files.map {
@@ -300,7 +300,7 @@ object FileUploadJourneyModel extends JourneyModel {
 
     /** Common transition helper based on the file upload status. */
     final def commonFileUploadStatusHandler(
-      config: FileUploadContext,
+      context: FileUploadContext,
       fileUploads: FileUploads,
       reference: String,
       uploadRequest: UploadRequest,
@@ -311,12 +311,12 @@ object FileUploadJourneyModel extends JourneyModel {
         goto(fallbackState)
 
       case Some(initiatedFile: FileUpload.Initiated) =>
-        goto(UploadFile(config, reference, uploadRequest, fileUploads))
+        goto(UploadFile(context, reference, uploadRequest, fileUploads))
 
       case Some(postedFile: FileUpload.Posted) =>
         goto(
           WaitingForFileVerification(
-            config,
+            context,
             reference,
             uploadRequest,
             postedFile,
@@ -325,12 +325,12 @@ object FileUploadJourneyModel extends JourneyModel {
         )
 
       case Some(acceptedFile: FileUpload.Accepted) =>
-        goto(FileUploaded(config, fileUploads))
+        goto(FileUploaded(context, fileUploads))
 
       case Some(failedFile: FileUpload.Failed) =>
         goto(
           UploadFile(
-            config,
+            context,
             reference,
             uploadRequest,
             fileUploads,
@@ -341,7 +341,7 @@ object FileUploadJourneyModel extends JourneyModel {
       case Some(rejectedFile: FileUpload.Rejected) =>
         goto(
           UploadFile(
-            config,
+            context,
             reference,
             uploadRequest,
             fileUploads,
@@ -352,7 +352,7 @@ object FileUploadJourneyModel extends JourneyModel {
       case Some(duplicatedFile: FileUpload.Duplicate) =>
         goto(
           UploadFile(
-            config,
+            context,
             reference,
             uploadRequest,
             fileUploads,
@@ -372,7 +372,7 @@ object FileUploadJourneyModel extends JourneyModel {
       Transition {
         /** Change file status to posted and wait. */
         case current @ UploadFile(
-              config,
+              context,
               reference,
               uploadRequest,
               fileUploads,
@@ -385,7 +385,7 @@ object FileUploadJourneyModel extends JourneyModel {
           })
           val currentUpload = updatedFileUploads.files.find(_.reference == reference)
           commonFileUploadStatusHandler(
-            config,
+            context,
             updatedFileUploads,
             reference,
             uploadRequest,
@@ -395,7 +395,7 @@ object FileUploadJourneyModel extends JourneyModel {
 
         /** If waiting already, keep waiting. */
         case current @ WaitingForFileVerification(
-              config,
+              context,
               reference,
               uploadRequest,
               currentFileUpload,
@@ -403,11 +403,11 @@ object FileUploadJourneyModel extends JourneyModel {
             ) =>
           val currentUpload = fileUploads.files.find(_.reference == reference)
           commonFileUploadStatusHandler(
-            config,
+            context,
             fileUploads,
             reference,
             uploadRequest,
-            UploadFile(config, reference, uploadRequest, fileUploads)
+            UploadFile(context, reference, uploadRequest, fileUploads)
           )
             .apply(currentUpload)
 
@@ -565,10 +565,10 @@ object FileUploadJourneyModel extends JourneyModel {
       upscanInitiate: UpscanInitiateApi
     )(exitFileUpload: Transition)(uploadAnotherFile: Boolean)(implicit ec: ExecutionContext) =
       Transition {
-        case current @ FileUploaded(config, fileUploads, acknowledged) =>
-          if (uploadAnotherFile && fileUploads.acceptedCount < maxFileUploadsNumber)
+        case current @ FileUploaded(context, fileUploads, acknowledged) =>
+          if (uploadAnotherFile && fileUploads.acceptedCount < context.config.maximumNumberOfFiles)
             gotoFileUploadOrUploaded(
-              config,
+              context,
               upscanRequest,
               upscanInitiate,
               Some(fileUploads),

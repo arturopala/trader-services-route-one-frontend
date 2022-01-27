@@ -19,19 +19,29 @@ package uk.gov.hmrc.uploaddocuments.models
 import play.api.libs.functional.syntax._
 import play.api.libs.json.{Format, JsPath, JsValue}
 
+import FileUploadSessionConfig._
+
 final case class FileUploadSessionConfig(
   serviceId: String, // client ID used by upscan configuration
   nonce: Nonce, // unique secret shared by the host and upload microservices
   continueUrl: String, // url to continue after uploading the files
   backlinkUrl: String, // backlink url
   callbackUrl: String, // url where to post uploaded files
+  continueWhenFullUrl: Option[String] = None, // optional url to continue after all possible files has been uploaded
+  maximumNumberOfFiles: Int = defaultMaximumNumberOfFiles,
+  initialNumberOfEmptyRows: Int = defaultInitialNumberOfEmptyRows,
   cargo: Option[JsValue] = None, // opaque data carried through, from and to the host service,
-  newFileDescription: Option[String] = None, // description of the new file added
+  newFileDescription: Option[String] = None, // description of the new file added,
   features: Features = Features(), // upload feature switches
   content: CustomizedServiceContent = CustomizedServiceContent() // page content customizations
-)
+) {
+  def getContinueWhenFullUrl: String = continueWhenFullUrl.getOrElse(continueUrl)
+}
 
 object FileUploadSessionConfig {
+
+  val defaultMaximumNumberOfFiles: Int = 100
+  val defaultInitialNumberOfEmptyRows: Int = 3
 
   implicit val format: Format[FileUploadSessionConfig] =
     Format(
@@ -40,6 +50,9 @@ object FileUploadSessionConfig {
         and (JsPath \ "continueUrl").read[String]
         and (JsPath \ "backlinkUrl").read[String]
         and (JsPath \ "callbackUrl").read[String]
+        and (JsPath \ "continueWhenFullUrl").readNullable[String]
+        and (JsPath \ "maximumNumberOfFiles").readWithDefault[Int](defaultMaximumNumberOfFiles)
+        and (JsPath \ "initialNumberOfEmptyRows").readWithDefault[Int](defaultInitialNumberOfEmptyRows)
         and (JsPath \ "cargo").readNullable[JsValue]
         and (JsPath \ "newFileDescription").readNullable[String]
         and (JsPath \ "features").readWithDefault[Features](Features())
@@ -50,6 +63,9 @@ object FileUploadSessionConfig {
         and (JsPath \ "continueUrl").write[String]
         and (JsPath \ "backlinkUrl").write[String]
         and (JsPath \ "callbackUrl").write[String]
+        and (JsPath \ "continueWhenFullUrl").writeNullable[String]
+        and (JsPath \ "maximumNumberOfFiles").write[Int]
+        and (JsPath \ "initialNumberOfEmptyRows").write[Int]
         and (JsPath \ "cargo").writeNullable[JsValue]
         and (JsPath \ "newFileDescription").writeNullable[String]
         and (JsPath \ "features").write[Features]

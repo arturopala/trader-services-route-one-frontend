@@ -23,7 +23,7 @@ final case class FileUploadInitializationRequest(
   existingFiles: Seq[UploadedFile]
 ) {
   def toFileUploads: FileUploads =
-    FileUploads(existingFiles.map(_.toFileUpload))
+    FileUploads(existingFiles.take(config.maximumNumberOfFiles).map(_.toFileUpload))
 }
 
 object FileUploadInitializationRequest {

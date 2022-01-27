@@ -322,13 +322,16 @@ class FileUploadJourneyController @Inject() (
           Redirect(controller.showChooseFile)
 
       case State.ContinueToHost(context, fileUploads) =>
-        Redirect(context.config.continueUrl)
+        if (fileUploads.acceptedCount >= context.config.maximumNumberOfFiles)
+          Redirect(context.config.getContinueWhenFullUrl)
+        else Redirect(context.config.continueUrl)
 
       case State.UploadMultipleFiles(context, fileUploads) =>
         implicit val content = context.config.content
         Ok(
           views.uploadMultipleFilesView(
-            maxFileUploadsNumber,
+            context.config.maximumNumberOfFiles,
+            context.config.initialNumberOfEmptyRows,
             fileUploads.files,
             initiateNextFileUpload = controller.initiateNextFileUpload,
             checkFileVerificationStatus = controller.checkFileVerificationStatus,
@@ -344,6 +347,7 @@ class FileUploadJourneyController @Inject() (
         implicit val content = context.config.content
         Ok(
           views.uploadFileView(
+            context.config.maximumNumberOfFiles,
             uploadRequest,
             fileUploads,
             maybeUploadError,
@@ -368,7 +372,7 @@ class FileUploadJourneyController @Inject() (
       case State.FileUploaded(context, fileUploads, _) =>
         implicit val content = context.config.content
         Ok(
-          if (fileUploads.acceptedCount < maxFileUploadsNumber)
+          if (fileUploads.acceptedCount < context.config.maximumNumberOfFiles)
             views.fileUploadedView(
               formWithErrors.or(UploadAnotherFileChoiceForm),
               fileUploads,
@@ -379,11 +383,12 @@ class FileUploadJourneyController @Inject() (
             )
           else
             views.fileUploadedSummaryView(
+              context.config.maximumNumberOfFiles,
               fileUploads,
               controller.continueToHost,
               controller.previewFileUploadByReference,
               controller.removeFileUploadByReference,
-              backLinkFor(breadcrumbs)
+              Call("GET", context.config.backlinkUrl)
             )
         )
 

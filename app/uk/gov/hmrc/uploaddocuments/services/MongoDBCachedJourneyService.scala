@@ -95,10 +95,12 @@ trait MongoDBCachedJourneyService[RequestContext] extends PersistentJourneyServi
         val stateAndBreadcrumbs = (entry.state, entry.breadcrumbs)
         if (traceFSM) {
           logger.debug("-" + stateAndBreadcrumbs._2.length + "-" * 32)
-          logger.debug(s"${AnsiColor.CYAN}Current state: ${AnsiColor.RESET}${stateAndBreadcrumbs._1}")
           logger.debug(
-            s"${AnsiColor.BLUE}Breadcrumbs: ${AnsiColor.RESET}${stateAndBreadcrumbs._2
-              .map(PlayFsmUtils.identityOf)}"
+            s"${AnsiColor.CYAN}Current state: ${Json
+              .prettyPrint(Json.toJson(stateAndBreadcrumbs._1.asInstanceOf[model.State]))}${AnsiColor.RESET}"
+          )
+          logger.debug(
+            s"${AnsiColor.BLUE}Breadcrumbs: ${stateAndBreadcrumbs._2.map(PlayFsmUtils.identityOf)}${AnsiColor.RESET}"
           )
         }
         stateAndBreadcrumbs
@@ -124,10 +126,10 @@ trait MongoDBCachedJourneyService[RequestContext] extends PersistentJourneyServi
       .map { _ =>
         if (traceFSM) {
           logger.debug("-" + stateAndBreadcrumbs._2.length + "-" * 32)
-          logger.debug(s"${AnsiColor.CYAN}Current state: ${AnsiColor.RESET}${stateAndBreadcrumbs._1}")
+          logger.debug(s"${AnsiColor.CYAN}Current state: ${Json
+            .prettyPrint(Json.toJson(stateAndBreadcrumbs._1.asInstanceOf[model.State]))}${AnsiColor.RESET}")
           logger.debug(
-            s"${AnsiColor.BLUE}Breadcrumbs: ${AnsiColor.RESET}${stateAndBreadcrumbs._2
-              .map(PlayFsmUtils.identityOf)}"
+            s"${AnsiColor.BLUE}Breadcrumbs: ${stateAndBreadcrumbs._2.map(PlayFsmUtils.identityOf)}${AnsiColor.RESET}"
           )
         }
         stateAndBreadcrumbs

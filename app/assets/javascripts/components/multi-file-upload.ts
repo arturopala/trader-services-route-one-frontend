@@ -27,7 +27,7 @@ export class MultiFileUpload extends Component {
     this.config = {
       startRows: parseInt(form.dataset.multiFileUploadStartRows) || 1,
       minFiles: parseInt(form.dataset.multiFileUploadMinFiles) || 1,
-      maxFiles: parseInt(form.dataset.multiFileUploadMaxFiles) || 10,
+      maxFiles: parseInt(form.dataset.multiFileUploadMaxFiles) || 100,
       uploadedFiles: form.dataset.multiFileUploadUploadedFiles ? JSON.parse(form.dataset.multiFileUploadUploadedFiles) : [],
       retryDelayMs: parseInt(form.dataset.multiFileUploadRetryDelayMs, 10) || 1000,
       maxRetries: parseInt(form.dataset.multiFileUploadMaxRetries) || 30,
@@ -113,8 +113,10 @@ export class MultiFileUpload extends Component {
       rowCount++;
     });
 
-    if (rowCount < this.config.startRows) {
-      for (let a = rowCount; a < this.config.startRows; a++) {
+    const startRows = Math.min(this.config.startRows, this.config.maxFiles);
+
+    if (rowCount < startRows) {
+      for (let a = rowCount; a < startRows; a++) {
         this.addItem();
       }
     }
