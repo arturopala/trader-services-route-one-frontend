@@ -1,9 +1,8 @@
 package uk.gov.hmrc.uploaddocuments.controllers
 
-import com.github.tomakehurst.wiremock.client.WireMock.{aResponse, get, matching, stubFor}
+import com.github.tomakehurst.wiremock.client.WireMock.{aResponse, get, stubFor, _}
 import play.api.Application
 import uk.gov.hmrc.uploaddocuments.support.ServerISpec
-import com.github.tomakehurst.wiremock.client.WireMock._
 
 class SessionControllerISpec extends SessionControllerISpecSetup() {
 
@@ -19,7 +18,7 @@ class SessionControllerISpec extends SessionControllerISpecSetup() {
 
     "GET /sign-out/timeout" should {
       "redirect to the timed out page" in {
-        givenSignOutWithContinueToTimedOut()
+        givenSignOut()
         val result = await(requestWithoutSessionId("/sign-out/timeout").get())
         result.status shouldBe 200
       }
@@ -27,16 +26,8 @@ class SessionControllerISpec extends SessionControllerISpecSetup() {
 
     "GET /sign-out" should {
       "redirect to the feedback survey" in {
-        givenSignOutWithContinueToFeedbackSurvey()
-        val result = await(requestWithoutSessionId("/sign-out").get())
-        result.status shouldBe 200
-      }
-    }
-
-    "GET /sign-out-no-survey" should {
-      "redirect to the feedback survey" in {
         givenSignOut()
-        val result = await(requestWithoutSessionId("/sign-out-no-survey").get())
+        val result = await(requestWithoutSessionId("/sign-out").get())
         result.status shouldBe 200
       }
     }
@@ -54,29 +45,6 @@ class SessionControllerISpec extends SessionControllerISpecSetup() {
 trait SessionControllerISpecSetup extends ServerISpec {
 
   override def fakeApplication: Application = appBuilder.build()
-
-  def givenSignOutWithContinueToTimedOut(): Unit =
-    stubFor(
-      get(urlPathEqualTo("/dummy-sign-out-url"))
-        .withQueryParam(
-          "continue",
-          matching(s"$wireMockBaseUrlAsString/upload-documents/timedout")
-        )
-        .willReturn(
-          aResponse()
-            .withStatus(200)
-        )
-    )
-
-  def givenSignOutWithContinueToFeedbackSurvey(): Unit =
-    stubFor(
-      get(urlPathEqualTo("/dummy-sign-out-url"))
-        .withQueryParam("continue", matching(appConfig.exitSurveyUrl))
-        .willReturn(
-          aResponse()
-            .withStatus(200)
-        )
-    )
 
   def givenSignOut(): Unit =
     stubFor(

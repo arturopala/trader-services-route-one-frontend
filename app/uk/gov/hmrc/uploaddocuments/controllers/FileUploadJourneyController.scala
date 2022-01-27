@@ -324,7 +324,8 @@ class FileUploadJourneyController @Inject() (
       case State.ContinueToHost(context, fileUploads) =>
         Redirect(context.config.continueUrl)
 
-      case State.UploadMultipleFiles(model, fileUploads) =>
+      case State.UploadMultipleFiles(context, fileUploads) =>
+        implicit val content = context.config.content
         Ok(
           views.uploadMultipleFilesView(
             maxFileUploadsNumber,
@@ -339,7 +340,8 @@ class FileUploadJourneyController @Inject() (
           )
         )
 
-      case State.UploadFile(model, reference, uploadRequest, fileUploads, maybeUploadError) =>
+      case State.UploadFile(context, reference, uploadRequest, fileUploads, maybeUploadError) =>
+        implicit val content = context.config.content
         Ok(
           views.uploadFileView(
             uploadRequest,
@@ -352,7 +354,8 @@ class FileUploadJourneyController @Inject() (
           )
         )
 
-      case State.WaitingForFileVerification(_, reference, _, _, _) =>
+      case State.WaitingForFileVerification(context, reference, _, _, _) =>
+        implicit val content = context.config.content
         Ok(
           views.waitingForFileVerificationView(
             successAction = controller.showFileUploaded,
@@ -362,7 +365,8 @@ class FileUploadJourneyController @Inject() (
           )
         )
 
-      case State.FileUploaded(model, fileUploads, _) =>
+      case State.FileUploaded(context, fileUploads, _) =>
+        implicit val content = context.config.content
         Ok(
           if (fileUploads.acceptedCount < maxFileUploadsNumber)
             views.fileUploadedView(
@@ -438,7 +442,7 @@ class FileUploadJourneyController @Inject() (
         Created.withHeaders(
           HeaderNames.LOCATION ->
             (
-              if (context.config.features.javascriptDisabled)
+              if (!context.config.features.showUploadMultiple)
                 routes.FileUploadJourneyController.showChooseFile
               else
                 routes.FileUploadJourneyController.start

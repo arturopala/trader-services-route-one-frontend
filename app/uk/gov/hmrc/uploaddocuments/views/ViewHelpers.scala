@@ -18,20 +18,37 @@ package uk.gov.hmrc.uploaddocuments.views
 
 import play.api.data.Form
 import play.api.i18n.Messages
+import uk.gov.hmrc.uploaddocuments.models.CustomizedServiceContent
 
 object ViewHelpers {
 
   /** Key of the prefix to the page's title when the form has errors. */
   val errorBrowserTitlePrefixKey = "error.browser.title.prefix"
 
-  def pageTitle(key: String, args: Any*)(implicit messages: Messages): Option[String] =
-    Some(messages(key, args))
+  def pageTitle(key: String, args: Any*)(implicit
+    messages: Messages,
+    content: CustomizedServiceContent = CustomizedServiceContent()
+  ): Option[String] =
+    content.title.orElse(Some(messages(key, args: _*)))
 
-  def pageTitle(key: String, hasErrors: Boolean, args: Any*)(implicit messages: Messages): Option[String] =
-    if (hasErrors) Some(messages(errorBrowserTitlePrefixKey) + " " + messages(key, args: _*))
-    else Some(messages(key, args: _*))
+  def pageTitleWithErrors(key: String, hasErrors: Boolean, args: Any*)(implicit
+    messages: Messages,
+    content: CustomizedServiceContent = CustomizedServiceContent()
+  ): Option[String] =
+    pageTitle(key, args: _*).map(title =>
+      if (hasErrors) messages(errorBrowserTitlePrefixKey) + " " + title
+      else title
+    )
 
-  def pageTitle(key: String, form: Form[_], args: Any*)(implicit messages: Messages): Option[String] =
-    pageTitle(key, form.hasErrors, args: _*)
+  def pageWithFormTitle(key: String, form: Form[_], args: Any*)(implicit
+    messages: Messages,
+    content: CustomizedServiceContent = CustomizedServiceContent()
+  ): Option[String] =
+    pageTitleWithErrors(key, form.hasErrors, args: _*)
+
+  def pageHeading(
+    key: String
+  )(implicit messages: Messages, content: CustomizedServiceContent = CustomizedServiceContent()): String =
+    content.title.getOrElse(messages(key))
 
 }

@@ -36,6 +36,7 @@ trait SummaryListRowHelper {
     keyClasses: Option[String] = None,
     valueClasses: Option[String] = None,
     url: Option[String] = None,
+    line2: Option[String] = None,
     escape: Boolean = true
   )(implicit messages: Messages): SummaryListRow =
     SummaryListRow(
@@ -45,11 +46,13 @@ trait SummaryListRowHelper {
       ),
       value = Value(
         content = HtmlContent(
-          if (url.nonEmpty)
+          s"""${if (url.nonEmpty)
             s"<a class='govuk-link' href='${url.get}' target='_blank' rel='noopener noreferrer'>${if (escape) HtmlFormat.escape(value)
             else value}</a>"
           else
-            s"${if (escape) HtmlFormat.escape(value) else value}"
+            s"${if (escape) HtmlFormat.escape(value) else value}"} 
+          ${line2.getOrElse("")}
+          """
         ),
         classes = valueClasses.getOrElse("govuk-!-width-two-thirds")
       ),

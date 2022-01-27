@@ -43,7 +43,6 @@ trait AppConfig {
   val mongoSessionExpiration: Duration
   val authorisedServiceName: String
   val authorisedIdentifierKey: String
-  val subscriptionJourneyUrl: String
   val govukStartUrl: String
 
   val languageMap: Map[String, Lang] = Map(
@@ -56,19 +55,15 @@ trait AppConfig {
 
   val contactHost: String
   val contactFormServiceIdentifier: String
-  val exitSurveyUrl: String
+
   def requestUri(implicit request: RequestHeader): String =
     SafeRedirectUrl(baseExternalCallbackUrl + request.uri).encodedUrl
-
-  def betaFeedbackUrl(implicit request: RequestHeader): String =
-    s"$contactHost/contact/beta-feedback?service=$contactFormServiceIdentifier&backUrl=$requestUri"
 
   def reportProblemUrl(implicit request: RequestHeader): String =
     s"$contactHost/contact/problem_reports_nonjs?newTab=true&service=$contactFormServiceIdentifier&backUrl=$requestUri"
 
   val signOutUrl: String
 
-  val researchBannerUrl: String
   val fileFormats: AppConfig.FileFormats
 
   val traceFSM: Boolean = false
@@ -90,17 +85,10 @@ class AppConfigImpl @Inject() (config: ServicesConfig, configuration: Configurat
   override val mongoSessionExpiration: Duration = config.getDuration("mongodb.session.expiration")
   override val authorisedServiceName: String = config.getString("authorisedServiceName")
   override val authorisedIdentifierKey: String = config.getString("authorisedIdentifierKey")
-  override val subscriptionJourneyUrl: String = config.getString("urls.subscriptionJourney")
   override val contactHost: String = config.getString("contact-frontend.host")
   override val contactFormServiceIdentifier: String = config.getString("feedback-frontend.formIdentifier")
 
-  private val exitSurveyBaseUrl =
-    config.getString("feedback-frontend.host") + config.getString("feedback-frontend.url")
-
-  override val exitSurveyUrl = s"$exitSurveyBaseUrl/$contactFormServiceIdentifier"
-
   override val signOutUrl: String = config.getString("urls.signOut")
-  override val researchBannerUrl: String = config.getString("urls.researchBanner")
 
   override val timeout: Int = config.getInt("session.timeoutSeconds")
   override val countdown: Int = config.getInt("session.countdownInSeconds")

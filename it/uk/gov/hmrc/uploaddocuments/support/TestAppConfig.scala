@@ -16,10 +16,7 @@ case class TestAppConfig(
   override val mongoSessionExpiration: Duration = 1.hour
   override val contactHost: String = wireMockBaseUrl
   override val contactFormServiceIdentifier: String = "dummy"
-  override val exitSurveyUrl: String = wireMockBaseUrl + "/dummy-survey-url"
   override val signOutUrl: String = wireMockBaseUrl + "/dummy-sign-out-url"
-  override val researchBannerUrl: String = wireMockBaseUrl + "dummy-research-banner-url"
-  override val subscriptionJourneyUrl: String = wireMockBaseUrl + "/dummy-subscription-url"
   override val authorisedServiceName: String = "HMRC-XYZ"
   override val authorisedIdentifierKey: String = "EORINumber"
 

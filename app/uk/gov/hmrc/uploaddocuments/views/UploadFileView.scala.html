@@ -14,7 +14,7 @@
  * limitations under the License.
  *@
 
-@import uk.gov.hmrc.uploaddocuments.models.{FileUploads,UploadRequest,FileUploadError}
+@import uk.gov.hmrc.uploaddocuments.models.{FileUploads,UploadRequest,FileUploadError,CustomizedServiceContent}
 @import uk.gov.hmrc.uploaddocuments.wiring.AppConfig
 @import uk.gov.hmrc.uploaddocuments.views.UploadFileViewContext
 
@@ -29,7 +29,7 @@ appConfig: AppConfig,
 context: UploadFileViewContext
 )
 
-@(uploadRequest: UploadRequest, fileUploads: FileUploads, maybeUploadError: Option[FileUploadError], successAction: Call, failureAction: Call, checkStatusAction: Call, backLink: Call)(implicit request: Request[_], messages: Messages)
+@(uploadRequest: UploadRequest, fileUploads: FileUploads, maybeUploadError: Option[FileUploadError], successAction: Call, failureAction: Call, checkStatusAction: Call, backLink: Call)(implicit request: Request[_], messages: Messages, serviceContent: CustomizedServiceContent)
 
 @govukLayout(
   pageTitle(if(fileUploads.isEmpty) "view.upload-file.first.title" else "view.upload-file.next.title", maybeUploadError.isDefined),
@@ -40,7 +40,7 @@ context: UploadFileViewContext
     @forms.errorSummary(Seq(context.toFormError(fileUploadError)))
   }
 
-  @html.h1(messages(if(fileUploads.isEmpty) "view.upload-file.first.heading" else "view.upload-file.next.heading"), classes = "govuk-heading-l")
+  @html.h1(pageHeading(if(fileUploads.isEmpty) "view.upload-file.first.heading" else "view.upload-file.next.heading"), classes = "govuk-heading-l")
 
   <form action="@uploadRequest.href" method="POST" enctype="multipart/form-data" class="js-form file-upload" novalidate
   data-file-upload-redirect-success-url="@successAction.url"
@@ -52,20 +52,9 @@ context: UploadFileViewContext
       @forms.inputHidden(key, value)
     }
 
-    @html.p{ @messages("view.upload-file.line1") }
-    @html.p{ @messages("view.upload-file.line2") }
-    <!-- <div class="govuk-inset-text"> {messages("view.upload-multiple-files.c1601")} </div> -->
-
-    @details(messages("view.upload-file.help.linkText")) {
-      @html.p{ @messages("view.upload-file.help.line1") }
-      @html.ul(
-        messages("view.upload-file.help.fileFormat1"),
-        messages("view.upload-file.help.fileFormat2"),
-        messages("view.upload-file.help.fileFormat3"),
-        messages("view.upload-file.help.fileFormat4"),
-        messages("view.upload-file.help.fileFormat5")
-      )
-      @html.p{ @messages("view.upload-file.help.line4") }
+    @serviceContent.descriptionHtml.map(d => Html(d)).getOrElse {
+      @html.p{ @messages("view.upload-file.line1") }
+      @html.p{ @messages("view.upload-file.line2") }
     }
 
     @govukFileUpload(FileUpload(

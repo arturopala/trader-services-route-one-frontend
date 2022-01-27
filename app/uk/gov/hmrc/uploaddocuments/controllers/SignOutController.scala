@@ -24,21 +24,16 @@ import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendController
 class SignOutController @Inject() (controllerComponents: MessagesControllerComponents, appConfig: AppConfig)
     extends FrontendController(controllerComponents) {
 
-  def signOut(continueUrl: Option[String]): Action[AnyContent] =
+  final def signOut(continueUrl: Option[String]): Action[AnyContent] =
     Action { _ =>
       continueUrl match {
         case Some(url) =>
           Redirect(appConfig.signOutUrl, Map("continue" -> Seq(url)))
         case _ =>
-          Redirect(appConfig.signOutUrl, Map("continue" -> Seq(appConfig.exitSurveyUrl)))
+          Redirect(appConfig.signOutUrl)
       }
     }
 
-  def signOutTimeout(): Action[AnyContent] =
-    signOut(continueUrl = Some(appConfig.baseExternalCallbackUrl + routes.SessionController.showTimeoutPage.url))
-
-  def signOutNoSurvey: Action[AnyContent] =
-    Action { _ =>
-      Redirect(appConfig.signOutUrl)
-    }
+  final def signOutTimeout(continueUrl: Option[String]): Action[AnyContent] =
+    signOut(continueUrl)
 }

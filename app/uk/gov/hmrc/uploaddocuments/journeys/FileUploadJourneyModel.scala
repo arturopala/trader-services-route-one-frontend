@@ -165,7 +165,6 @@ object FileUploadJourneyModel extends JourneyModel {
               )
             )
           else {
-            println("SwitchToSingleFileUpload")
             goto(
               SwitchToSingleFileUpload(
                 context = state.context,

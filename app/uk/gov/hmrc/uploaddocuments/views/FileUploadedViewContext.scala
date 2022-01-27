@@ -55,6 +55,7 @@ class FileUploadedViewContext extends RadioItemsHelper with SummaryListRowHelper
       summaryListRow(
         label = s"$index.",
         value = fileUpload.fileName,
+        line2 = fileUpload.description.map(d => s"<div>$d</div>"),
         visuallyHiddenText = Some(fileUpload.fileName),
         keyClasses = Some(""),
         valueClasses = Some("govuk-!-width-full"),

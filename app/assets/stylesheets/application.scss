@@ -1,6 +1,7 @@
 $images-path: "../images";
 $govuk-assets-path: "/upload-documents/assets/lib/govuk-frontend/govuk/assets/";
 $hmrc-assets-path: "/upload-documents/assets/lib/hmrc-frontend/hmrc/";
+
 @import "webjars/lib/govuk-frontend/govuk/all";
 @import "webjars/lib/hmrc-frontend/hmrc/all";
 
@@ -14,8 +15,6 @@ $hmrc-assets-path: "/upload-documents/assets/lib/hmrc-frontend/hmrc/";
 @import "components/action-buttons";
 @import "components/contents-list";
 @import "components/multi-file-upload";
-@import "components/receipt";
-@import "components/case-summary";
 
 .js-enabled #confirmation-heading-no-js{display: none;}
 .js-enabled #confirmation-heading{display: inline-block;}

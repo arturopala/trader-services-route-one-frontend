@@ -14,7 +14,7 @@
  * limitations under the License.
  *@
 
-@import uk.gov.hmrc.uploaddocuments.models.{FileUploads,FileUpload,UploadRequest,FileUploadError}
+@import uk.gov.hmrc.uploaddocuments.models.{FileUploads,FileUpload,UploadRequest,FileUploadError,CustomizedServiceContent}
 @import uk.gov.hmrc.uploaddocuments.wiring.AppConfig
 @import uk.gov.hmrc.uploaddocuments.views.UploadFileViewContext
 @import uk.gov.hmrc.uploaddocuments.views.html.partials.multiFileUpload
@@ -39,7 +39,7 @@ context: UploadFileViewContext
   previewFile: (String,String) => Call,
   markFileRejected: Call,
   continueAction: Call,
-  backLink: Call)(implicit request: Request[_], messages: Messages)
+  backLink: Call)(implicit request: Request[_], messages: Messages, serviceContent: CustomizedServiceContent)
 
 @govukLayout(
   pageTitle("view.upload-multiple-files.title"),
@@ -79,27 +79,16 @@ context: UploadFileViewContext
    * + continueAction - a call to proceed next (i.e. to the check-your-answers page)
    *@
 
-  @html.h1(messages("view.upload-multiple-files.heading"), classes = "govuk-heading-l")
+  @html.h1(pageHeading("view.upload-multiple-files.heading"), classes = serviceContent.pageTitleClasses.getOrElse("govuk-heading-l"))
 
-  @html.p{ @messages("view.upload-multiple-files.line1") }
-  @html.p{ @messages("view.upload-multiple-files.line2") }
-  <!-- <div class="govuk-inset-text"> {messages("view.upload-multiple-files.c1601")} </div> -->
+  @serviceContent.descriptionHtml.map(d => Html(d)).getOrElse {
+    @html.p{ @messages("view.upload-multiple-files.line1") }
+    @html.p{ @messages("view.upload-multiple-files.line2") }
 
-  @html.p(
-    content = Html(messages("view.upload-multiple-files.uploadOnSelect")),
-    classes = "govuk-body govuk-visually-hidden"
-  )
-
-  @details(messages("view.upload-file.help.linkText")) {
-    @html.p{ @messages("view.upload-file.help.line1") }
-    @html.ul(
-      messages("view.upload-file.help.fileFormat1"),
-      messages("view.upload-file.help.fileFormat2"),
-      messages("view.upload-file.help.fileFormat3"),
-      messages("view.upload-file.help.fileFormat4"),
-      messages("view.upload-file.help.fileFormat5")
+    @html.p(
+      content = Html(messages("view.upload-multiple-files.uploadOnSelect")),
+      classes = "govuk-body govuk-visually-hidden"
     )
-    @html.p{ @messages("view.upload-file.help.line4") }
   }
 
   <form

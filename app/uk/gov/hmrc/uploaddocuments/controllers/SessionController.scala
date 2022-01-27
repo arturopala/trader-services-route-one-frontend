@@ -29,11 +29,11 @@ class SessionController @Inject() (
   timedOutView: TimedOutView
 ) extends FrontendController(controllerComponents) {
 
-  val showTimeoutPage: Action[AnyContent] = Action.async { implicit request =>
+  final val showTimeoutPage: Action[AnyContent] = Action.async { implicit request =>
     Future.successful(Ok(timedOutView()))
   }
 
-  val keepAlive: Action[AnyContent] = Action.async { _ =>
-    Future.successful(Ok("{}"))
+  final def keepAlive(continueUrl: Option[String]): Action[AnyContent] = Action.async { _ =>
+    Future.successful(continueUrl.map(url => Redirect(url)).getOrElse(Ok("{}")))
   }
 }
