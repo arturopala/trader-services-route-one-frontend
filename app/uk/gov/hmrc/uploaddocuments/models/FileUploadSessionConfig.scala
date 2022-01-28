@@ -28,6 +28,8 @@ final case class FileUploadSessionConfig(
   backlinkUrl: String, // backlink url
   callbackUrl: String, // url where to post uploaded files
   continueWhenFullUrl: Option[String] = None, // optional url to continue after all possible files has been uploaded
+  continueWhenEmptyUrl: Option[String] = None, // optional url to continue after none file uploaded
+  minimumNumberOfFiles: Int = defaultMinimumNumberOfFiles,
   maximumNumberOfFiles: Int = defaultMaximumNumberOfFiles,
   initialNumberOfEmptyRows: Int = defaultInitialNumberOfEmptyRows,
   maximumFileSizeBytes: Long = defaultMaximumFileSizeBytes,
@@ -39,6 +41,7 @@ final case class FileUploadSessionConfig(
   content: CustomizedServiceContent = CustomizedServiceContent() // page content customizations
 ) {
   def getContinueWhenFullUrl: String = continueWhenFullUrl.getOrElse(continueUrl)
+  def getContinueWhenEmptyUrl: String = continueWhenEmptyUrl.getOrElse(continueUrl)
   def getFilePickerAcceptFilter: String = allowedContentTypes + allowedFileExtensions.map("," + _).getOrElse("")
 
   def isValid: Boolean =
@@ -47,12 +50,15 @@ final case class FileUploadSessionConfig(
       backlinkUrl.nonEmpty &&
       callbackUrl.nonEmpty &&
       allowedContentTypes.nonEmpty &&
-      maximumNumberOfFiles > 0 &&
+      minimumNumberOfFiles >= 0 &&
+      maximumNumberOfFiles >= 1 &&
+      maximumNumberOfFiles >= minimumNumberOfFiles &&
       maximumFileSizeBytes > 0
 }
 
 object FileUploadSessionConfig {
 
+  val defaultMinimumNumberOfFiles: Int = 1
   val defaultMaximumNumberOfFiles: Int = 10
   val defaultInitialNumberOfEmptyRows: Int = 3
   val defaultMaximumFileSizeBytes = 10 * 1024 * 1024
@@ -66,6 +72,8 @@ object FileUploadSessionConfig {
         and (JsPath \ "backlinkUrl").read[String]
         and (JsPath \ "callbackUrl").read[String]
         and (JsPath \ "continueWhenFullUrl").readNullable[String]
+        and (JsPath \ "continueWhenEmptyUrl").readNullable[String]
+        and (JsPath \ "minimumNumberOfFiles").readWithDefault[Int](defaultMinimumNumberOfFiles)
         and (JsPath \ "maximumNumberOfFiles").readWithDefault[Int](defaultMaximumNumberOfFiles)
         and (JsPath \ "initialNumberOfEmptyRows").readWithDefault[Int](defaultInitialNumberOfEmptyRows)
         and (JsPath \ "maximumFileSizeBytes").readWithDefault[Long](defaultMaximumFileSizeBytes)
@@ -82,6 +90,8 @@ object FileUploadSessionConfig {
         and (JsPath \ "backlinkUrl").write[String]
         and (JsPath \ "callbackUrl").write[String]
         and (JsPath \ "continueWhenFullUrl").writeNullable[String]
+        and (JsPath \ "continueWhenEmptyUrl").writeNullable[String]
+        and (JsPath \ "minimumNumberOfFiles").write[Int]
         and (JsPath \ "maximumNumberOfFiles").write[Int]
         and (JsPath \ "initialNumberOfEmptyRows").write[Int]
         and (JsPath \ "maximumFileSizeBytes").write[Long]

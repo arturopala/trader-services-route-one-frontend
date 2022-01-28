@@ -32,6 +32,7 @@ context: UploadFileViewContext
 )
 
 @(
+  minimumNumberOfFiles: Int,
   maximumNumberOfFiles: Int,
   initialNumberOfEmptyRows: Int,
   maximumFileSizeBytes: Long,
@@ -54,6 +55,8 @@ context: UploadFileViewContext
 
   @*
    * Available parameters:
+   * + minimumNumberOfFiles - this is the value the frontend service will check file upload list against, 
+   *                          if number of upload will be less then the minimum, user will be not able to progress
    * + maximumNumberOfFiles - this is the value the frontend service will check file upload list against, 
    *                          if number of upload will exceed the limit, user will be not able to progress
    *
@@ -101,6 +104,7 @@ context: UploadFileViewContext
     action="@continueAction"
     class="multi-file-upload"
     data-multi-file-upload-start-rows="@Math.min(initialNumberOfEmptyRows,maximumNumberOfFiles)"
+    data-multi-file-upload-min-files="@minimumNumberOfFiles"
     data-multi-file-upload-max-files="@maximumNumberOfFiles"
     data-multi-file-upload-send-url-tpl="@initiateNextFileUpload("{fileId}")"
     data-multi-file-upload-status-url-tpl="@checkFileVerificationStatus("{fileRef}")"

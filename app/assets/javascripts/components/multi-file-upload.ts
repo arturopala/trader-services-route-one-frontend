@@ -26,7 +26,7 @@ export class MultiFileUpload extends Component {
 
     this.config = {
       startRows: parseInt(form.dataset.multiFileUploadStartRows) || 1,
-      minFiles: parseInt(form.dataset.multiFileUploadMinFiles) || 1,
+      minFiles: parseInt(form.dataset.multiFileUploadMinFiles),
       maxFiles: parseInt(form.dataset.multiFileUploadMaxFiles) || 100,
       uploadedFiles: form.dataset.multiFileUploadUploadedFiles ? JSON.parse(form.dataset.multiFileUploadUploadedFiles) : [],
       retryDelayMs: parseInt(form.dataset.multiFileUploadRetryDelayMs, 10) || 1000,
@@ -160,7 +160,7 @@ export class MultiFileUpload extends Component {
       return;
     }
 
-    if (this.container.querySelector(`.${this.classes.uploaded}`)) {
+    if (this.container.querySelectorAll(`.${this.classes.uploaded}`).length >= this.config.minFiles) {
       window.location.href = this.config.actionUrl;
     }
     else {

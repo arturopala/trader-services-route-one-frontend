@@ -327,14 +327,18 @@ class FileUploadJourneyController @Inject() (
           Redirect(controller.showChooseFile)
 
       case State.ContinueToHost(context, fileUploads) =>
+        if (fileUploads.acceptedCount == 0)
+          Redirect(context.config.getContinueWhenEmptyUrl)
         if (fileUploads.acceptedCount >= context.config.maximumNumberOfFiles)
           Redirect(context.config.getContinueWhenFullUrl)
-        else Redirect(context.config.continueUrl)
+        else
+          Redirect(context.config.continueUrl)
 
       case State.UploadMultipleFiles(context, fileUploads) =>
         implicit val content = context.config.content
         Ok(
           views.uploadMultipleFilesView(
+            minimumNumberOfFiles = context.config.minimumNumberOfFiles,
             maximumNumberOfFiles = context.config.maximumNumberOfFiles,
             initialNumberOfEmptyRows = context.config.initialNumberOfEmptyRows,
             maximumFileSizeBytes = context.config.maximumFileSizeBytes,
