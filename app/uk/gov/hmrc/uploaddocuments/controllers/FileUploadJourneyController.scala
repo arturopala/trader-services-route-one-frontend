@@ -120,7 +120,7 @@ class FileUploadJourneyController @Inject() (
     whenAuthenticatedInBackchannel
       .parseJsonWithFallback[FileUploadInitializationRequest](BadRequest)
       .applyWithRequest { implicit request =>
-        Transitions.initialize(CallbackAuth.from(request))
+        Transitions.initialize(HostService.from(request))
       }
       .displayUsing(renderInitializationResponse)
       .recover {

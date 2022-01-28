@@ -28,7 +28,7 @@ class FileUploadJourneyStateFormatsSpec extends UnitSpec {
   implicit val formats: Format[State] = FileUploadJourneyStateFormats.formats
   val generatedAt = java.time.LocalDateTime.of(2018, 12, 11, 10, 20, 30)
   val fileUploadSessionConfig =
-    FileUploadContext(config = FileUploadSessionConfig("dummy", Nonce.random, "/foo", "/bar", "/zoo"))
+    FileUploadContext(config = FileUploadSessionConfig(Nonce.random, "/foo", "/bar", "/zoo"))
 
   "FileUploadJourneyStateFormats" should {
     "serialize and deserialize state" in new JsonFormatTest[State](info) {

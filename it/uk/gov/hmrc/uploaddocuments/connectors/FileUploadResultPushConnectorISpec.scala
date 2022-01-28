@@ -36,7 +36,6 @@ class FileUploadResultPushConnectorISpec extends FileUploadResultPushConnectorIS
 
       def request(url: String): Request =
         Request(
-          "dummy-host",
           url,
           Nonce(123),
           Seq(
@@ -68,7 +67,7 @@ class FileUploadResultPushConnectorISpec extends FileUploadResultPushConnectorIS
           val url = s"$wireMockBaseUrlAsString$path"
           givenResultPushEndpoint(path, Payload.from(request(url), "http://base.external.callback"), status)
           val result: Response = await(connector.push(request(url)))
-          result shouldBe Left(Error(status, s"Failure pushing uploaded files to $url:  CallbackAuth.Any"))
+          result shouldBe Left(Error(status, s"Failure pushing uploaded files to $url:  HostService.Any"))
           verifyResultPushHasHappened(path, 1)
         }
       }
@@ -90,7 +89,7 @@ class FileUploadResultPushConnectorISpec extends FileUploadResultPushConnectorIS
           val url = s"$wireMockBaseUrlAsString$path"
           givenResultPushEndpoint(path, Payload.from(request(url), "http://base.external.callback"), status)
           val result: Response = await(connector.push(request(url)))
-          result shouldBe Left(Error(status, s"Failure pushing uploaded files to $url:  CallbackAuth.Any"))
+          result shouldBe Left(Error(status, s"Failure pushing uploaded files to $url:  HostService.Any"))
           verifyResultPushHasHappened(path, 3)
         }
       }

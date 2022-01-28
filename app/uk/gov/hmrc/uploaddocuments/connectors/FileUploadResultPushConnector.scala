@@ -23,7 +23,7 @@ import play.api.Logger
 import play.api.libs.json.{Format, JsValue, Json, Writes}
 import uk.gov.hmrc.http.HttpReads.Implicits._
 import uk.gov.hmrc.http._
-import uk.gov.hmrc.uploaddocuments.models.{CallbackAuth, FileUploadContext, FileUploads, Nonce, UploadedFile}
+import uk.gov.hmrc.uploaddocuments.models.{FileUploadContext, FileUploads, HostService, Nonce, UploadedFile}
 import uk.gov.hmrc.uploaddocuments.wiring.AppConfig
 
 import java.net.URL
@@ -48,7 +48,7 @@ class FileUploadResultPushConnector @Inject() (
 
   def push(request: Request)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Response] =
     retry(appConfig.fileUploadResultPushRetryIntervals: _*)(shouldRetry, errorMessage) {
-      monitor(s"ConsumedAPI-push-file-uploads-${request.hostServiceId}-POST") {
+      monitor(s"ConsumedAPI-push-file-uploads-${request.hostService.userAgent}-POST") {
         Try(new URL(request.url).toExternalForm).fold(
           e => {
             val msg = s"${e.getClass().getName()} ${e.getMessage()}"
@@ -58,7 +58,7 @@ class FileUploadResultPushConnector @Inject() (
           endpointUrl => {
             val wts = implicitly[Writes[FileUploadResultPushConnector.Payload]]
             val rds = implicitly[HttpReads[HttpResponse]]
-            val ehc = request.callbackAuth.populate(hc)
+            val ehc = request.hostService.populate(hc)
             http
               .POST[Payload, HttpResponse](endpointUrl, Payload.from(request, appConfig.baseExternalCallbackUrl))(
                 wts,
@@ -72,7 +72,7 @@ class FileUploadResultPushConnector @Inject() (
                     if (response.status == 204) SuccessResponse
                     else {
                       val msg =
-                        s"Failure pushing uploaded files to ${request.url}: ${response.body.take(1024)} ${request.callbackAuth}"
+                        s"Failure pushing uploaded files to ${request.url}: ${response.body.take(1024)} ${request.hostService}"
                       Logger(getClass).error(msg)
                       Left(Error(response.status, msg))
                     }
@@ -91,12 +91,11 @@ class FileUploadResultPushConnector @Inject() (
 object FileUploadResultPushConnector {
 
   case class Request(
-    hostServiceId: String,
     url: String,
     nonce: Nonce,
     uploadedFiles: Seq[UploadedFile],
     context: Option[JsValue],
-    callbackAuth: CallbackAuth = CallbackAuth.Any
+    hostService: HostService = HostService.Any
   )
   case class Payload(nonce: Nonce, uploadedFiles: Seq[UploadedFile], cargo: Option[JsValue])
 
@@ -111,12 +110,11 @@ object FileUploadResultPushConnector {
   object Request {
     def from(context: FileUploadContext, fileUploads: FileUploads): Request =
       Request(
-        context.config.serviceId,
         context.config.callbackUrl,
         context.config.nonce,
         fileUploads.toUploadedFiles,
         context.config.cargo,
-        context.callbackAuth
+        context.hostService
       )
 
     implicit val format: Format[Request] = Json.format[Request]

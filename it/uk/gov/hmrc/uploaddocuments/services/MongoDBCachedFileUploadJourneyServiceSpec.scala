@@ -6,6 +6,7 @@ import uk.gov.hmrc.uploaddocuments.support.{AppISpec, SHA256}
 
 import java.util.UUID
 import scala.concurrent.ExecutionContext.Implicits.global
+import uk.gov.hmrc.uploaddocuments.models.HostService
 
 class MongoDBCachedFileUploadJourneyServiceSpec extends AppISpec {
 
@@ -19,13 +20,20 @@ class MongoDBCachedFileUploadJourneyServiceSpec extends AppISpec {
       .withExtraHeaders("FileUploadJourney" -> SHA256.compute(UUID.randomUUID.toString))
 
   val fileUploadContext =
-    FileUploadContext(config = FileUploadSessionConfig("dummy-id", Nonce.random, "/foo", "/bar", "/zoo"))
+    FileUploadContext(config =
+      FileUploadSessionConfig(
+        Nonce.random,
+        "http://localhost:1111/foo",
+        "https://localhost/bar",
+        "https://tax.service.gov.uk/zoo"
+      )
+    )
   val request =
     FileUploadInitializationRequest(config = fileUploadContext.config, existingFiles = Seq.empty)
 
   "MongoDBCachedFileUploadJourneyService" should {
     "apply initialize transition" in {
-      await(service.apply(Transitions.initialize(None)(request))) shouldBe (
+      await(service.apply(Transitions.initialize(HostService.Any)(request))) shouldBe (
         (
           State.Initialized(fileUploadContext, FileUploads()),
           List(State.Uninitialized)

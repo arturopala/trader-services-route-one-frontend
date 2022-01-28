@@ -24,8 +24,6 @@ final case class FileUploadInitializationRequest(
 ) {
   def toFileUploads: FileUploads =
     FileUploads(existingFiles.take(config.maximumNumberOfFiles).map(_.toFileUpload))
-
-  def isValid: Boolean = config.isValid
 }
 
 object FileUploadInitializationRequest {

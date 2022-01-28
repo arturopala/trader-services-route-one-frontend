@@ -40,15 +40,15 @@ class UpscanInitiateConnector @Inject() (appConfig: AppConfig, http: HttpGet wit
   override val kenshooRegistry: MetricRegistry = metrics.defaultRegistry
 
   def initiate(
-    hostServiceId: String,
+    hostUserAgent: String,
     request: UpscanInitiateRequest
   )(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[UpscanInitiateResponse] =
-    monitor(s"ConsumedAPI-upscan-v2-initiate-$hostServiceId-POST") {
+    monitor(s"ConsumedAPI-upscan-v2-initiate-$hostUserAgent-POST") {
       http
         .POST[UpscanInitiateRequest, UpscanInitiateResponse](
           new URL(baseUrl + upscanInitiatev2Path).toExternalForm,
           request,
-          Seq("User-Agent" -> hostServiceId)
+          Seq("User-Agent" -> hostUserAgent)
         )
         .recoverWith { case e: Throwable =>
           Future.failed(UpscanInitiateError(e))

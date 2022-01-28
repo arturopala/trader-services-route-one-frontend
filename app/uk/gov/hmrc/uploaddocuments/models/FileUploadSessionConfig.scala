@@ -18,11 +18,12 @@ package uk.gov.hmrc.uploaddocuments.models
 
 import play.api.libs.functional.syntax._
 import play.api.libs.json.{Format, JsPath, JsValue}
+import uk.gov.hmrc.uploaddocuments.models.FileUploadSessionConfig._
 
-import FileUploadSessionConfig._
+import java.net.URL
+import scala.util.Try
 
 final case class FileUploadSessionConfig(
-  serviceId: String, // client ID used by upscan configuration
   nonce: Nonce, // unique secret shared by the host and upload microservices
   continueUrl: String, // url to continue after uploading the files
   backlinkUrl: String, // backlink url
@@ -40,34 +41,36 @@ final case class FileUploadSessionConfig(
   features: Features = Features(), // upload feature switches
   content: CustomizedServiceContent = CustomizedServiceContent() // page content customizations
 ) {
-  def getContinueWhenFullUrl: String = continueWhenFullUrl.getOrElse(continueUrl)
-  def getContinueWhenEmptyUrl: String = continueWhenEmptyUrl.getOrElse(continueUrl)
-  def getFilePickerAcceptFilter: String = allowedContentTypes + allowedFileExtensions.map("," + _).getOrElse("")
 
-  def isValid: Boolean =
-    serviceId.nonEmpty &&
-      continueUrl.nonEmpty &&
-      backlinkUrl.nonEmpty &&
-      callbackUrl.nonEmpty &&
+  final def getContinueWhenFullUrl: String = continueWhenFullUrl.getOrElse(continueUrl)
+  final def getContinueWhenEmptyUrl: String = continueWhenEmptyUrl.getOrElse(continueUrl)
+  final def getFilePickerAcceptFilter: String = allowedContentTypes + allowedFileExtensions.map("," + _).getOrElse("")
+
+  final def isValid: Boolean =
+    isValidCallbackUrl(callbackUrl) &&
+      isValidFrontendUrl(continueUrl) &&
+      isValidFrontendUrl(backlinkUrl) &&
+      continueWhenFullUrl.map(isValidFrontendUrl).getOrElse(true) &&
+      continueWhenEmptyUrl.map(isValidFrontendUrl).getOrElse(true) &&
       allowedContentTypes.nonEmpty &&
       minimumNumberOfFiles >= 0 &&
       maximumNumberOfFiles >= 1 &&
       maximumNumberOfFiles >= minimumNumberOfFiles &&
       maximumFileSizeBytes > 0
+
 }
 
 object FileUploadSessionConfig {
 
-  val defaultMinimumNumberOfFiles: Int = 1
-  val defaultMaximumNumberOfFiles: Int = 10
-  val defaultInitialNumberOfEmptyRows: Int = 3
-  val defaultMaximumFileSizeBytes = 10 * 1024 * 1024
-  val defaultAllowedContentTypes = "image/jpeg,image/png,application/pdf,text/plain"
+  final val defaultMinimumNumberOfFiles: Int = 1
+  final val defaultMaximumNumberOfFiles: Int = 10
+  final val defaultInitialNumberOfEmptyRows: Int = 3
+  final val defaultMaximumFileSizeBytes = 10 * 1024 * 1024
+  final val defaultAllowedContentTypes = "image/jpeg,image/png,application/pdf,text/plain"
 
   implicit val format: Format[FileUploadSessionConfig] =
     Format(
-      ((JsPath \ "serviceId").read[String]
-        and (JsPath \ "nonce").read[Nonce]
+      ((JsPath \ "nonce").read[Nonce]
         and (JsPath \ "continueUrl").read[String]
         and (JsPath \ "backlinkUrl").read[String]
         and (JsPath \ "callbackUrl").read[String]
@@ -84,8 +87,7 @@ object FileUploadSessionConfig {
         and (JsPath \ "features").readWithDefault[Features](Features())
         and (JsPath \ "content")
           .readWithDefault[CustomizedServiceContent](CustomizedServiceContent()))(FileUploadSessionConfig.apply _),
-      ((JsPath \ "serviceId").write[String]
-        and (JsPath \ "nonce").write[Nonce]
+      ((JsPath \ "nonce").write[Nonce]
         and (JsPath \ "continueUrl").write[String]
         and (JsPath \ "backlinkUrl").write[String]
         and (JsPath \ "callbackUrl").write[String]
@@ -102,4 +104,22 @@ object FileUploadSessionConfig {
         and (JsPath \ "features").write[Features]
         and (JsPath \ "content").write[CustomizedServiceContent])(unlift(FileUploadSessionConfig.unapply(_)))
     )
+
+  final def isValidFrontendUrl(url: String): Boolean =
+    url.nonEmpty && Try(new URL(url))
+      .map { url =>
+        val isHttps = url.getProtocol() == "https"
+        val host = url.getHost()
+        (host == "localhost") || (isHttps && host.endsWith(".gov.uk"))
+      }
+      .getOrElse(false)
+
+  final def isValidCallbackUrl(url: String): Boolean =
+    url.nonEmpty && Try(new URL(url))
+      .map { url =>
+        val isHttps = url.getProtocol() == "https"
+        val host = url.getHost()
+        (host == "localhost") || (isHttps && host.endsWith(".mdtp"))
+      }
+      .getOrElse(false)
 }

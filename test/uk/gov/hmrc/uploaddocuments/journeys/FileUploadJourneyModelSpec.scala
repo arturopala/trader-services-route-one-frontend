@@ -38,11 +38,10 @@ class FileUploadJourneyModelSpec
 
   val fileUploadContext = FileUploadContext(
     config = FileUploadSessionConfig(
-      serviceId = "dummy-hmrc-service",
       nonce = Nonce.random,
-      continueUrl = "/continue-url",
-      backlinkUrl = "/backlink-url",
-      callbackUrl = "/result-post-url",
+      continueUrl = "https://tax.service.gov.uk/continue-url",
+      backlinkUrl = "http://localhost:1234/backlink-url",
+      callbackUrl = "https://cds.public.mdtp:443/result-post-url",
       maximumNumberOfFiles = 13,
       maximumFileSizeBytes = 13 * 1024
     )
@@ -141,7 +140,7 @@ class FileUploadJourneyModelSpec
       "go back to Initialized when initialize" in {
         given(UploadMultipleFiles(fileUploadContext, nonEmptyFileUploads))
           .when(
-            initialize(None)(
+            initialize(HostService.Any)(
               FileUploadInitializationRequest(fileUploadContext.config, nonEmptyFileUploads.toUploadedFiles)
             )
           )
@@ -154,7 +153,7 @@ class FileUploadJourneyModelSpec
         given(UploadMultipleFiles(fileUploadContext, nonEmptyFileUploads)).when(wipeOut).thenGoes(Uninitialized)
 
       "fail when initialization with invalid config" in {
-        val invalidContext = fileUploadContext.copy(config = fileUploadContext.config.copy(serviceId = ""))
+        val invalidContext = fileUploadContext.copy(config = fileUploadContext.config.copy(callbackUrl = ""))
         given(
           UploadMultipleFiles(
             invalidContext,
@@ -162,8 +161,23 @@ class FileUploadJourneyModelSpec
           )
         )
           .when(
-            initialize(None)(
+            initialize(HostService.Any)(
               FileUploadInitializationRequest(invalidContext.config, nonEmptyFileUploads.toUploadedFiles)
+            )
+          )
+          .thenFailsWith[Exception]
+      }
+
+      "fail when initialization without user agent" in {
+        given(
+          UploadMultipleFiles(
+            fileUploadContext,
+            nonEmptyFileUploads
+          )
+        )
+          .when(
+            initialize(HostService.InitializationRequestHeaders(Seq.empty))(
+              FileUploadInitializationRequest(fileUploadContext.config, nonEmptyFileUploads.toUploadedFiles)
             )
           )
           .thenFailsWith[Exception]
