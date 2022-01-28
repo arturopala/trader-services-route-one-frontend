@@ -28,8 +28,6 @@ import uk.gov.hmrc.uploaddocuments.support.SHA256
 import uk.gov.hmrc.uploaddocuments.wiring.AppConfig
 
 import scala.concurrent.{ExecutionContext, Future}
-import uk.gov.hmrc.http.SessionKeys
-import uk.gov.hmrc.http.HeaderNames
 
 /** Base controller class for a journey. */
 abstract class BaseJourneyController[S <: JourneyService[HeaderCarrier]](
@@ -46,13 +44,19 @@ abstract class BaseJourneyController[S <: JourneyService[HeaderCarrier]](
 
   implicit val ec: ExecutionContext = controllerComponents.executionContext
 
-  /** AsAnyUser authorisation request */
-  final val AsAnyUser: WithAuthorised[Unit] = { implicit request => body =>
-    authorisedWithoutEnrolment(_ => body(()))
+  final val AsFrontendUser: WithAuthorised[Unit] = { implicit request => body =>
+    val hc = HeaderCarrierConverter.fromRequestAndSession(request, request.session)
+    authorisedWithoutEnrolment(_ => body(()))(request, hc, ec)
   }
 
-  /** Base authenticated action builder */
-  final val whenAuthenticated = actions.whenAuthorised(AsAnyUser)
+  final val whenAuthenticated = actions.whenAuthorised(AsFrontendUser)
+
+  final val AsBackchannelUser: WithAuthorised[Unit] = { implicit request => body =>
+    val hc = HeaderCarrierConverter.fromRequest(request)
+    authorisedWithoutEnrolment(_ => body(()))(request, hc, ec)
+  }
+
+  final val whenAuthenticatedInBackchannel = actions.whenAuthorised(AsBackchannelUser)
 
   // ------------------------------------
   // Retrieval of journeyId configuration
@@ -60,17 +64,7 @@ abstract class BaseJourneyController[S <: JourneyService[HeaderCarrier]](
 
   private val journeyIdPathParamRegex = ".*?/journey/([a-fA-F0-9]+?)/.*".r
 
-  private def decodeHeaderCarrier(rh: RequestHeader): HeaderCarrier =
-    rh.session
-      .get(SessionKeys.authToken)
-      .fold(
-        rh.headers
-          .get(HeaderNames.authorisation)
-          .fold(HeaderCarrierConverter.fromRequestAndSession(rh, rh.session))(authToken =>
-            HeaderCarrierConverter
-              .fromRequestAndSession(rh, rh.session + (SessionKeys.authToken -> authToken))
-          )
-      )(_ => HeaderCarrierConverter.fromRequestAndSession(rh, rh.session))
+  final def currentJourneyId(implicit rh: RequestHeader): String = journeyId.get
 
   final def journeyId(implicit rh: RequestHeader): Option[String] =
     journeyId(decodeHeaderCarrier(rh), rh)
@@ -82,14 +76,15 @@ abstract class BaseJourneyController[S <: JourneyService[HeaderCarrier]](
     })
       .orElse(hc.sessionId.map(_.value).map(SHA256.compute))
 
-  final def currentJourneyId(implicit rh: RequestHeader): String = journeyId.get
-
   final override implicit def context(implicit rh: RequestHeader): HeaderCarrier = {
     val hc = decodeHeaderCarrier(rh)
     journeyId(hc, rh)
       .map(jid => hc.withExtraHeaders(journeyService.journeyKey -> jid))
       .getOrElse(hc)
   }
+
+  private def decodeHeaderCarrier(rh: RequestHeader): HeaderCarrier =
+    HeaderCarrierConverter.fromRequestAndSession(rh, rh.session)
 
   final override def withValidRequest(
     body: => Future[Result]

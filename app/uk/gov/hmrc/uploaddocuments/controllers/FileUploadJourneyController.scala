@@ -48,7 +48,6 @@ class FileUploadJourneyController @Inject() (
   val actorSystem: ActorSystem
 ) extends BaseJourneyController(
       fileUploadJourneyService,
-      // controllerComponents,
       appConfig,
       authConnector,
       environment,
@@ -61,35 +60,6 @@ class FileUploadJourneyController @Inject() (
   import uk.gov.hmrc.uploaddocuments.journeys.FileUploadJourneyModel._
 
   implicit val scheduler: Scheduler = actorSystem.scheduler
-
-  // POST /initialize
-  final val initialize: Action[AnyContent] =
-    whenAuthenticated
-      .parseJsonWithFallback[FileUploadInitializationRequest](BadRequest)
-      .applyWithRequest { implicit request =>
-        Transitions.initialize(CallbackAuth.from(request))
-      }
-      .displayUsing(renderInitializationResponse)
-      .recover {
-        case e: JsonParseException => BadRequest(e.getMessage())
-        case e                     => InternalServerError
-      }
-
-  // GET /continue-to-host
-  final val continueToHost: Action[AnyContent] =
-    whenAuthenticated
-      .show[State.ContinueToHost]
-      .orApply(Transitions.continueToHost)
-      .andCleanBreadcrumbs()
-
-  // POST /wipe-out
-  final val wipeOut: Action[AnyContent] =
-    whenAuthenticated
-      .apply(Transitions.wipeOut)
-      .displayUsing(renderWipeOutResponse)
-      .andCleanBreadcrumbs()
-
-  // ----------------------- FILES UPLOAD -----------------------
 
   /** Initial time to wait for callback arrival. */
   final val INITIAL_CALLBACK_WAIT_TIME_SECONDS = 2
@@ -140,6 +110,37 @@ class FileUploadJourneyController @Inject() (
       minimumFileSize = Some(1),
       maximumFileSize = Some(maximumFileSizeBytes.toInt)
     )
+
+  // --------------------------------------------- //
+  //                    ACTIONS                    //
+  // --------------------------------------------- //
+
+  // POST /initialize
+  final val initialize: Action[AnyContent] =
+    whenAuthenticatedInBackchannel
+      .parseJsonWithFallback[FileUploadInitializationRequest](BadRequest)
+      .applyWithRequest { implicit request =>
+        Transitions.initialize(CallbackAuth.from(request))
+      }
+      .displayUsing(renderInitializationResponse)
+      .recover {
+        case e: JsonParseException => BadRequest(e.getMessage())
+        case e                     => InternalServerError
+      }
+
+  // GET /continue-to-host
+  final val continueToHost: Action[AnyContent] =
+    whenAuthenticated
+      .show[State.ContinueToHost]
+      .orApply(Transitions.continueToHost)
+      .andCleanBreadcrumbs()
+
+  // POST /wipe-out
+  final val wipeOut: Action[AnyContent] =
+    whenAuthenticatedInBackchannel
+      .apply(Transitions.wipeOut)
+      .displayUsing(renderWipeOutResponse)
+      .andCleanBreadcrumbs()
 
   // GET /
   final val start: Action[AnyContent] =
