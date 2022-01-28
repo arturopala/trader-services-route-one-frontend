@@ -18,8 +18,6 @@ case class TestAppConfig(
   override val contactHost: String = wireMockBaseUrl
   override val contactFormServiceIdentifier: String = "dummy"
   override val signOutUrl: String = wireMockBaseUrl + "/dummy-sign-out-url"
-  override val authorisedServiceName: String = "HMRC-XYZ"
-  override val authorisedIdentifierKey: String = "EORINumber"
   override val timeout: Int = 10
   override val countdown: Int = 2
   override val govukStartUrl: String = wireMockBaseUrl + "/dummy-start-url"

@@ -37,8 +37,6 @@ trait AppConfig {
   val authBaseUrl: String
   val upscanInitiateBaseUrl: String
   val mongoSessionExpiration: Duration
-  val authorisedServiceName: String
-  val authorisedIdentifierKey: String
   val govukStartUrl: String
 
   val languageMap: Map[String, Lang] = Map(
@@ -72,8 +70,6 @@ class AppConfigImpl @Inject() (config: ServicesConfig, configuration: Configurat
   override val authBaseUrl: String = config.baseUrl("auth")
   override val upscanInitiateBaseUrl: String = config.baseUrl("upscan-initiate")
   override val mongoSessionExpiration: Duration = config.getDuration("mongodb.session.expiration")
-  override val authorisedServiceName: String = config.getString("authorisedServiceName")
-  override val authorisedIdentifierKey: String = config.getString("authorisedIdentifierKey")
   override val contactHost: String = config.getString("contact-frontend.host")
   override val contactFormServiceIdentifier: String = config.getString("feedback-frontend.formIdentifier")
   override val signOutUrl: String = config.getString("urls.signOut")
