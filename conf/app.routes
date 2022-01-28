@@ -33,7 +33,8 @@ POST       /uploaded                                                @uk.gov.hmrc
 GET        /uploaded/:reference/remove                              @uk.gov.hmrc.uploaddocuments.controllers.FileUploadJourneyController.removeFileUploadByReference(reference: String)
 + nocsrf
 POST       /uploaded/:reference/remove                              @uk.gov.hmrc.uploaddocuments.controllers.FileUploadJourneyController.removeFileUploadByReferenceAsync(reference: String)
-GET        /uploaded/:reference/:fileName                           @uk.gov.hmrc.uploaddocuments.controllers.FileUploadJourneyController.previewFileUploadByReference(reference: String, fileName: String)
+
+GET        /preview/:reference/:fileName                            @uk.gov.hmrc.uploaddocuments.controllers.FileUploadJourneyController.previewFileUploadByReference(reference: String, fileName: String)
 
 GET        /continue-to-host                                        @uk.gov.hmrc.uploaddocuments.controllers.FileUploadJourneyController.continueToHost
 

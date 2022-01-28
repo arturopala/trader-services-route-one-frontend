@@ -33,6 +33,8 @@ import scala.concurrent.Future
 
 trait FileStream {
 
+  val defaultFileSizeLimit: Long = 100 * 1024 * 1024
+
   implicit val actorSystem: ActorSystem
 
   private val connectionPool: Flow[(HttpRequest, String), (Try[HttpResponse], String), NotUsed] =
@@ -42,16 +44,18 @@ trait FileStream {
     url: String,
     fileName: String,
     fileMimeType: String,
+    fileSize: Long,
     contentDispositionForMimeType: (String, String) => (String, String)
   ): Future[Result] = {
     val httpRequest = HttpRequest(method = HttpMethods.GET, uri = url)
-    fileStream(httpRequest, fileName, fileMimeType, contentDispositionForMimeType)
+    fileStream(httpRequest, fileName, fileMimeType, fileSize, contentDispositionForMimeType)
   }
 
   final def fileStream(
     httpRequest: HttpRequest,
     fileName: String,
     fileMimeType: String,
+    fileSize: Long,
     contentDispositionForMimeType: (String, String) => (String, String)
   ): Future[Result] =
     Source
@@ -62,7 +66,8 @@ trait FileStream {
           if (httpResponse.status.isSuccess())
             Results.Ok
               .streamed(
-                content = httpResponse.entity.dataBytes,
+                content =
+                  httpResponse.entity.withSizeLimit(if (fileSize == 0) defaultFileSizeLimit else fileSize).dataBytes,
                 contentLength = httpResponse.entity.contentLengthOption,
                 contentType = Some(fileMimeType)
               )

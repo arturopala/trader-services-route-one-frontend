@@ -812,7 +812,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
         val result3 =
           await(request("/file-verification/f029444f-415c-4dec-9cf2-36774ec63ab8/status").get())
         result3.status shouldBe 200
-        result3.body shouldBe """{"reference":"f029444f-415c-4dec-9cf2-36774ec63ab8","fileStatus":"ACCEPTED","fileMimeType":"application/pdf","fileName":"test.pdf","fileSize":4567890,"previewUrl":"/upload-documents/uploaded/f029444f-415c-4dec-9cf2-36774ec63ab8/test.pdf"}"""
+        result3.body shouldBe """{"reference":"f029444f-415c-4dec-9cf2-36774ec63ab8","fileStatus":"ACCEPTED","fileMimeType":"application/pdf","fileName":"test.pdf","fileSize":4567890,"previewUrl":"/upload-documents/preview/f029444f-415c-4dec-9cf2-36774ec63ab8/test.pdf"}"""
         journey.getState shouldBe state
 
         val result4 =
@@ -1178,7 +1178,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
 
     "GET /uploaded/:reference/remove" should {
       "remove file from upload list by reference" in {
-        givenHostPushEndpoint(
+        givenResultPushEndpoint(
           "/result-post-url",
           FileUploadResultPushConnector.Payload.from(
             FileUploadContext(fileUploadSessionConfig),
@@ -1196,7 +1196,8 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
                   4567890
                 )
               )
-            )
+            ),
+            "http://base.external.callback"
           ),
           204
         )
@@ -1256,14 +1257,14 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
           )
         )
         eventually(
-          verifyHostPushEndpointHasHappened("/result-post-url", 1)
+          verifyResultPushHasHappened("/result-post-url", 1)
         )
       }
     }
 
     "POST /uploaded/:reference/remove" should {
       "remove file from upload list by reference" in {
-        givenHostPushEndpoint(
+        givenResultPushEndpoint(
           "/result-post-url",
           FileUploadResultPushConnector.Payload.from(
             FileUploadContext(fileUploadSessionConfig),
@@ -1281,7 +1282,8 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
                   4567890
                 )
               )
-            )
+            ),
+            "http://base.external.callback"
           ),
           204
         )
@@ -1340,12 +1342,12 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
           )
         )
         eventually(
-          verifyHostPushEndpointHasHappened("/result-post-url", 1)
+          verifyResultPushHasHappened("/result-post-url", 1)
         )
       }
     }
 
-    "GET /uploaded/:reference" should {
+    "GET /preview/:reference/:fileName" should {
       "stream the uploaded file content back if it exists" in {
         val bytes = Array.ofDim[Byte](1024 * 1024)
         Random.nextBytes(bytes)
@@ -1383,7 +1385,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
 
         val result =
           await(
-            request("/uploaded/f029444f-415c-4dec-9cf2-36774ec63ab8/test.pdf")
+            request("/preview/f029444f-415c-4dec-9cf2-36774ec63ab8/test.pdf")
               .get()
           )
         result.status shouldBe 200
@@ -1429,7 +1431,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
 
         val result =
           await(
-            request("/uploaded/f029444f-415c-4dec-9cf2-36774ec63ab8/test.pdf")
+            request("/preview/f029444f-415c-4dec-9cf2-36774ec63ab8/test.pdf")
               .get()
           )
         result.status shouldBe 200
@@ -1516,13 +1518,13 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
           )
         )
         eventually {
-          verifyHostPushEndpointHasNotHappened("/continue")
+          verifyResultPushHasNotHappened("/continue")
         }
       }
 
       "modify file status to Accepted and return 204" in {
         val nonce = Nonce.random
-        givenHostPushEndpoint(
+        givenResultPushEndpoint(
           "/result-post-url",
           FileUploadResultPushConnector.Payload.from(
             FileUploadContext(fileUploadSessionConfig),
@@ -1552,7 +1554,8 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
                   Some(Json.obj("bar" -> 1))
                 )
               )
-            )
+            ),
+            "http://base.external.callback"
           ),
           204
         )
@@ -1634,7 +1637,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
           )
         )
         eventually {
-          verifyHostPushEndpointHasHappened("/result-post-url", 1)
+          verifyResultPushHasHappened("/result-post-url", 1)
         }
       }
 
@@ -1704,7 +1707,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
           )
         )
         eventually {
-          verifyHostPushEndpointHasNotHappened("/continue")
+          verifyResultPushHasNotHappened("/continue")
         }
       }
 
@@ -1754,7 +1757,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
           )
         )
         eventually {
-          verifyHostPushEndpointHasNotHappened("/continue")
+          verifyResultPushHasNotHappened("/continue")
         }
       }
     }

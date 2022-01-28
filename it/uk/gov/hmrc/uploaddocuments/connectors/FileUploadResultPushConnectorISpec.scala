@@ -56,20 +56,20 @@ class FileUploadResultPushConnectorISpec extends FileUploadResultPushConnectorIS
       "accept valid request and return success when response 204" in {
         val path = s"/dummy-host-endpoint"
         val url = s"$wireMockBaseUrlAsString$path"
-        givenHostPushEndpoint(path, Payload.from(request(url)), 204)
+        givenResultPushEndpoint(path, Payload.from(request(url), "http://base.external.callback"), 204)
         val result: Response = await(connector.push(request(url)))
         result.isRight shouldBe true
-        verifyHostPushEndpointHasHappened(path, 1)
+        verifyResultPushHasHappened(path, 1)
       }
 
       "accept valid request and return an error without retrying" in {
         (200 to 498).filterNot(Set(204, 301, 302, 303, 307, 308).contains).foreach { status =>
           val path = s"/dummy-host-endpoint-$status"
           val url = s"$wireMockBaseUrlAsString$path"
-          givenHostPushEndpoint(path, Payload.from(request(url)), status)
+          givenResultPushEndpoint(path, Payload.from(request(url), "http://base.external.callback"), status)
           val result: Response = await(connector.push(request(url)))
           result shouldBe Left(Error(status, s"Failure pushing uploaded files to $url:  CallbackAuth.Any"))
-          verifyHostPushEndpointHasHappened(path, 1)
+          verifyResultPushHasHappened(path, 1)
         }
       }
 
@@ -77,10 +77,10 @@ class FileUploadResultPushConnectorISpec extends FileUploadResultPushConnectorIS
         Set(301, 302, 303, 307, 308).foreach { status =>
           val path = s"/dummy-host-endpoint-$status"
           val url = s"$wireMockBaseUrlAsString$path"
-          givenHostPushEndpoint(path, Payload.from(request(url)), status)
+          givenResultPushEndpoint(path, Payload.from(request(url), "http://base.external.callback"), status)
           val result: Response = await(connector.push(request(url)))
           result shouldBe Left(Error(0, "originalUrl"))
-          verifyHostPushEndpointHasHappened(path, 1)
+          verifyResultPushHasHappened(path, 1)
         }
       }
 
@@ -88,10 +88,10 @@ class FileUploadResultPushConnectorISpec extends FileUploadResultPushConnectorIS
         (499 to 599).foreach { status =>
           val path = s"/dummy-host-endpoint-$status"
           val url = s"$wireMockBaseUrlAsString$path"
-          givenHostPushEndpoint(path, Payload.from(request(url)), status)
+          givenResultPushEndpoint(path, Payload.from(request(url), "http://base.external.callback"), status)
           val result: Response = await(connector.push(request(url)))
           result shouldBe Left(Error(status, s"Failure pushing uploaded files to $url:  CallbackAuth.Any"))
-          verifyHostPushEndpointHasHappened(path, 3)
+          verifyResultPushHasHappened(path, 3)
         }
       }
     }

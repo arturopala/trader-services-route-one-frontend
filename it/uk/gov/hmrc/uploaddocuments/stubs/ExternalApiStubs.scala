@@ -50,18 +50,18 @@ trait ExternalApiStubs {
         )
     )
 
-  def givenHostPushEndpoint(path: String, payload: FileUploadResultPushConnector.Payload, status: Int): Unit =
+  def givenResultPushEndpoint(path: String, payload: FileUploadResultPushConnector.Payload, status: Int): Unit =
     stubFor(
       post(urlPathEqualTo(path))
         .withRequestBody(equalToJson(Json.stringify(Json.toJson(payload))))
         .willReturn(aResponse().withStatus(status))
     )
 
-  def verifyHostPushEndpointHasHappened(path: String, times: Int = 1) {
+  def verifyResultPushHasHappened(path: String, times: Int = 1) {
     verify(times, postRequestedFor(urlEqualTo(path)))
   }
 
-  def verifyHostPushEndpointHasNotHappened(path: String) {
+  def verifyResultPushHasNotHappened(path: String) {
     verify(0, postRequestedFor(urlEqualTo(path)))
   }
 

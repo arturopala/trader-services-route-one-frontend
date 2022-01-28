@@ -270,7 +270,7 @@ class FileUploadJourneyController @Inject() (
       }
       .displayUsing(renderFileRemovalStatus)
 
-  // GET /uploaded/:reference/:fileName
+  // GET /preview/:reference/:fileName
   final def previewFileUploadByReference(reference: String, fileName: String): Action[AnyContent] =
     whenAuthenticated.showCurrentState
       .displayAsyncUsing(streamFileFromUspcan(reference))
@@ -488,13 +488,14 @@ class FileUploadJourneyController @Inject() (
     reference: String
   ) =
     AsyncRenderer.simple {
-      case s: FileUploadState =>
+      case s: HasFileUploads =>
         s.fileUploads.files.find(_.reference == reference) match {
           case Some(file: FileUpload.Accepted) =>
             getFileStream(
               file.url,
               file.fileName,
               file.fileMimeType,
+              file.fileSize,
               (fileName, fileMimeType) =>
                 fileMimeType match {
                   case _ =>

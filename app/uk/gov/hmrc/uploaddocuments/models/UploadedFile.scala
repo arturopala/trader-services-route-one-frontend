@@ -30,7 +30,8 @@ case class UploadedFile(
   fileMimeType: String,
   fileSize: Int,
   cargo: Option[JsValue] = None, // data carried through, from and to host service
-  description: Option[String] = None
+  description: Option[String] = None,
+  previewUrl: Option[String] = None
 ) {
   def toFileUpload: FileUpload =
     FileUpload.Accepted(

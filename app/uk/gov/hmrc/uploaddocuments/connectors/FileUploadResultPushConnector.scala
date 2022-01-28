@@ -60,7 +60,12 @@ class FileUploadResultPushConnector @Inject() (
             val rds = implicitly[HttpReads[HttpResponse]]
             val ehc = request.callbackAuth.populate(hc)
             http
-              .POST[Payload, HttpResponse](endpointUrl, Payload.from(request))(wts, rds, ehc, ec)
+              .POST[Payload, HttpResponse](endpointUrl, Payload.from(request, appConfig.baseExternalCallbackUrl))(
+                wts,
+                rds,
+                ehc,
+                ec
+              )
               .transformWith[Response] {
                 case Success(response) =>
                   Future.successful(
@@ -118,11 +123,26 @@ object FileUploadResultPushConnector {
   }
 
   object Payload {
-    def from(request: Request): Payload =
-      Payload(request.nonce, request.uploadedFiles, request.context)
 
-    def from(config: FileUploadContext, fileUploads: FileUploads): Payload =
-      Payload.from(Request.from(config, fileUploads))
+    def from(request: Request, baseUrl: String): Payload =
+      Payload(
+        request.nonce,
+        request.uploadedFiles
+          .map(file =>
+            file.copy(
+              previewUrl = Some(baseUrl + filePreviewPathFor(file.upscanReference, file.fileName))
+            )
+          ),
+        request.context
+      )
+
+    private def filePreviewPathFor(refererence: String, fileName: String): String =
+      uk.gov.hmrc.uploaddocuments.controllers.routes.FileUploadJourneyController
+        .previewFileUploadByReference(refererence, fileName)
+        .url
+
+    def from(config: FileUploadContext, fileUploads: FileUploads, basePreviewUrl: String): Payload =
+      Payload.from(Request.from(config, fileUploads), basePreviewUrl)
 
     implicit val format: Format[Payload] = Json.format[Payload]
   }

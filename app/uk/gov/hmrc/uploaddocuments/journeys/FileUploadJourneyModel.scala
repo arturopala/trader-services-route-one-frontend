@@ -33,13 +33,20 @@ object FileUploadJourneyModel extends JourneyModel {
   /** Minimum time gap to allow overwriting upload status. */
   final val minStatusOverwriteGapInMilliseconds: Long = 1000
 
-  /** Marker trait of permitted entry states. */
-  trait CanEnterFileUpload extends State {
+  sealed trait HasFileUploads {
+    def fileUploads: FileUploads
+  }
+
+  sealed trait HasContext {
+    def context: FileUploadContext
+  }
+
+  sealed trait CanEnterFileUpload extends State with HasContext {
     def context: FileUploadContext
     def fileUploadsOpt: Option[FileUploads]
   }
 
-  sealed trait FileUploadState extends State {
+  sealed trait FileUploadState extends State with HasFileUploads with HasContext {
     def context: FileUploadContext
     def fileUploads: FileUploads
   }
@@ -50,13 +57,13 @@ object FileUploadJourneyModel extends JourneyModel {
     final case object Uninitialized extends State
 
     final case class Initialized(context: FileUploadContext, fileUploads: FileUploads)
-        extends State with CanEnterFileUpload {
+        extends State with CanEnterFileUpload with HasFileUploads {
       final def fileUploadsOpt: Option[FileUploads] =
         if (fileUploads.isEmpty) None else Some(fileUploads)
     }
 
     final case class ContinueToHost(context: FileUploadContext, fileUploads: FileUploads)
-        extends State with CanEnterFileUpload {
+        extends State with CanEnterFileUpload with HasFileUploads {
       final def fileUploadsOpt: Option[FileUploads] =
         if (fileUploads.isEmpty) None else Some(fileUploads)
     }

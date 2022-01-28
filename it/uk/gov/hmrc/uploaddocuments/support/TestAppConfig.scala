@@ -10,8 +10,8 @@ case class TestAppConfig(
 ) extends AppConfig {
 
   override val appName: String = "upload-documents"
-  override val baseInternalCallbackUrl: String = wireMockBaseUrl
-  override val baseExternalCallbackUrl: String = wireMockBaseUrl
+  override val baseInternalCallbackUrl: String = "http://base.internal.callback"
+  override val baseExternalCallbackUrl: String = "http://base.external.callback"
   override val authBaseUrl: String = wireMockBaseUrl
   override val upscanInitiateBaseUrl: String = wireMockBaseUrl
   override val mongoSessionExpiration: Duration = 1.hour
