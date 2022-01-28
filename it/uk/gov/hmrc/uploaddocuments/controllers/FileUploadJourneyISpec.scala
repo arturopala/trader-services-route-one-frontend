@@ -90,6 +90,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
     "POST /initialize" should {
       "return 404 if wrong http method" in {
         journey.setState(Uninitialized)
+        givenAuthorisedForEnrolment(Enrolment("HMRC-XYZ", "EORINumber", "foo"))
         val result = await(request("/initialize").get())
         result.status shouldBe 404
         journey.getState shouldBe Uninitialized
@@ -97,6 +98,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
 
       "return 400 if malformed payload" in {
         journey.setState(Uninitialized)
+        givenAuthorisedForEnrolment(Enrolment("HMRC-XYZ", "EORINumber", "foo"))
         val result = await(request("/initialize").post(""))
         result.status shouldBe 400
         journey.getState shouldBe Uninitialized
@@ -104,6 +106,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
 
       "return 400 if cannot accept payload" in {
         journey.setState(Uninitialized)
+        givenAuthorisedForEnrolment(Enrolment("HMRC-XYZ", "EORINumber", "foo"))
         val result = await(
           request("/initialize")
             .post(
@@ -126,6 +129,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
 
       "register config and empty file uploads" in {
         journey.setState(Uninitialized)
+        givenAuthorisedForEnrolment(Enrolment("HMRC-XYZ", "EORINumber", "foo"))
         val result = await(
           request("/initialize")
             .post(Json.toJson(FileUploadInitializationRequest(fileUploadSessionConfig, Seq.empty)))
@@ -154,6 +158,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
           )
         )
         journey.setState(Uninitialized)
+        givenAuthorisedForEnrolment(Enrolment("HMRC-XYZ", "EORINumber", "foo"))
         val result = await(
           request("/initialize")
             .post(
@@ -186,6 +191,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
           FileUploads()
         )
         journey.setState(state)
+        givenAuthorisedForEnrolment(Enrolment("HMRC-XYZ", "EORINumber", "foo"))
         val result = await(request("/wipe-out").get())
         result.status shouldBe 404
         journey.getState shouldBe state
@@ -200,6 +206,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
           FileUploads()
         )
         journey.setState(state)
+        givenAuthorisedForEnrolment(Enrolment("HMRC-XYZ", "EORINumber", "foo"))
         val result = await(request("/wipe-out").post(""))
         result.status shouldBe 204
         journey.getState shouldBe Uninitialized
@@ -330,7 +337,6 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
 
     "POST /initialize-upscan/:uploadId" should {
       "initialise first file upload" in {
-
         val state = UploadMultipleFiles(
           FileUploadContext(fileUploadSessionConfig),
           fileUploads = FileUploads()
@@ -399,7 +405,6 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
       }
 
       "initialise next file upload" in {
-
         val state = UploadMultipleFiles(
           FileUploadContext(fileUploadSessionConfig),
           fileUploads = FileUploads(

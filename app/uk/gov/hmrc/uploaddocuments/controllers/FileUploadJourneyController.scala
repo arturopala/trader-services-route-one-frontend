@@ -44,11 +44,11 @@ class FileUploadJourneyController @Inject() (
   authConnector: FrontendAuthConnector,
   environment: Environment,
   configuration: Configuration,
-  controllerComponents: MessagesControllerComponents,
+  val controllerComponents: MessagesControllerComponents,
   val actorSystem: ActorSystem
 ) extends BaseJourneyController(
       fileUploadJourneyService,
-      controllerComponents,
+      // controllerComponents,
       appConfig,
       authConnector,
       environment,
@@ -64,7 +64,7 @@ class FileUploadJourneyController @Inject() (
 
   // POST /initialize
   final val initialize: Action[AnyContent] =
-    actions
+    whenAuthenticated
       .parseJsonWithFallback[FileUploadInitializationRequest](BadRequest)
       .applyWithRequest { implicit request =>
         Transitions.initialize(CallbackAuth.from(request))
@@ -83,7 +83,7 @@ class FileUploadJourneyController @Inject() (
 
   // POST /wipe-out
   final val wipeOut: Action[AnyContent] =
-    actions
+    whenAuthenticated
       .apply(Transitions.wipeOut)
       .displayUsing(renderWipeOutResponse)
       .andCleanBreadcrumbs()

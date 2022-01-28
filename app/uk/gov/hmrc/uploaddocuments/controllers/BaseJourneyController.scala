@@ -20,23 +20,25 @@ import play.api.i18n.I18nSupport
 import play.api.mvc._
 import play.api.{Configuration, Environment}
 import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendController
+import uk.gov.hmrc.play.bootstrap.controller.{Utf8MimeTypes, WithJsonBody}
 import uk.gov.hmrc.play.fsm.{JourneyController, JourneyService}
+import uk.gov.hmrc.play.http.HeaderCarrierConverter
 import uk.gov.hmrc.uploaddocuments.connectors.FrontendAuthConnector
 import uk.gov.hmrc.uploaddocuments.support.SHA256
 import uk.gov.hmrc.uploaddocuments.wiring.AppConfig
 
 import scala.concurrent.{ExecutionContext, Future}
+import uk.gov.hmrc.http.SessionKeys
+import uk.gov.hmrc.http.HeaderNames
 
 /** Base controller class for a journey. */
 abstract class BaseJourneyController[S <: JourneyService[HeaderCarrier]](
   val journeyService: S,
-  controllerComponents: MessagesControllerComponents,
   appConfig: AppConfig,
   val authConnector: FrontendAuthConnector,
   val env: Environment,
   val config: Configuration
-) extends FrontendController(controllerComponents) with I18nSupport with AuthActions
+) extends MessagesBaseController with Utf8MimeTypes with WithJsonBody with I18nSupport with AuthActions
     with JourneyController[HeaderCarrier] {
 
   final override val actionBuilder = controllerComponents.actionBuilder
@@ -45,17 +47,11 @@ abstract class BaseJourneyController[S <: JourneyService[HeaderCarrier]](
   implicit val ec: ExecutionContext = controllerComponents.executionContext
 
   /** AsAnyUser authorisation request */
-  final val AsAnyUser: WithAuthorised[Option[String]] =
-    if (appConfig.requireEnrolmentFeature) { implicit request => body =>
-      authorisedWithEnrolment(
-        appConfig.authorisedServiceName,
-        appConfig.authorisedIdentifierKey
-      )(x => body(x._2))
-    } else { implicit request => body =>
-      authorisedWithoutEnrolment(x => body(x._2))
-    }
+  final val AsAnyUser: WithAuthorised[Unit] = { implicit request => body =>
+    authorisedWithoutEnrolment(_ => body(()))
+  }
 
-  /** Base authorized action builder */
+  /** Base authenticated action builder */
   final val whenAuthenticated = actions.whenAuthorised(AsAnyUser)
 
   // ------------------------------------
@@ -64,7 +60,22 @@ abstract class BaseJourneyController[S <: JourneyService[HeaderCarrier]](
 
   private val journeyIdPathParamRegex = ".*?/journey/([a-fA-F0-9]+?)/.*".r
 
+  private def decodeHeaderCarrier(rh: RequestHeader): HeaderCarrier =
+    rh.session
+      .get(SessionKeys.authToken)
+      .fold(
+        rh.headers
+          .get(HeaderNames.authorisation)
+          .fold(HeaderCarrierConverter.fromRequestAndSession(rh, rh.session))(authToken =>
+            HeaderCarrierConverter
+              .fromRequestAndSession(rh, rh.session + (SessionKeys.authToken -> authToken))
+          )
+      )(_ => HeaderCarrierConverter.fromRequestAndSession(rh, rh.session))
+
   final def journeyId(implicit rh: RequestHeader): Option[String] =
+    journeyId(decodeHeaderCarrier(rh), rh)
+
+  private def journeyId(hc: HeaderCarrier, rh: RequestHeader): Option[String] =
     (rh.path match {
       case journeyIdPathParamRegex(id) => Some(id)
       case _                           => None
@@ -74,10 +85,10 @@ abstract class BaseJourneyController[S <: JourneyService[HeaderCarrier]](
   final def currentJourneyId(implicit rh: RequestHeader): String = journeyId.get
 
   final override implicit def context(implicit rh: RequestHeader): HeaderCarrier = {
-    val headerCarrier = super.hc(rh)
-    journeyId
-      .map(value => headerCarrier.withExtraHeaders(journeyService.journeyKey -> value))
-      .getOrElse(headerCarrier)
+    val hc = decodeHeaderCarrier(rh)
+    journeyId(hc, rh)
+      .map(jid => hc.withExtraHeaders(journeyService.journeyKey -> jid))
+      .getOrElse(hc)
   }
 
   final override def withValidRequest(

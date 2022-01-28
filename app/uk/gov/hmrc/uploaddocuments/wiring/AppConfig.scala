@@ -63,7 +63,6 @@ trait AppConfig {
   val timeout: Int
   val countdown: Int
   val fileUploadResultPushRetryIntervals: Seq[FiniteDuration]
-  val requireEnrolmentFeature: Boolean = false
 }
 
 class AppConfigImpl @Inject() (config: ServicesConfig, configuration: Configuration) extends AppConfig {
