@@ -176,6 +176,36 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
       }
     }
 
+    "POST /wipe-out" should {
+      "return 404 if wrong http method" in {
+        val state = Initialized(
+          FileUploadContext(
+            fileUploadSessionConfig,
+            CallbackAuth.Any
+          ),
+          FileUploads()
+        )
+        journey.setState(state)
+        val result = await(request("/wipe-out").get())
+        result.status shouldBe 404
+        journey.getState shouldBe state
+      }
+
+      "return 204 and cleanup session" in {
+        val state = Initialized(
+          FileUploadContext(
+            fileUploadSessionConfig,
+            CallbackAuth.Any
+          ),
+          FileUploads()
+        )
+        journey.setState(state)
+        val result = await(request("/wipe-out").post(""))
+        result.status shouldBe 204
+        journey.getState shouldBe Uninitialized
+      }
+    }
+
     "GET /" should {
       "show the start page when no cookie set" in {
         val state = Initialized(

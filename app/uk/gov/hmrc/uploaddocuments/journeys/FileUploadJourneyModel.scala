@@ -158,6 +158,9 @@ object FileUploadJourneyModel extends JourneyModel {
         case s: CanEnterFileUpload => goto(ContinueToHost(s.context, s.fileUploadsOpt.getOrElse(FileUploads())))
       }
 
+    final val wipeOut =
+      Transition { case _ => goto(Uninitialized) }
+
     private def resetFileUploadStatusToInitiated(reference: String, fileUploads: FileUploads): FileUploads =
       fileUploads.copy(files = fileUploads.files.map {
         case f if f.reference == reference =>

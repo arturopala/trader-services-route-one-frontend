@@ -114,6 +114,14 @@ class FileUploadJourneyModelSpec
         )
       }
 
+      "go to Unitialized when wipeOut transition" in
+        given(
+          Initialized(
+            fileUploadContext,
+            nonEmptyFileUploads
+          )
+        ).when(wipeOut).thenGoes(Uninitialized)
+
       "go to SwitchToSingleFileUpload when toUploadMultipleFiles transition and preferUploadMutipleFiles is false" in {
         given(
           Initialized(
@@ -141,6 +149,9 @@ class FileUploadJourneyModelSpec
             Initialized(fileUploadContext, nonEmptyFileUploads)
           )
       }
+
+      "go to Unitialized when wipeOut transition" in
+        given(UploadMultipleFiles(fileUploadContext, nonEmptyFileUploads)).when(wipeOut).thenGoes(Uninitialized)
 
       "fail when initialization with invalid config" in {
         val invalidContext = fileUploadContext.copy(config = fileUploadContext.config.copy(serviceId = ""))
@@ -1111,6 +1122,45 @@ class FileUploadJourneyModelSpec
     }
 
     "at state UploadFile" should {
+      "go to Unitialized when wipeOut transition" in
+        given(
+          UploadFile(
+            fileUploadContext,
+            "foo-bar-ref-2",
+            UploadRequest(
+              href = "https://s3.bucket",
+              fields = Map(
+                "callbackUrl"     -> "https://foo.bar/callback",
+                "successRedirect" -> "https://foo.bar/success",
+                "errorRedirect"   -> "https://foo.bar/failure"
+              )
+            ),
+            FileUploads(files =
+              Seq(
+                FileUpload.Posted(Nonce(1), Timestamp.Any, "foo-bar-ref-1"),
+                FileUpload.Initiated(Nonce(2), Timestamp.Any, "foo-bar-ref-2"),
+                FileUpload.Accepted(
+                  Nonce(3),
+                  Timestamp.Any,
+                  "foo-bar-ref-3",
+                  "https://bucketName.s3.eu-west-2.amazonaws.com?1235676",
+                  ZonedDateTime.parse("2018-04-24T09:30:00Z"),
+                  "396f101dd52e8b2ace0dcf5ed09b1d1f030e608938510ce46e7a5c7a4e775100",
+                  "test.pdf",
+                  "application/pdf",
+                  4567890
+                ),
+                FileUpload.Failed(
+                  Nonce(4),
+                  Timestamp.Any,
+                  "foo-bar-ref-4",
+                  UpscanNotification.FailureDetails(UpscanNotification.REJECTED, "some failure reason")
+                )
+              )
+            )
+          )
+        ).when(wipeOut).thenGoes(Uninitialized)
+
       "go to WaitingForFileVerification when waitForFileVerification and not verified yet" in {
         given(
           UploadFile(
@@ -2244,6 +2294,11 @@ class FileUploadJourneyModelSpec
             )
           )
       }
+    }
+
+    "at state ContinueToHost" should {
+      "go to Unitialized when wipeOut transition" in
+        given(ContinueToHost(fileUploadContext, nonEmptyFileUploads)).when(wipeOut).thenGoes(Uninitialized)
     }
 
   }

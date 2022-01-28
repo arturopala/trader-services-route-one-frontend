@@ -81,6 +81,13 @@ class FileUploadJourneyController @Inject() (
       .show[State.ContinueToHost]
       .orApply(Transitions.continueToHost)
 
+  // POST /wipe-out
+  final val wipeOut: Action[AnyContent] =
+    actions
+      .apply(Transitions.wipeOut)
+      .displayUsing(renderWipeOutResponse)
+      .andCleanBreadcrumbs()
+
   // ----------------------- FILES UPLOAD -----------------------
 
   /** Initial time to wait for callback arrival. */
@@ -477,6 +484,9 @@ class FileUploadJourneyController @Inject() (
         )
       case _ => BadRequest
     }
+
+  private def renderWipeOutResponse =
+    Renderer.simple { case _ => NoContent }
 
   private def renderFileRemovalStatus =
     Renderer.simple {
