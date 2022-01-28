@@ -544,8 +544,8 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
         val result = await(request("/choose-file").get())
 
         result.status shouldBe 200
-        result.body should include(htmlEscapedPageTitle("view.file-uploaded.singular.title", "1"))
-        result.body should include(htmlEscapedMessage("view.file-uploaded.singular.heading", "1"))
+        result.body should include(htmlEscapedPageTitle("view.summary.singular.title", "1"))
+        result.body should include(htmlEscapedMessage("view.summary.singular.heading", "1"))
 
         journey.getState shouldBe FileUploaded(
           FileUploadContext(fileUploadSessionConfig),
@@ -606,8 +606,8 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
         val result = await(request("/choose-file").get())
 
         result.status shouldBe 200
-        result.body should include(htmlEscapedPageTitle("view.file-uploaded.plural.title", "2"))
-        result.body should include(htmlEscapedMessage("view.file-uploaded.plural.heading", "2"))
+        result.body should include(htmlEscapedPageTitle("view.summary.plural.title", "2"))
+        result.body should include(htmlEscapedMessage("view.summary.plural.heading", "2"))
 
         journey.getState shouldBe FileUploaded(
           FileUploadContext(fileUploadSessionConfig),
@@ -875,7 +875,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
       }
     }
 
-    "GET /uploaded" should {
+    "GET /summary" should {
       "show uploaded singular file view" in {
         val state = FileUploaded(
           FileUploadContext(fileUploadSessionConfig),
@@ -884,11 +884,11 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
         journey.setState(state)
         givenAuthorisedForEnrolment(Enrolment("HMRC-XYZ", "EORINumber", "foo"))
 
-        val result = await(request("/uploaded").get())
+        val result = await(request("/summary").get())
 
         result.status shouldBe 200
-        result.body should include(htmlEscapedPageTitle("view.file-uploaded.singular.title", "1"))
-        result.body should include(htmlEscapedMessage("view.file-uploaded.singular.heading", "1"))
+        result.body should include(htmlEscapedPageTitle("view.summary.singular.title", "1"))
+        result.body should include(htmlEscapedMessage("view.summary.singular.heading", "1"))
         journey.getState shouldBe state
       }
 
@@ -925,11 +925,11 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
         journey.setState(state)
         givenAuthorisedForEnrolment(Enrolment("HMRC-XYZ", "EORINumber", "foo"))
 
-        val result = await(request("/uploaded").get())
+        val result = await(request("/summary").get())
 
         result.status shouldBe 200
-        result.body should include(htmlEscapedPageTitle("view.file-uploaded.plural.title", "2"))
-        result.body should include(htmlEscapedMessage("view.file-uploaded.plural.heading", "2"))
+        result.body should include(htmlEscapedPageTitle("view.summary.plural.title", "2"))
+        result.body should include(htmlEscapedMessage("view.summary.plural.heading", "2"))
         journey.getState shouldBe state
       }
 
@@ -941,11 +941,11 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
         journey.setState(state)
         givenAuthorisedForEnrolment(Enrolment("HMRC-XYZ", "EORINumber", "foo"))
 
-        val result = await(request("/uploaded").get())
+        val result = await(request("/summary").get())
 
         result.status shouldBe 200
-        result.body should include(htmlEscapedPageTitle("view.file-uploaded.plural.title", FILES_LIMIT.toString))
-        result.body should include(htmlEscapedMessage("view.file-uploaded.plural.heading", FILES_LIMIT.toString))
+        result.body should include(htmlEscapedPageTitle("view.summary.plural.title", FILES_LIMIT.toString))
+        result.body should include(htmlEscapedMessage("view.summary.plural.heading", FILES_LIMIT.toString))
         journey.getState shouldBe state
       }
     }
@@ -1271,8 +1271,8 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
         val result = await(request("/uploaded/11370e18-6e24-453e-b45a-76d3e32ea33d/remove").get())
 
         result.status shouldBe 200
-        result.body should include(htmlEscapedPageTitle("view.file-uploaded.singular.title", "1"))
-        result.body should include(htmlEscapedMessage("view.file-uploaded.singular.heading", "1"))
+        result.body should include(htmlEscapedPageTitle("view.summary.singular.title", "1"))
+        result.body should include(htmlEscapedMessage("view.summary.singular.heading", "1"))
         journey.getState shouldBe FileUploaded(
           FileUploadContext(fileUploadSessionConfig),
           fileUploads = FileUploads(files =

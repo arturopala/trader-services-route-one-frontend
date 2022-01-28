@@ -140,13 +140,13 @@ view.upload-file.help.fileFormat4=Microsoft (Word, Excel or PowerPoint)
 view.upload-file.help.fileFormat5=Open Document Format (ODF)
 view.upload-file.help.line4=You cannot upload zip files or documents that are password-protected.
 
-view.file-uploaded.singular.title=You’ve uploaded {0} document
-view.file-uploaded.singular.heading=You’ve uploaded {0} document
-view.file-uploaded.plural.title=You’ve uploaded {0} documents
-view.file-uploaded.plural.heading=You’ve uploaded {0} documents
-view.file-uploaded.uploadAnotherFile.heading=Do you want to upload another document?
-view.file-uploaded.list.heading=Documents you’ve uploaded
-view.file-uploaded.maximum=You can upload up to {0} files.
+view.summary.singular.title=You’ve uploaded {0} document
+view.summary.singular.heading=You’ve uploaded {0} document
+view.summary.plural.title=You’ve uploaded {0} documents
+view.summary.plural.heading=You’ve uploaded {0} documents
+view.summary.uploadAnotherFile.heading=Do you want to upload another document?
+view.summary.list.heading=Documents you’ve uploaded
+view.summary.maximum=You can upload up to {0} files.
 
 form.upload-file.file=Upload a file
 form.upload-file.submit=Upload

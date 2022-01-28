@@ -242,7 +242,7 @@ class FileUploadJourneyController @Inject() (
         InternalServerError
       }
 
-  // GET /uploaded
+  // GET /summary
   final val showFileUploaded: Action[AnyContent] =
     whenAuthenticated
       .show[State.FileUploaded]

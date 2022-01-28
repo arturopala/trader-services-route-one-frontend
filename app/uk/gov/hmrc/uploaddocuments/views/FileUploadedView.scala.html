@@ -36,7 +36,7 @@
 }
 
 @govukLayout(
-  pageTitle = pageWithFormTitle(if(fileUploads.isSingle) "view.file-uploaded.singular.title" else "view.file-uploaded.plural.title", form, fileUploads.acceptedCount)(messages, CustomizedServiceContent()),
+  pageTitle = pageWithFormTitle(if(fileUploads.isSingle) "view.summary.singular.title" else "view.summary.plural.title", form, fileUploads.acceptedCount)(messages, CustomizedServiceContent()),
   backLink = Some(backLink.url)) {
 
   @forms.errorSummary(form.errors)
@@ -44,11 +44,11 @@
   @forms.formWithCSRF(action = postAction) {
 
     @html.h1(
-      messages(if(fileUploads.isSingle) "view.file-uploaded.singular.heading" else "view.file-uploaded.plural.heading", fileUploads.acceptedCount),
+      messages(if(fileUploads.isSingle) "view.summary.singular.heading" else "view.summary.plural.heading", fileUploads.acceptedCount),
       classes = serviceContent.pageTitleClasses.getOrElse("govuk-heading-l")
     )
 
-    @html.h2(messages("view.file-uploaded.list.heading"), classes = "govuk-heading-m")
+    @html.h2(messages("view.summary.list.heading"), classes = "govuk-heading-m")
 
     @html.summaryList(context.summaryListOfFileUploads(fileUploads, previewFileCall, removeFileCall))
 
@@ -69,7 +69,7 @@
           conditionalHtml = None
         )
       ),
-      legend = Some("view.file-uploaded.uploadAnotherFile.heading"),
+      legend = Some("view.summary.uploadAnotherFile.heading"),
       legendAsHeading = false,
       legendAsH2 = true,
       legendClasses = "govuk-fieldset__legend--m"
