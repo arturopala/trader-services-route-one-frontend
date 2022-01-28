@@ -22,9 +22,9 @@ import uk.gov.hmrc.uploaddocuments.views.html._
 @Singleton
 class FileUploadViews @Inject() (
   val startView: StartView,
-  val uploadFileView: UploadFileView,
+  val uploadMultipleFilesView: UploadMultipleFilesView,
+  val uploadSingleFileView: UploadSingleFileView,
   val waitingForFileVerificationView: WaitingForFileVerificationView,
-  val fileUploadedView: FileUploadedView,
-  val fileUploadedSummaryView: FileUploadedSummaryView,
-  val uploadMultipleFilesView: UploadMultipleFilesView
+  val summaryView: SummaryView,
+  val summaryNoChoiceView: SummaryNoChoiceView
 )

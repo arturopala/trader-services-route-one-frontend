@@ -33,8 +33,8 @@ POST       /journey/:journeyId/callback-from-upscan/:nonce          @uk.gov.hmrc
 GET        /file-verification                                       @uk.gov.hmrc.uploaddocuments.controllers.FileUploadJourneyController.showWaitingForFileVerification
 GET        /file-verification/:reference/status                     @uk.gov.hmrc.uploaddocuments.controllers.FileUploadJourneyController.checkFileVerificationStatus(reference: String)
 
-GET        /summary                                                 @uk.gov.hmrc.uploaddocuments.controllers.FileUploadJourneyController.showFileUploaded
-POST       /uploaded                                                @uk.gov.hmrc.uploaddocuments.controllers.FileUploadJourneyController.submitUploadAnotherFileChoice
+GET        /summary                                                 @uk.gov.hmrc.uploaddocuments.controllers.FileUploadJourneyController.showSummary
+POST       /summary                                                 @uk.gov.hmrc.uploaddocuments.controllers.FileUploadJourneyController.submitUploadAnotherFileChoice
 GET        /uploaded/:reference/remove                              @uk.gov.hmrc.uploaddocuments.controllers.FileUploadJourneyController.removeFileUploadByReference(reference: String)
 + nocsrf
 POST       /uploaded/:reference/remove                              @uk.gov.hmrc.uploaddocuments.controllers.FileUploadJourneyController.removeFileUploadByReferenceAsync(reference: String)

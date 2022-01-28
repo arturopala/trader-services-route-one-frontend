@@ -16,37 +16,7 @@
 
 package uk.gov.hmrc.uploaddocuments.views
 
-import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
-import play.api.i18n.Messages
-import java.time.ZoneOffset
-import java.time.ZoneId
-
 object CommonUtilsHelper {
-
-  val dateFormat = DateTimeFormatter
-    .ofPattern("dd MMMM yyyy")
-
-  val timeFormat = DateTimeFormatter
-    .ofPattern("HH:mm")
-
-  implicit class Improvements(s: Int) {
-    def format3d = "%03d".format(s)
-  }
-
-  implicit class DateTimeUtilities(s: LocalDateTime) {
-    def ddMMYYYYAtTimeFormat(implicit messages: Messages) = {
-      val dateFormatted = dateFormat.withLocale(messages.lang.locale).format(s)
-      val timeFormatted = timeFormat.withLocale(messages.lang.locale).format(s)
-      val preposition = messages("site.datetime.preposition")
-      s"$dateFormatted $preposition $timeFormatted"
-    }
-
-    def asLondonClockTime =
-      s.atOffset(ZoneOffset.UTC)
-        .atZoneSameInstant(ZoneId.of("Europe/London"))
-        .toLocalDateTime()
-  }
 
   /** Mapping, folding and getOrElse on Option[String] for non-empty strings. Commonly used in the Twirl components.
     *

@@ -16,7 +16,7 @@
 
 @import uk.gov.hmrc.uploaddocuments.models.{FileUploads,FileUpload,UploadRequest,FileUploadError,CustomizedServiceContent}
 @import uk.gov.hmrc.uploaddocuments.wiring.AppConfig
-@import uk.gov.hmrc.uploaddocuments.views.UploadFileViewContext
+@import uk.gov.hmrc.uploaddocuments.views.UploadFileViewHelper
 @import uk.gov.hmrc.uploaddocuments.views.html.partials.multiFileUpload
 @import uk.gov.hmrc.uploaddocuments.views.html.partials.errorManager
 
@@ -28,7 +28,7 @@ details: uk.gov.hmrc.uploaddocuments.views.html.components.details,
 govukFileUpload: GovukFileUpload,
 govukButton: GovukButton,
 appConfig: AppConfig,
-context: UploadFileViewContext
+context: UploadFileViewHelper
 )
 
 @(

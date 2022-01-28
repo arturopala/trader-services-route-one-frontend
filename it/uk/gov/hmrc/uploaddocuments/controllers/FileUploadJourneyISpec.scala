@@ -274,7 +274,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
         result.body should include(htmlEscapedPageTitle("view.upload-file.first.title"))
         result.body should include(htmlEscapedMessage("view.upload-file.first.heading"))
 
-        journey.getState shouldBe UploadFile(
+        journey.getState shouldBe UploadSingleFile(
           FileUploadContext(fileUploadSessionConfig),
           reference = "11370e18-6e24-453e-b45a-76d3e32ea33d",
           uploadRequest = UploadRequest(
@@ -491,7 +491,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
         result.body should include(htmlEscapedPageTitle("view.upload-file.first.title"))
         result.body should include(htmlEscapedMessage("view.upload-file.first.heading"))
 
-        journey.getState shouldBe UploadFile(
+        journey.getState shouldBe UploadSingleFile(
           FileUploadContext(fileUploadSessionConfig),
           reference = "11370e18-6e24-453e-b45a-76d3e32ea33d",
           uploadRequest = UploadRequest(
@@ -547,7 +547,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
         result.body should include(htmlEscapedPageTitle("view.summary.singular.title", "1"))
         result.body should include(htmlEscapedMessage("view.summary.singular.heading", "1"))
 
-        journey.getState shouldBe FileUploaded(
+        journey.getState shouldBe Summary(
           FileUploadContext(fileUploadSessionConfig),
           fileUploads = FileUploads(files =
             Seq(
@@ -609,7 +609,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
         result.body should include(htmlEscapedPageTitle("view.summary.plural.title", "2"))
         result.body should include(htmlEscapedMessage("view.summary.plural.heading", "2"))
 
-        journey.getState shouldBe FileUploaded(
+        journey.getState shouldBe Summary(
           FileUploadContext(fileUploadSessionConfig),
           fileUploads = FileUploads(files =
             Seq(
@@ -644,7 +644,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
     "GET /file-verification" should {
       "display waiting for file verification page" in {
         journey.setState(
-          UploadFile(
+          UploadSingleFile(
             FileUploadContext(fileUploadSessionConfig),
             "2b72fe99-8adf-4edb-865e-622ae710f77c",
             UploadRequest(href = "https://s3.bucket", fields = Map("callbackUrl" -> "https://foo.bar/callback")),
@@ -684,7 +684,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
     "GET /journey/:journeyId/file-rejected" should {
       "set current file upload status as rejected and return 204 NoContent" in {
         journey.setState(
-          UploadFile(
+          UploadSingleFile(
             FileUploadContext(fileUploadSessionConfig),
             "11370e18-6e24-453e-b45a-76d3e32ea33d",
             UploadRequest(href = "https://s3.bucket", fields = Map("callbackUrl" -> "https://foo.bar/callback")),
@@ -708,7 +708,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
         result1.status shouldBe 204
         result1.body.isEmpty shouldBe true
         journey.getState shouldBe (
-          UploadFile(
+          UploadSingleFile(
             FileUploadContext(fileUploadSessionConfig),
             "11370e18-6e24-453e-b45a-76d3e32ea33d",
             UploadRequest(href = "https://s3.bucket", fields = Map("callbackUrl" -> "https://foo.bar/callback")),
@@ -740,7 +740,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
     "GET /journey/:journeyId/file-verification" should {
       "set current file upload status as posted and return 204 NoContent" in {
         journey.setState(
-          UploadFile(
+          UploadSingleFile(
             FileUploadContext(fileUploadSessionConfig),
             "11370e18-6e24-453e-b45a-76d3e32ea33d",
             UploadRequest(href = "https://s3.bucket", fields = Map("callbackUrl" -> "https://foo.bar/callback")),
@@ -779,7 +779,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
     "GET /file-verification/:reference/status" should {
       "return file verification status" in {
 
-        val state = FileUploaded(
+        val state = Summary(
           FileUploadContext(fileUploadSessionConfig),
           FileUploads(files =
             Seq(
@@ -877,7 +877,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
 
     "GET /summary" should {
       "show uploaded singular file view" in {
-        val state = FileUploaded(
+        val state = Summary(
           FileUploadContext(fileUploadSessionConfig),
           fileUploads = FileUploads(files = Seq(TestData.acceptedFileUpload))
         )
@@ -893,7 +893,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
       }
 
       "show uploaded plural file view" in {
-        val state = FileUploaded(
+        val state = Summary(
           FileUploadContext(fileUploadSessionConfig),
           fileUploads = FileUploads(files =
             Seq(
@@ -934,7 +934,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
       }
 
       "show file upload summary view" in {
-        val state = FileUploaded(
+        val state = Summary(
           FileUploadContext(fileUploadSessionConfig),
           fileUploads = FileUploads(files = for (i <- 1 to FILES_LIMIT) yield TestData.acceptedFileUpload)
         )
@@ -950,12 +950,12 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
       }
     }
 
-    "POST /uploaded" should {
+    "POST /summary" should {
 
       "show upload a file view for export when yes and number of files below the limit" in {
 
         val fileUploads = FileUploads(files = for (i <- 1 until FILES_LIMIT) yield TestData.acceptedFileUpload)
-        val state = FileUploaded(
+        val state = Summary(
           FileUploadContext(fileUploadSessionConfig),
           fileUploads
         )
@@ -966,14 +966,14 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
         givenUpscanInitiateSucceeds(callbackUrl, hostServiceId)
 
         val result = await(
-          request("/uploaded")
+          request("/summary")
             .post(Map("uploadAnotherFile" -> "yes"))
         )
 
         result.status shouldBe 200
         result.body should include(htmlEscapedPageTitle("view.upload-file.next.title"))
         result.body should include(htmlEscapedMessage("view.upload-file.next.heading"))
-        journey.getState shouldBe UploadFile(
+        journey.getState shouldBe UploadSingleFile(
           FileUploadContext(fileUploadSessionConfig),
           reference = "11370e18-6e24-453e-b45a-76d3e32ea33d",
           uploadRequest = UploadRequest(
@@ -1002,7 +1002,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
       "show upload a file view when yes and number of files below the limit" in {
 
         val fileUploads = FileUploads(files = for (i <- 1 until FILES_LIMIT) yield TestData.acceptedFileUpload)
-        val state = FileUploaded(
+        val state = Summary(
           FileUploadContext(fileUploadSessionConfig),
           fileUploads
         )
@@ -1013,14 +1013,14 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
         givenUpscanInitiateSucceeds(callbackUrl, hostServiceId)
 
         val result = await(
-          request("/uploaded")
+          request("/summary")
             .post(Map("uploadAnotherFile" -> "yes"))
         )
 
         result.status shouldBe 200
         result.body should include(htmlEscapedPageTitle("view.upload-file.next.title"))
         result.body should include(htmlEscapedMessage("view.upload-file.next.heading"))
-        journey.getState shouldBe UploadFile(
+        journey.getState shouldBe UploadSingleFile(
           FileUploadContext(fileUploadSessionConfig),
           reference = "11370e18-6e24-453e-b45a-76d3e32ea33d",
           uploadRequest = UploadRequest(
@@ -1049,7 +1049,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
       "redirect to the continue_url when yes and files number limit has been reached" in {
 
         val fileUploads = FileUploads(files = for (i <- 1 to FILES_LIMIT) yield TestData.acceptedFileUpload)
-        val state = FileUploaded(
+        val state = Summary(
           FileUploadContext(fileUploadSessionConfig),
           fileUploads
         )
@@ -1058,7 +1058,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
         givenSomePage(200, "/continue-url", "Welcome back at host 1!")
 
         val result = await(
-          request("/uploaded")
+          request("/summary")
             .post(Map("uploadAnotherFile" -> "yes"))
         )
 
@@ -1074,7 +1074,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
       "redirect to the continue_url when no and files number below the limit" in {
 
         val fileUploads = FileUploads(files = for (i <- 1 until FILES_LIMIT) yield TestData.acceptedFileUpload)
-        val state = FileUploaded(
+        val state = Summary(
           FileUploadContext(fileUploadSessionConfig),
           fileUploads
         )
@@ -1083,7 +1083,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
         givenSomePage(200, "/continue-url", "Welcome back at host 2!")
 
         val result = await(
-          request("/uploaded")
+          request("/summary")
             .post(Map("uploadAnotherFile" -> "no"))
         )
 
@@ -1099,7 +1099,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
       "redirect to the continue_url when no and files number above the limit" in {
 
         val fileUploads = FileUploads(files = for (i <- 1 to FILES_LIMIT) yield TestData.acceptedFileUpload)
-        val state = FileUploaded(
+        val state = Summary(
           FileUploadContext(fileUploadSessionConfig),
           fileUploads
         )
@@ -1108,7 +1108,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
         givenSomePage(200, "/continue-url", "Welcome back at host 3!")
 
         val result = await(
-          request("/uploaded")
+          request("/summary")
             .post(Map("uploadAnotherFile" -> "no"))
         )
 
@@ -1125,7 +1125,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
     "GET /file-rejected" should {
       "show upload document again" in {
         journey.setState(
-          UploadFile(
+          UploadSingleFile(
             FileUploadContext(fileUploadSessionConfig),
             "2b72fe99-8adf-4edb-865e-622ae710f77c",
             UploadRequest(href = "https://s3.bucket", fields = Map("callbackUrl" -> "https://foo.bar/callback")),
@@ -1148,7 +1148,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
         result.status shouldBe 200
         result.body should include(htmlEscapedPageTitle("view.upload-file.first.title"))
         result.body should include(htmlEscapedMessage("view.upload-file.first.heading"))
-        journey.getState shouldBe UploadFile(
+        journey.getState shouldBe UploadSingleFile(
           FileUploadContext(fileUploadSessionConfig),
           "2b72fe99-8adf-4edb-865e-622ae710f77c",
           UploadRequest(href = "https://s3.bucket", fields = Map("callbackUrl" -> "https://foo.bar/callback")),
@@ -1236,7 +1236,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
           ),
           204
         )
-        val state = FileUploaded(
+        val state = Summary(
           FileUploadContext(fileUploadSessionConfig),
           fileUploads = FileUploads(files =
             Seq(
@@ -1273,7 +1273,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
         result.status shouldBe 200
         result.body should include(htmlEscapedPageTitle("view.summary.singular.title", "1"))
         result.body should include(htmlEscapedMessage("view.summary.singular.heading", "1"))
-        journey.getState shouldBe FileUploaded(
+        journey.getState shouldBe Summary(
           FileUploadContext(fileUploadSessionConfig),
           fileUploads = FileUploads(files =
             Seq(
@@ -1388,7 +1388,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
         Random.nextBytes(bytes)
         val upscanUrl = stubForFileDownload(200, bytes, "test.pdf")
 
-        val state = FileUploaded(
+        val state = Summary(
           FileUploadContext(fileUploadSessionConfig),
           FileUploads(files =
             Seq(
@@ -1434,7 +1434,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
       "return error page if file does not exist" in {
         val upscanUrl = stubForFileDownloadFailure(404, "test.pdf")
 
-        val state = FileUploaded(
+        val state = Summary(
           FileUploadContext(fileUploadSessionConfig),
           FileUploads(files =
             Seq(

@@ -24,33 +24,33 @@ import uk.gov.hmrc.uploaddocuments.journeys.FileUploadJourneyModel.State
 object FileUploadJourneyStateFormats extends JsonStateFormats[State] {
 
   val initializedFormat = Json.format[Initialized]
-  val continueToHostFormat = Json.format[ContinueToHost]
-  val uploadFileFormat = Json.format[UploadFile]
-  val fileUploadedFormat = Json.format[FileUploaded]
-  val waitingForFileVerificationFormat = Json.format[WaitingForFileVerification]
   val uploadMultipleFilesFormat = Json.format[UploadMultipleFiles]
-  val switchToSingleFileUploadFormat = Json.format[SwitchToSingleFileUpload]
+  val uploadSingleFileFormat = Json.format[UploadSingleFile]
+  val waitingForFileVerificationFormat = Json.format[WaitingForFileVerification]
+  val summaryFormat = Json.format[Summary]
+  val switchToUploadSingleFileFormat = Json.format[SwitchToUploadSingleFile]
+  val continueToHostFormat = Json.format[ContinueToHost]
 
   override val serializeStateProperties: PartialFunction[State, JsValue] = {
     case s: Initialized                => initializedFormat.writes(s)
-    case s: ContinueToHost             => continueToHostFormat.writes(s)
-    case s: UploadFile                 => uploadFileFormat.writes(s)
-    case s: FileUploaded               => fileUploadedFormat.writes(s)
-    case s: WaitingForFileVerification => waitingForFileVerificationFormat.writes(s)
     case s: UploadMultipleFiles        => uploadMultipleFilesFormat.writes(s)
-    case s: SwitchToSingleFileUpload   => switchToSingleFileUploadFormat.writes(s)
+    case s: UploadSingleFile           => uploadSingleFileFormat.writes(s)
+    case s: WaitingForFileVerification => waitingForFileVerificationFormat.writes(s)
+    case s: Summary                    => summaryFormat.writes(s)
+    case s: SwitchToUploadSingleFile   => switchToUploadSingleFileFormat.writes(s)
+    case s: ContinueToHost             => continueToHostFormat.writes(s)
   }
 
   override def deserializeState(stateName: String, properties: JsValue): JsResult[State] =
     stateName match {
       case "Uninitialized"              => JsSuccess(Uninitialized)
       case "Initialized"                => initializedFormat.reads(properties)
-      case "ContinueToHost"             => continueToHostFormat.reads(properties)
-      case "UploadFile"                 => uploadFileFormat.reads(properties)
-      case "FileUploaded"               => fileUploadedFormat.reads(properties)
-      case "WaitingForFileVerification" => waitingForFileVerificationFormat.reads(properties)
       case "UploadMultipleFiles"        => uploadMultipleFilesFormat.reads(properties)
-      case "SwitchToSingleFileUpload"   => switchToSingleFileUploadFormat.reads(properties)
+      case "UploadSingleFile"           => uploadSingleFileFormat.reads(properties)
+      case "WaitingForFileVerification" => waitingForFileVerificationFormat.reads(properties)
+      case "Summary"                    => summaryFormat.reads(properties)
+      case "SwitchToUploadSingleFile"   => switchToUploadSingleFileFormat.reads(properties)
+      case "ContinueToHost"             => continueToHostFormat.reads(properties)
       case _                            => JsError(s"Unknown state name $stateName")
     }
 }

@@ -19,7 +19,7 @@ package uk.gov.hmrc.uploaddocuments.models
 import play.api.i18n.Messages
 import play.api.libs.json.{Format, Json}
 import play.api.mvc.Call
-import uk.gov.hmrc.uploaddocuments.views.UploadFileViewContext
+import uk.gov.hmrc.uploaddocuments.views.UploadFileViewHelper
 
 case class FileVerificationStatus(
   reference: String,
@@ -37,7 +37,7 @@ object FileVerificationStatus {
 
   def apply(
     fileUpload: FileUpload,
-    uploadFileViewContext: UploadFileViewContext,
+    uploadFileViewHelper: UploadFileViewHelper,
     filePreviewUrl: (String, String) => Call,
     maximumFileSizeBytes: Long,
     allowedFileTypesHint: String
@@ -68,7 +68,7 @@ object FileVerificationStatus {
           "FAILED",
           errorMessage = Some(
             messages(
-              uploadFileViewContext.toMessageKey(f.details),
+              uploadFileViewHelper.toMessageKey(f.details),
               (maximumFileSizeBytes / (1024 * 1024)),
               allowedFileTypesHint
             )
@@ -81,7 +81,7 @@ object FileVerificationStatus {
           "REJECTED",
           errorMessage = Some(
             messages(
-              uploadFileViewContext.toMessageKey(f.details),
+              uploadFileViewHelper.toMessageKey(f.details),
               (maximumFileSizeBytes / (1024 * 1024)),
               allowedFileTypesHint
             )
@@ -92,7 +92,7 @@ object FileVerificationStatus {
         FileVerificationStatus(
           fileUpload.reference,
           "DUPLICATE",
-          errorMessage = Some(messages(uploadFileViewContext.duplicateFileMessageKey))
+          errorMessage = Some(messages(uploadFileViewHelper.duplicateFileMessageKey))
         )
     }
 

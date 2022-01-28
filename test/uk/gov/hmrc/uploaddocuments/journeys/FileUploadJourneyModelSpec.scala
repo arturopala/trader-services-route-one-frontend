@@ -73,7 +73,7 @@ class FileUploadJourneyModelSpec
         given(
           Initialized(fileUploadContext, FileUploads())
         ) when initiateFileUpload(upscanRequest)(mockUpscanInitiate) should thenGo(
-          UploadFile(
+          UploadSingleFile(
             fileUploadContext,
             "foo-bar-ref",
             UploadRequest(href = "https://s3.bucket", fields = Map("callbackUrl" -> "https://foo.bar/callback")),
@@ -84,9 +84,9 @@ class FileUploadJourneyModelSpec
 
       "go back to FileUploaded when backToFileUploaded and non-empty file uploads" in {
         given(Initialized(fileUploadContext, nonEmptyFileUploads))
-          .when(backToFileUploaded)
+          .when(backToSummary)
           .thenGoes(
-            FileUploaded(
+            Summary(
               fileUploadContext,
               nonEmptyFileUploads,
               acknowledged = true
@@ -96,7 +96,7 @@ class FileUploadJourneyModelSpec
 
       "go back to ContinueToHost when backToFileUploaded and empty file uploads" in {
         given(Initialized(fileUploadContext, FileUploads()))
-          .when(backToFileUploaded)
+          .when(backToSummary)
           .thenGoes(ContinueToHost(fileUploadContext, FileUploads()))
       }
 
@@ -129,7 +129,7 @@ class FileUploadJourneyModelSpec
             nonEmptyFileUploads
           )
         ) when toUploadMultipleFiles(preferUploadMultipleFiles = false) should thenGo(
-          SwitchToSingleFileUpload(
+          SwitchToUploadSingleFile(
             fileUploadContext,
             Some(nonEmptyFileUploads)
           )
@@ -1124,7 +1124,7 @@ class FileUploadJourneyModelSpec
     "at state UploadFile" should {
       "go to Unitialized when wipeOut transition" in
         given(
-          UploadFile(
+          UploadSingleFile(
             fileUploadContext,
             "foo-bar-ref-2",
             UploadRequest(
@@ -1163,7 +1163,7 @@ class FileUploadJourneyModelSpec
 
       "go to WaitingForFileVerification when waitForFileVerification and not verified yet" in {
         given(
-          UploadFile(
+          UploadSingleFile(
             fileUploadContext,
             "foo-bar-ref-2",
             UploadRequest(
@@ -1240,7 +1240,7 @@ class FileUploadJourneyModelSpec
 
       "go to FileUploaded when waitForFileVerification and accepted already" in {
         given(
-          UploadFile(
+          UploadSingleFile(
             fileUploadContext,
             "foo-bar-ref-3",
             UploadRequest(
@@ -1276,7 +1276,7 @@ class FileUploadJourneyModelSpec
             )
           )
         ) when waitForFileVerification should thenGo(
-          FileUploaded(
+          Summary(
             fileUploadContext,
             FileUploads(files =
               Seq(
@@ -1307,7 +1307,7 @@ class FileUploadJourneyModelSpec
 
       "go to UploadFile when waitForFileVerification and file upload already rejected" in {
         given(
-          UploadFile(
+          UploadSingleFile(
             fileUploadContext,
             "foo-bar-ref-4",
             UploadRequest(
@@ -1343,7 +1343,7 @@ class FileUploadJourneyModelSpec
             )
           )
         ) when waitForFileVerification should thenGo(
-          UploadFile(
+          UploadSingleFile(
             fileUploadContext,
             "foo-bar-ref-4",
             UploadRequest(
@@ -1390,7 +1390,7 @@ class FileUploadJourneyModelSpec
         val mockPushFileUploadResult: FileUploadResultPushApi =
           _ => Future.successful(FileUploadResultPushConnector.SuccessResponse)
         given(
-          UploadFile(
+          UploadSingleFile(
             fileUploadContext,
             "foo-bar-ref-1",
             UploadRequest(
@@ -1416,7 +1416,7 @@ class FileUploadJourneyModelSpec
             )
           )
         ) should thenGo(
-          FileUploaded(
+          Summary(
             fileUploadContext,
             FileUploads(files = Seq(acceptedFileUpload))
           )
@@ -1427,7 +1427,7 @@ class FileUploadJourneyModelSpec
         val mockPushFileUploadResult: FileUploadResultPushApi =
           _ => Future.successful(FileUploadResultPushConnector.SuccessResponse)
         given(
-          UploadFile(
+          UploadSingleFile(
             fileUploadContext,
             "foo-bar-ref-1",
             UploadRequest(
@@ -1468,7 +1468,7 @@ class FileUploadJourneyModelSpec
             )
           )
         ) should thenGo(
-          UploadFile(
+          UploadSingleFile(
             fileUploadContext,
             "foo-bar-ref-1",
             UploadRequest(
@@ -1517,7 +1517,7 @@ class FileUploadJourneyModelSpec
         val mockPushFileUploadResult: FileUploadResultPushApi =
           _ => Future.successful(FileUploadResultPushConnector.SuccessResponse)
         given(
-          UploadFile(
+          UploadSingleFile(
             fileUploadContext,
             "foo-bar-ref-1",
             UploadRequest(
@@ -1539,7 +1539,7 @@ class FileUploadJourneyModelSpec
             )
           )
         ) should thenGo(
-          UploadFile(
+          UploadSingleFile(
             fileUploadContext,
             "foo-bar-ref-1",
             UploadRequest(
@@ -1571,7 +1571,7 @@ class FileUploadJourneyModelSpec
 
       "go to UploadFile with error when fileUploadWasRejected" in {
         val state =
-          UploadFile(
+          UploadSingleFile(
             fileUploadContext,
             "foo-bar-ref-1",
             UploadRequest(
@@ -1628,7 +1628,7 @@ class FileUploadJourneyModelSpec
 
       "switch over to UploadMultipleFiles when toUploadMultipleFiles()" in {
         given(
-          UploadFile(
+          UploadSingleFile(
             fileUploadContext,
             "foo-bar-ref-4",
             UploadRequest(
@@ -1671,7 +1671,7 @@ class FileUploadJourneyModelSpec
         given(UploadMultipleFiles(hostData, fileUploads))
           .when(initiateFileUpload(testUpscanRequest)(mockUpscanInitiate))
           .thenGoes(
-            UploadFile(
+            UploadSingleFile(
               hostData,
               "foo-bar-ref",
               someUploadRequest(testUpscanRequest("foo", maximumFileSizeBytes)),
@@ -1699,7 +1699,7 @@ class FileUploadJourneyModelSpec
         given(UploadMultipleFiles(hostData, fileUploads))
           .when(initiateFileUpload(testUpscanRequest)(mockUpscanInitiate))
           .thenGoes(
-            FileUploaded(
+            Summary(
               hostData,
               fileUploads
             )
@@ -1751,7 +1751,7 @@ class FileUploadJourneyModelSpec
             )
           )
         ) when waitForFileVerification should thenGo(
-          UploadFile(
+          UploadSingleFile(
             fileUploadContext,
             "foo-bar-ref-2",
             UploadRequest(
@@ -1798,7 +1798,7 @@ class FileUploadJourneyModelSpec
             FileUploads(files = Seq(acceptedFileUpload))
           )
         ) when waitForFileVerification should thenGo(
-          FileUploaded(
+          Summary(
             fileUploadContext,
             FileUploads(files = Seq(acceptedFileUpload))
           )
@@ -1836,7 +1836,7 @@ class FileUploadJourneyModelSpec
             )
           )
         ) when waitForFileVerification should thenGo(
-          UploadFile(
+          UploadSingleFile(
             fileUploadContext,
             "foo-bar-ref-1",
             UploadRequest(
@@ -1895,7 +1895,7 @@ class FileUploadJourneyModelSpec
             )
           )
         ) should thenGo(
-          FileUploaded(
+          Summary(
             fileUploadContext,
             FileUploads(files = Seq(acceptedFileUpload))
           )
@@ -1929,7 +1929,7 @@ class FileUploadJourneyModelSpec
             )
           )
         ) should thenGo(
-          UploadFile(
+          UploadSingleFile(
             fileUploadContext,
             "foo-bar-ref-1",
             UploadRequest(
@@ -2049,8 +2049,8 @@ class FileUploadJourneyModelSpec
               )
             )
           )
-        ) when backToFileUploaded should thenGo(
-          FileUploaded(
+        ) when backToSummary should thenGo(
+          Summary(
             fileUploadContext,
             FileUploads(files =
               Seq(
@@ -2094,7 +2094,7 @@ class FileUploadJourneyModelSpec
               )
             )
           )
-        ) when backToFileUploaded should thenGo(
+        ) when backToSummary should thenGo(
           ContinueToHost(
             fileUploadContext,
             FileUploads(files =
@@ -2131,13 +2131,13 @@ class FileUploadJourneyModelSpec
         )
         given(state)
           .when(initiateFileUpload(testUpscanRequest)(mockUpscanInitiate))
-          .thenGoes(UploadFile(hostData, "foo-bar-ref-1", uploadRequest, fileUploads))
+          .thenGoes(UploadSingleFile(hostData, "foo-bar-ref-1", uploadRequest, fileUploads))
       }
     }
 
     "at state FileUploaded" should {
       "go to acknowledged FileUploaded when waitForFileVerification" in {
-        val state = FileUploaded(
+        val state = Summary(
           fileUploadContext,
           FileUploads(files =
             Seq(
@@ -2178,7 +2178,7 @@ class FileUploadJourneyModelSpec
             )
         )
         given(
-          FileUploaded(
+          Summary(
             hostData,
             fileUploads,
             acknowledged = false
@@ -2186,7 +2186,7 @@ class FileUploadJourneyModelSpec
         )
           .when(initiateFileUpload(testUpscanRequest)(mockUpscanInitiate))
           .thenGoes(
-            UploadFile(
+            UploadSingleFile(
               hostData,
               "foo-bar-ref",
               someUploadRequest(testUpscanRequest("foo", maximumFileSizeBytes)),
@@ -2212,7 +2212,7 @@ class FileUploadJourneyModelSpec
             )
         )
         given(
-          FileUploaded(
+          Summary(
             hostData,
             fileUploads,
             acknowledged = false
@@ -2229,11 +2229,11 @@ class FileUploadJourneyModelSpec
             yield fileUploadAccepted.copy(reference = s"file-$i")
         )
         given(
-          FileUploaded(hostData, fileUploads)
+          Summary(hostData, fileUploads)
         )
           .when(submitedUploadAnotherFileChoice(testUpscanRequest)(mockUpscanInitiate)(continueToHost)(true))
           .thenGoes(
-            UploadFile(
+            UploadSingleFile(
               hostData,
               "foo-bar-ref",
               someUploadRequest(testUpscanRequest("foo", maximumFileSizeBytes)),
@@ -2249,7 +2249,7 @@ class FileUploadJourneyModelSpec
             yield fileUploadAccepted.copy(reference = s"file-$i")
         )
         given(
-          FileUploaded(hostData, fileUploads)
+          Summary(hostData, fileUploads)
         )
           .when(submitedUploadAnotherFileChoice(testUpscanRequest)(mockUpscanInitiate)(continueToHost)(true))
           .thenGoes(
@@ -2264,7 +2264,7 @@ class FileUploadJourneyModelSpec
             yield fileUploadAccepted.copy(reference = s"file-$i")
         )
         given(
-          FileUploaded(hostData, fileUploads)
+          Summary(hostData, fileUploads)
         )
           .when(submitedUploadAnotherFileChoice(testUpscanRequest)(mockUpscanInitiate)(continueToHost)(false))
           .thenGoes(
@@ -2278,7 +2278,7 @@ class FileUploadJourneyModelSpec
         val mockPushFileUploadResult: FileUploadResultPushApi =
           _ => Future.successful(FileUploadResultPushConnector.SuccessResponse)
         given(
-          FileUploaded(hostData, fileUploads)
+          Summary(hostData, fileUploads)
         )
           .when(
             removeFileUploadByReference(fileUploadAccepted.reference)(testUpscanRequest)(mockUpscanInitiate)(
@@ -2286,7 +2286,7 @@ class FileUploadJourneyModelSpec
             )
           )
           .thenGoes(
-            UploadFile(
+            UploadSingleFile(
               hostData,
               "foo-bar-ref",
               someUploadRequest(testUpscanRequest("foo", maximumFileSizeBytes)),

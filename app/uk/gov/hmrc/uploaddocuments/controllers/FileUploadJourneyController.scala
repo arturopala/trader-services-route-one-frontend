@@ -26,7 +26,7 @@ import play.mvc.Http.HeaderNames
 import uk.gov.hmrc.uploaddocuments.connectors._
 import uk.gov.hmrc.uploaddocuments.models._
 import uk.gov.hmrc.uploaddocuments.services.FileUploadJourneyServiceWithHeaderCarrier
-import uk.gov.hmrc.uploaddocuments.views.UploadFileViewContext
+import uk.gov.hmrc.uploaddocuments.views.UploadFileViewHelper
 import uk.gov.hmrc.uploaddocuments.wiring.AppConfig
 
 import javax.inject.{Inject, Singleton}
@@ -39,7 +39,7 @@ class FileUploadJourneyController @Inject() (
   views: uk.gov.hmrc.uploaddocuments.views.FileUploadViews,
   upscanInitiateConnector: UpscanInitiateConnector,
   fileUploadResultPushConnector: FileUploadResultPushConnector,
-  uploadFileViewContext: UploadFileViewContext,
+  uploadFileViewHelper: UploadFileViewHelper,
   appConfig: AppConfig,
   authConnector: FrontendAuthConnector,
   environment: Environment,
@@ -80,6 +80,7 @@ class FileUploadJourneyController @Inject() (
     whenAuthenticated
       .show[State.ContinueToHost]
       .orApply(Transitions.continueToHost)
+      .andCleanBreadcrumbs()
 
   // POST /wipe-out
   final val wipeOut: Action[AnyContent] =
@@ -175,7 +176,7 @@ class FileUploadJourneyController @Inject() (
         Transitions
           .initiateFileUpload(upscanRequest)(upscanInitiateConnector.initiate(_, _))
       }
-      .redirectOrDisplayIf[State.UploadFile]
+      .redirectOrDisplayIf[State.UploadSingleFile]
 
   // GET /file-rejected
   final val markFileUploadAsRejected: Action[AnyContent] =
@@ -200,14 +201,14 @@ class FileUploadJourneyController @Inject() (
   // GET /file-verification
   final val showWaitingForFileVerification: Action[AnyContent] =
     whenAuthenticated
-      .waitForStateThenRedirect[State.FileUploaded](INITIAL_CALLBACK_WAIT_TIME_SECONDS)
+      .waitForStateThenRedirect[State.Summary](INITIAL_CALLBACK_WAIT_TIME_SECONDS)
       .orApplyOnTimeout(Transitions.waitForFileVerification)
       .redirectOrDisplayIf[State.WaitingForFileVerification]
 
   // GET /journey/:journeyId/file-verification
   final def asyncWaitingForFileVerification(journeyId: String): Action[AnyContent] =
     actions
-      .waitForStateAndDisplayUsing[State.FileUploaded](
+      .waitForStateAndDisplayUsing[State.Summary](
         INITIAL_CALLBACK_WAIT_TIME_SECONDS,
         acknowledgeFileUploadRedirect
       )
@@ -243,12 +244,12 @@ class FileUploadJourneyController @Inject() (
       }
 
   // GET /summary
-  final val showFileUploaded: Action[AnyContent] =
+  final val showSummary: Action[AnyContent] =
     whenAuthenticated
-      .show[State.FileUploaded]
-      .orApply(Transitions.backToFileUploaded)
+      .show[State.Summary]
+      .orApply(Transitions.backToSummary)
 
-  // POST /uploaded
+  // POST /summary
   final val submitUploadAnotherFileChoice: Action[AnyContent] =
     whenAuthenticated
       .bindForm[Boolean](UploadAnotherFileChoiceForm)
@@ -300,16 +301,16 @@ class FileUploadJourneyController @Inject() (
       case _: State.UploadMultipleFiles =>
         controller.showChooseMultipleFiles
 
-      case _: State.UploadFile =>
+      case _: State.UploadSingleFile =>
         controller.showChooseFile
 
       case _: State.WaitingForFileVerification =>
         controller.showWaitingForFileVerification
 
-      case _: State.FileUploaded =>
-        controller.showFileUploaded
+      case _: State.Summary =>
+        controller.showSummary
 
-      case _: State.SwitchToSingleFileUpload =>
+      case _: State.SwitchToUploadSingleFile =>
         controller.showChooseFile
 
       case _ =>
@@ -364,10 +365,10 @@ class FileUploadJourneyController @Inject() (
           )
         )
 
-      case State.UploadFile(context, reference, uploadRequest, fileUploads, maybeUploadError) =>
+      case State.UploadSingleFile(context, reference, uploadRequest, fileUploads, maybeUploadError) =>
         implicit val content = context.config.content
         Ok(
-          views.uploadFileView(
+          views.uploadSingleFileView(
             maxFileUploadsNumber = context.config.maximumNumberOfFiles,
             maximumFileSizeBytes = context.config.maximumFileSizeBytes,
             filePickerAcceptFilter = context.config.getFilePickerAcceptFilter,
@@ -377,7 +378,7 @@ class FileUploadJourneyController @Inject() (
             uploadRequest = uploadRequest,
             fileUploads = fileUploads,
             maybeUploadError = maybeUploadError,
-            successAction = controller.showFileUploaded,
+            successAction = controller.showSummary,
             failureAction = controller.showChooseFile,
             checkStatusAction = controller.checkFileVerificationStatus(reference),
             backLink = backLinkFor(breadcrumbs)
@@ -388,18 +389,20 @@ class FileUploadJourneyController @Inject() (
         implicit val content = context.config.content
         Ok(
           views.waitingForFileVerificationView(
-            successAction = controller.showFileUploaded,
+            successAction = controller.showSummary,
             failureAction = controller.showChooseFile,
             checkStatusAction = controller.checkFileVerificationStatus(reference),
             backLink = backLinkFor(breadcrumbs)
           )
         )
 
-      case State.FileUploaded(context, fileUploads, _) =>
+      case State.Summary(context, fileUploads, _) =>
         implicit val content = context.config.content
         Ok(
           if (fileUploads.acceptedCount < context.config.maximumNumberOfFiles)
-            views.fileUploadedView(
+            views.summaryView(
+              maxFileUploadsNumber = context.config.maximumNumberOfFiles,
+              maximumFileSizeBytes = context.config.maximumFileSizeBytes,
               formWithErrors.or(UploadAnotherFileChoiceForm),
               fileUploads,
               controller.submitUploadAnotherFileChoice,
@@ -408,7 +411,7 @@ class FileUploadJourneyController @Inject() (
               backLinkFor(breadcrumbs)
             )
           else
-            views.fileUploadedSummaryView(
+            views.summaryNoChoiceView(
               context.config.maximumNumberOfFiles,
               fileUploads,
               controller.continueToHost,
@@ -455,7 +458,7 @@ class FileUploadJourneyController @Inject() (
                 Json.toJson(
                   FileVerificationStatus(
                     file,
-                    uploadFileViewContext,
+                    uploadFileViewHelper,
                     controller.previewFileUploadByReference(_, _),
                     s.context.config.maximumFileSizeBytes.toInt,
                     s.context.config.content.allowedFilesTypesHint
@@ -524,7 +527,7 @@ class FileUploadJourneyController @Inject() (
   private def acknowledgeFileUploadRedirect = Renderer.simple { case state =>
     (state match {
       case _: State.UploadMultipleFiles        => Created
-      case _: State.FileUploaded               => Created
+      case _: State.Summary                    => Created
       case _: State.WaitingForFileVerification => Accepted
       case _                                   => NoContent
     }).withHeaders(HeaderNames.ACCESS_CONTROL_ALLOW_ORIGIN -> "*")

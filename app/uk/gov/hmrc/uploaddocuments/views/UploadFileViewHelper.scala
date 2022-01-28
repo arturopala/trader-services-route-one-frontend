@@ -33,7 +33,7 @@ import play.api.libs.json.Json
 import play.api.i18n.Messages
 
 @Singleton
-class UploadFileViewContext @Inject() (appConfig: AppConfig) {
+class UploadFileViewHelper @Inject() (appConfig: AppConfig) {
 
   def initialScriptStateFrom(
     initialFileUploads: Seq[FileUpload],

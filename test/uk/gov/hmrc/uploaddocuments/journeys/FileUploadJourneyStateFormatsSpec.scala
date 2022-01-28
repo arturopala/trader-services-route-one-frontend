@@ -94,7 +94,7 @@ class FileUploadJourneyStateFormatsSpec extends UnitSpec {
         )
       )
       validateCanReadAndWriteJson(
-        State.UploadFile(
+        State.UploadSingleFile(
           fileUploadSessionConfig,
           "foo-bar-ref",
           UploadRequest(href = "https://foo.bar", fields = Map.empty),
@@ -126,7 +126,7 @@ class FileUploadJourneyStateFormatsSpec extends UnitSpec {
         )
       )
       validateCanReadAndWriteJson(
-        State.UploadFile(
+        State.UploadSingleFile(
           fileUploadSessionConfig,
           "foo-bar-ref-2",
           UploadRequest(href = "https://foo.bar", fields = Map("amz" -> "123")),
@@ -190,7 +190,7 @@ class FileUploadJourneyStateFormatsSpec extends UnitSpec {
       )
 
       validateCanReadAndWriteJson(
-        State.FileUploaded(
+        State.Summary(
           fileUploadSessionConfig,
           FileUploads(files =
             Seq(

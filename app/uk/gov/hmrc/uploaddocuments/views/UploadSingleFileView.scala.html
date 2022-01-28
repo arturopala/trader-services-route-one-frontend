@@ -16,7 +16,7 @@
 
 @import uk.gov.hmrc.uploaddocuments.models.{FileUploads,UploadRequest,FileUploadError,CustomizedServiceContent}
 @import uk.gov.hmrc.uploaddocuments.wiring.AppConfig
-@import uk.gov.hmrc.uploaddocuments.views.UploadFileViewContext
+@import uk.gov.hmrc.uploaddocuments.views.UploadFileViewHelper
 
 @this(
 govukLayout: uk.gov.hmrc.uploaddocuments.views.html.templates.GovukLayoutWrapper,
@@ -26,7 +26,7 @@ details: uk.gov.hmrc.uploaddocuments.views.html.components.details,
 govukFileUpload: GovukFileUpload,
 govukButton: GovukButton,
 appConfig: AppConfig,
-context: UploadFileViewContext
+context: UploadFileViewHelper
 )
 
 @(
@@ -64,10 +64,10 @@ context: UploadFileViewContext
       @forms.inputHidden(key, value)
     }
 
-    @serviceContent.descriptionHtml.map(d => Html(d)).getOrElse {
-      @html.p{ @messages("view.upload-file.line1", maxFileUploadsNumber) }
-      @html.p{ @messages("view.upload-file.line2") }
-    }
+     @serviceContent.descriptionHtml.map(d => Html(d)).getOrElse {
+        @html.p{ @messages("view.upload-file.line1", maxFileUploadsNumber, maximumFileSizeBytes) }
+        @html.p{ @messages("view.upload-file.line2", maxFileUploadsNumber, maximumFileSizeBytes) }
+      }
 
     @govukFileUpload(FileUpload(
       name = "file",
