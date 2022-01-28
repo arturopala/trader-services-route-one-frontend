@@ -108,17 +108,21 @@ class FileUploadJourneyController @Inject() (
       case None    => controller.markFileUploadAsRejected
     })
 
-  final def upscanRequest(nonce: String, maximumFileSizeBytes: Long)(implicit rh: RequestHeader) =
+  final def upscanRequest(nonce: String, maximumFileSizeBytes: Long)(implicit
+    rh: RequestHeader
+  ) =
     UpscanInitiateRequest(
       callbackUrl = appConfig.baseInternalCallbackUrl + controller.callbackFromUpscan(currentJourneyId, nonce).url,
       successRedirect = Some(successRedirect),
       errorRedirect = Some(errorRedirect),
       minimumFileSize = Some(1),
-      maximumFileSize = Some(maximumFileSizeBytes.toInt),
-      expectedContentType = Some(appConfig.fileFormats.approvedFileTypes)
+      maximumFileSize = Some(maximumFileSizeBytes.toInt)
     )
 
-  final def upscanRequestWhenUploadingMultipleFiles(nonce: String, maximumFileSizeBytes: Long)(implicit
+  final def upscanRequestWhenUploadingMultipleFiles(
+    nonce: String,
+    maximumFileSizeBytes: Long
+  )(implicit
     rh: RequestHeader
   ) =
     UpscanInitiateRequest(
@@ -126,8 +130,7 @@ class FileUploadJourneyController @Inject() (
       successRedirect = Some(successRedirectWhenUploadingMultipleFiles),
       errorRedirect = Some(errorRedirect),
       minimumFileSize = Some(1),
-      maximumFileSize = Some(maximumFileSizeBytes.toInt),
-      expectedContentType = Some(appConfig.fileFormats.approvedFileTypes)
+      maximumFileSize = Some(maximumFileSizeBytes.toInt)
     )
 
   // GET /
@@ -332,10 +335,14 @@ class FileUploadJourneyController @Inject() (
         implicit val content = context.config.content
         Ok(
           views.uploadMultipleFilesView(
-            context.config.maximumNumberOfFiles,
-            context.config.initialNumberOfEmptyRows,
-            context.config.maximumFileSizeBytes,
-            fileUploads.files,
+            maximumNumberOfFiles = context.config.maximumNumberOfFiles,
+            initialNumberOfEmptyRows = context.config.initialNumberOfEmptyRows,
+            maximumFileSizeBytes = context.config.maximumFileSizeBytes,
+            filePickerAcceptFilter = context.config.getFilePickerAcceptFilter,
+            allowedFileTypesHint = context.config.content.allowedFilesTypesHint
+              .orElse(context.config.allowedFileExtensions)
+              .getOrElse(context.config.allowedContentTypes),
+            initialFileUploads = fileUploads.files,
             initiateNextFileUpload = controller.initiateNextFileUpload,
             checkFileVerificationStatus = controller.checkFileVerificationStatus,
             removeFile = controller.removeFileUploadByReferenceAsync,
@@ -350,11 +357,15 @@ class FileUploadJourneyController @Inject() (
         implicit val content = context.config.content
         Ok(
           views.uploadFileView(
-            context.config.maximumNumberOfFiles,
-            context.config.maximumFileSizeBytes,
-            uploadRequest,
-            fileUploads,
-            maybeUploadError,
+            maxFileUploadsNumber = context.config.maximumNumberOfFiles,
+            maximumFileSizeBytes = context.config.maximumFileSizeBytes,
+            filePickerAcceptFilter = context.config.getFilePickerAcceptFilter,
+            allowedFileTypesHint = context.config.content.allowedFilesTypesHint
+              .orElse(context.config.allowedFileExtensions)
+              .getOrElse(context.config.allowedContentTypes),
+            uploadRequest = uploadRequest,
+            fileUploads = fileUploads,
+            maybeUploadError = maybeUploadError,
             successAction = controller.showFileUploaded,
             failureAction = controller.showChooseFile,
             checkStatusAction = controller.checkFileVerificationStatus(reference),
@@ -435,7 +446,10 @@ class FileUploadJourneyController @Inject() (
                     file,
                     uploadFileViewContext,
                     controller.previewFileUploadByReference(_, _),
-                    s.context.config.maximumFileSizeBytes.toInt
+                    s.context.config.maximumFileSizeBytes.toInt,
+                    s.context.config.content.allowedFilesTypesHint
+                      .orElse(s.context.config.allowedFileExtensions)
+                      .getOrElse(s.context.config.allowedContentTypes)
                   )
                 )
               )

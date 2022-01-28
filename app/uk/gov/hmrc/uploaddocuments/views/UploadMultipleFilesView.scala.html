@@ -35,6 +35,8 @@ context: UploadFileViewContext
   maximumNumberOfFiles: Int,
   initialNumberOfEmptyRows: Int,
   maximumFileSizeBytes: Long,
+  filePickerAcceptFilter: String,
+  allowedFileTypesHint: String,
   initialFileUploads: Seq[FileUpload],
   initiateNextFileUpload: String => Call,
   checkFileVerificationStatus: String => Call,
@@ -103,7 +105,7 @@ context: UploadFileViewContext
     data-multi-file-upload-send-url-tpl="@initiateNextFileUpload("{fileId}")"
     data-multi-file-upload-status-url-tpl="@checkFileVerificationStatus("{fileRef}")"
     data-multi-file-upload-remove-url-tpl="@removeFile("{fileRef}")"
-    data-multi-file-upload-uploaded-files="@context.initialScriptStateFrom(initialFileUploads, previewFile, maximumFileSizeBytes)"
+    data-multi-file-upload-uploaded-files="@context.initialScriptStateFrom(initialFileUploads, previewFile, maximumFileSizeBytes, allowedFileTypesHint)"
     data-multi-file-upload-error-generic="@messages("error.file-upload.try-again")"
     data-multi-file-upload-error-remove-file="@messages("error.file-upload.remove.try-again")"
     data-multi-file-upload-error-select-file="@messages("error.file-upload.required")"
@@ -131,7 +133,7 @@ context: UploadFileViewContext
 
     <div class="multi-file-upload__notifications govuk-visually-hidden" aria-live="polite" role="status"></div>
 
-    <script type="text/x-template" id="multi-file-upload-item-tpl"> @multiFileUpload.item(appConfig.fileFormats.approvedFileExtensions) </script>
+    <script type="text/x-template" id="multi-file-upload-item-tpl"> @multiFileUpload.item(filePickerAcceptFilter) </script>
     <script type="text/x-template" id="error-manager-summary-tpl"> @errorManager.summary(messages) </script>
     <script type="text/x-template" id="error-manager-summary-item-tpl"> @errorManager.summaryItem(messages) </script>
     <script type="text/x-template" id="error-manager-message-tpl"> @errorManager.message(messages) </script>

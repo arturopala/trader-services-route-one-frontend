@@ -62,20 +62,18 @@ trait TestData {
         successRedirect = Some("https://foo.bar/success"),
         errorRedirect = Some("https://foo.bar/failure"),
         minimumFileSize = Some(0),
-        maximumFileSize = Some(maxFileSize.toInt),
-        expectedContentType = Some("image/jpeg,image/png")
+        maximumFileSize = Some(maxFileSize.toInt)
       )
 
   def someUploadRequest(request: UpscanInitiateRequest) =
     UploadRequest(
       href = "https://s3.bucket",
       fields = Map(
-        "callbackUrl"         -> request.callbackUrl,
-        "successRedirect"     -> request.successRedirect.getOrElse(""),
-        "errorRedirect"       -> request.errorRedirect.getOrElse(""),
-        "minimumFileSize"     -> request.minimumFileSize.getOrElse(0).toString,
-        "maximumFileSize"     -> request.maximumFileSize.getOrElse(0).toString,
-        "expectedContentType" -> request.expectedContentType.getOrElse("")
+        "callbackUrl"     -> request.callbackUrl,
+        "successRedirect" -> request.successRedirect.getOrElse(""),
+        "errorRedirect"   -> request.errorRedirect.getOrElse(""),
+        "minimumFileSize" -> request.minimumFileSize.getOrElse(0).toString,
+        "maximumFileSize" -> request.maximumFileSize.getOrElse(0).toString
       )
     )
 

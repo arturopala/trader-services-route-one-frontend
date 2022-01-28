@@ -36,7 +36,8 @@ final case class CustomizedServiceContent(
   timeoutSeconds: Option[Int] = None,
   countdownSeconds: Option[Int] = None,
   showLanguageSelection: Option[Boolean] = None,
-  pageTitleClasses: Option[String] = None
+  pageTitleClasses: Option[String] = None,
+  allowedFilesTypesHint: Option[String] = None
 )
 
 object CustomizedServiceContent {

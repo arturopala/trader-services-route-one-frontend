@@ -38,25 +38,26 @@ class UploadFileViewContext @Inject() (appConfig: AppConfig) {
   def initialScriptStateFrom(
     initialFileUploads: Seq[FileUpload],
     previewFile: (String, String) => Call,
-    maximumFileSizeBytes: Long
+    maximumFileSizeBytes: Long,
+    allowedFileTypesHint: String
   )(implicit
     messages: Messages
   ): String =
     Json.stringify(
       Json.toJson(
         initialFileUploads.map(file =>
-          FileVerificationStatus(file, this, previewFile, (maximumFileSizeBytes / (1024 * 1024)))
+          FileVerificationStatus(file, this, previewFile, (maximumFileSizeBytes / (1024 * 1024)), allowedFileTypesHint)
         )
       )
     )
 
-  def toFormError(error: FileUploadError, maximumFileSizeBytes: Long): FormError =
+  def toFormError(error: FileUploadError, maximumFileSizeBytes: Long, allowedFileTypesHint: String): FormError =
     error match {
       case FileTransmissionFailed(error) =>
-        FormError("file", Seq(toMessageKey(error)), Seq((maximumFileSizeBytes / (1024 * 1024))))
+        FormError("file", Seq(toMessageKey(error)), Seq((maximumFileSizeBytes / (1024 * 1024)), allowedFileTypesHint))
 
       case FileVerificationFailed(details) =>
-        FormError("file", Seq(toMessageKey(details)))
+        FormError("file", Seq(toMessageKey(details)), Seq((maximumFileSizeBytes / (1024 * 1024)), allowedFileTypesHint))
 
       case DuplicateFileUpload(checksum, existingFileName, duplicateFileName) =>
         FormError("file", Seq(duplicateFileMessageKey))

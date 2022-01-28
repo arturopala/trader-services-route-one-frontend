@@ -28,10 +28,6 @@ import scala.concurrent.duration.FiniteDuration
 import uk.gov.hmrc.uploaddocuments.connectors.Retries
 import play.api.Configuration
 
-object AppConfig {
-  case class FileFormats(approvedFileTypes: String, approvedFileExtensions: String)
-}
-
 @ImplementedBy(classOf[AppConfigImpl])
 trait AppConfig {
 
@@ -63,21 +59,15 @@ trait AppConfig {
     s"$contactHost/contact/problem_reports_nonjs?newTab=true&service=$contactFormServiceIdentifier&backUrl=$requestUri"
 
   val signOutUrl: String
-
-  val fileFormats: AppConfig.FileFormats
-
   val traceFSM: Boolean = false
-
   val timeout: Int
   val countdown: Int
-
   val fileUploadResultPushRetryIntervals: Seq[FiniteDuration]
-
   val requireEnrolmentFeature: Boolean = false
-
 }
 
 class AppConfigImpl @Inject() (config: ServicesConfig, configuration: Configuration) extends AppConfig {
+
   override val baseExternalCallbackUrl: String = config.getString("urls.callback.external")
   override val baseInternalCallbackUrl: String = config.getString("urls.callback.internal")
   override val authBaseUrl: String = config.baseUrl("auth")
@@ -87,19 +77,10 @@ class AppConfigImpl @Inject() (config: ServicesConfig, configuration: Configurat
   override val authorisedIdentifierKey: String = config.getString("authorisedIdentifierKey")
   override val contactHost: String = config.getString("contact-frontend.host")
   override val contactFormServiceIdentifier: String = config.getString("feedback-frontend.formIdentifier")
-
   override val signOutUrl: String = config.getString("urls.signOut")
-
   override val timeout: Int = config.getInt("session.timeoutSeconds")
   override val countdown: Int = config.getInt("session.countdownInSeconds")
-
-  val fileFormats: AppConfig.FileFormats = AppConfig.FileFormats(
-    approvedFileExtensions = config.getString("file-formats.approved-file-extensions"),
-    approvedFileTypes = config.getString("file-formats.approved-file-types")
-  )
-
   override val traceFSM: Boolean = config.getBoolean("trace.fsm")
-
   override val govukStartUrl: String = config.getString("govuk.start.url")
 
   override val fileUploadResultPushRetryIntervals: Seq[FiniteDuration] =

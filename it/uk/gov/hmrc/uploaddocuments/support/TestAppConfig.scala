@@ -8,6 +8,7 @@ case class TestAppConfig(
   wireMockBaseUrl: String,
   wireMockPort: Int
 ) extends AppConfig {
+
   override val appName: String = "upload-documents"
   override val baseInternalCallbackUrl: String = wireMockBaseUrl
   override val baseExternalCallbackUrl: String = wireMockBaseUrl
@@ -19,12 +20,8 @@ case class TestAppConfig(
   override val signOutUrl: String = wireMockBaseUrl + "/dummy-sign-out-url"
   override val authorisedServiceName: String = "HMRC-XYZ"
   override val authorisedIdentifierKey: String = "EORINumber"
-
-  val fileFormats: AppConfig.FileFormats = AppConfig.FileFormats("", "")
-
   override val timeout: Int = 10
   override val countdown: Int = 2
-
   override val govukStartUrl: String = wireMockBaseUrl + "/dummy-start-url"
 
   override val fileUploadResultPushRetryIntervals: Seq[FiniteDuration] =

@@ -31,19 +31,32 @@ final case class FileUploadSessionConfig(
   maximumNumberOfFiles: Int = defaultMaximumNumberOfFiles,
   initialNumberOfEmptyRows: Int = defaultInitialNumberOfEmptyRows,
   maximumFileSizeBytes: Long = defaultMaximumFileSizeBytes,
+  allowedContentTypes: String = defaultAllowedContentTypes,
+  allowedFileExtensions: Option[String] = None,
   cargo: Option[JsValue] = None, // opaque data carried through, from and to the host service,
   newFileDescription: Option[String] = None, // description of the new file added,
   features: Features = Features(), // upload feature switches
   content: CustomizedServiceContent = CustomizedServiceContent() // page content customizations
 ) {
   def getContinueWhenFullUrl: String = continueWhenFullUrl.getOrElse(continueUrl)
+  def getFilePickerAcceptFilter: String = allowedContentTypes + allowedFileExtensions.map("," + _).getOrElse("")
+
+  def isValid: Boolean =
+    serviceId.nonEmpty &&
+      continueUrl.nonEmpty &&
+      backlinkUrl.nonEmpty &&
+      callbackUrl.nonEmpty &&
+      allowedContentTypes.nonEmpty &&
+      maximumNumberOfFiles > 0 &&
+      maximumFileSizeBytes > 0
 }
 
 object FileUploadSessionConfig {
 
-  val defaultMaximumNumberOfFiles: Int = 100
+  val defaultMaximumNumberOfFiles: Int = 10
   val defaultInitialNumberOfEmptyRows: Int = 3
-  val defaultMaximumFileSizeBytes = 100 * 1024 * 1024
+  val defaultMaximumFileSizeBytes = 10 * 1024 * 1024
+  val defaultAllowedContentTypes = "image/jpeg,image/png,application/pdf,text/plain"
 
   implicit val format: Format[FileUploadSessionConfig] =
     Format(
@@ -56,6 +69,8 @@ object FileUploadSessionConfig {
         and (JsPath \ "maximumNumberOfFiles").readWithDefault[Int](defaultMaximumNumberOfFiles)
         and (JsPath \ "initialNumberOfEmptyRows").readWithDefault[Int](defaultInitialNumberOfEmptyRows)
         and (JsPath \ "maximumFileSizeBytes").readWithDefault[Long](defaultMaximumFileSizeBytes)
+        and (JsPath \ "allowedContentTypes").readWithDefault[String](defaultAllowedContentTypes)
+        and (JsPath \ "allowedFileExtensions").readNullable[String]
         and (JsPath \ "cargo").readNullable[JsValue]
         and (JsPath \ "newFileDescription").readNullable[String]
         and (JsPath \ "features").readWithDefault[Features](Features())
@@ -70,6 +85,8 @@ object FileUploadSessionConfig {
         and (JsPath \ "maximumNumberOfFiles").write[Int]
         and (JsPath \ "initialNumberOfEmptyRows").write[Int]
         and (JsPath \ "maximumFileSizeBytes").write[Long]
+        and (JsPath \ "allowedContentTypes").write[String]
+        and (JsPath \ "allowedFileExtensions").writeNullable[String]
         and (JsPath \ "cargo").writeNullable[JsValue]
         and (JsPath \ "newFileDescription").writeNullable[String]
         and (JsPath \ "features").write[Features]

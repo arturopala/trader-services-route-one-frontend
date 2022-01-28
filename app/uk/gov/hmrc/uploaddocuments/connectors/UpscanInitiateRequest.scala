@@ -31,16 +31,13 @@ import play.api.libs.json.{Format, Json}
   *   (optional) Minimum file size (in Bytes). Default is 0
   * @param maximumFileSize
   *   (optional) Maximum file size (in Bytes). Cannot be greater than 100MB. Default is 100MB
-  * @param expectedContentType
-  *   (optional) MIME type describing the upload contents.
   */
 case class UpscanInitiateRequest(
   callbackUrl: String,
   successRedirect: Option[String] = None,
   errorRedirect: Option[String] = None,
   minimumFileSize: Option[Int] = None,
-  maximumFileSize: Option[Int] = None,
-  expectedContentType: Option[String] = None
+  maximumFileSize: Option[Int] = None
 )
 
 object UpscanInitiateRequest {

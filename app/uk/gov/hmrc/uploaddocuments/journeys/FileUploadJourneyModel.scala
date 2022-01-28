@@ -117,7 +117,10 @@ object FileUploadJourneyModel extends JourneyModel {
       val nonce = Nonce.random
       for {
         upscanResponse <-
-          upscanInitiate(context.config.serviceId, upscanRequest(nonce.toString(), context.config.maximumFileSizeBytes))
+          upscanInitiate(
+            context.config.serviceId,
+            upscanRequest(nonce.toString(), context.config.maximumFileSizeBytes)
+          )
       } yield State.UploadFile(
         context,
         upscanResponse.reference,
@@ -132,12 +135,14 @@ object FileUploadJourneyModel extends JourneyModel {
 
     final def initialize(callbackAuthOpt: Option[CallbackAuth])(request: FileUploadInitializationRequest) =
       Transition { case _ =>
-        goto(
-          Initialized(
-            FileUploadContext(request.config, callbackAuthOpt.getOrElse(CallbackAuth.Any)),
-            request.toFileUploads
+        if (request.isValid)
+          goto(
+            Initialized(
+              FileUploadContext(request.config, callbackAuthOpt.getOrElse(CallbackAuth.Any)),
+              request.toFileUploads
+            )
           )
-        )
+        else fail(new Exception("Invalid initialization request"))
       }
 
     final val continueToHost =
@@ -191,7 +196,10 @@ object FileUploadJourneyModel extends JourneyModel {
           val nonce = Nonce.random
           upscanInitiate(
             state.context.config.serviceId,
-            upscanRequest(nonce.toString(), state.context.config.maximumFileSizeBytes)
+            upscanRequest(
+              nonce.toString(),
+              state.context.config.maximumFileSizeBytes
+            )
           )
             .flatMap { upscanResponse =>
               goto(

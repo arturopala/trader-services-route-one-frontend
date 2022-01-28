@@ -142,6 +142,22 @@ class FileUploadJourneyModelSpec
           )
       }
 
+      "fail when initialization with invalid config" in {
+        val invalidContext = fileUploadContext.copy(config = fileUploadContext.config.copy(serviceId = ""))
+        given(
+          UploadMultipleFiles(
+            invalidContext,
+            nonEmptyFileUploads
+          )
+        )
+          .when(
+            initialize(None)(
+              FileUploadInitializationRequest(invalidContext.config, nonEmptyFileUploads.toUploadedFiles)
+            )
+          )
+          .thenFailsWith[Exception]
+      }
+
       "go to ContinueToHost when non-empty file uploads and continueToHost" in {
         given(
           UploadMultipleFiles(fileUploadContext, nonEmptyFileUploads)
