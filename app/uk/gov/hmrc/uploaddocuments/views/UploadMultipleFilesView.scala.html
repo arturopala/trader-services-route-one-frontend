@@ -90,7 +90,7 @@ context: UploadFileViewHelper
 
   @html.h1(pageHeading("view.upload-multiple-files.heading"), classes = serviceContent.pageTitleClasses.getOrElse("govuk-heading-l"))
 
-  @serviceContent.descriptionHtml.map(d => Html(d)).getOrElse {
+  @serviceContent.safeDescriptionHtml.map(d => Html(d)).getOrElse {
     @html.p{ @messages("view.upload-multiple-files.line1", maximumNumberOfFiles) }
     @html.p{ @messages("view.upload-multiple-files.line2") }
 

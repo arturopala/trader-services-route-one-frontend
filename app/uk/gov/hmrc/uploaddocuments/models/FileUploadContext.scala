@@ -62,8 +62,12 @@ object HostService {
   }
 
   object InitializationRequestHeaders {
-    implicit val reads: Reads[InitializationRequestHeaders] = Json.reads[InitializationRequestHeaders]
-    implicit val writes: Writes[InitializationRequestHeaders] = Json.writes[InitializationRequestHeaders]
+
+    implicit val reads: Reads[InitializationRequestHeaders] =
+      Json.reads[InitializationRequestHeaders]
+
+    implicit val writes: Writes[InitializationRequestHeaders] =
+      Json.writes[InitializationRequestHeaders]
   }
 
   object Any extends HostService {

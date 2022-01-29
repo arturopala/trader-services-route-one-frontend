@@ -153,7 +153,7 @@ object FileUploadJourneyModel extends JourneyModel {
             )
           )
         else
-          fail(new Exception("Invalid initialization request"))
+          fail(new Exception(s"Invalid initialization request $fileUploadContext"))
       }
 
     final val continueToHost =

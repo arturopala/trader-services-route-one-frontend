@@ -16,10 +16,11 @@
 
 package uk.gov.hmrc.uploaddocuments.models
 
-import play.api.libs.json.{Format, Json}
+import play.api.libs.json.{Format, JsValue, Json}
+import uk.gov.hmrc.uploaddocuments.support.HtmlCleaner
+
 import java.time.ZonedDateTime
 import scala.util.matching.Regex
-import play.api.libs.json.JsValue
 
 /** Container for file upload status tracking. */
 case class FileUploads(
@@ -57,7 +58,7 @@ case class FileUploads(
         f.fileMimeType,
         f.fileSize,
         f.cargo,
-        f.description
+        f.safeDescription
       )
     }
 
@@ -159,11 +160,14 @@ object FileUpload extends SealedTraitFormats[FileUpload] {
     fileMimeType: String,
     fileSize: Int,
     cargo: Option[JsValue] = None, // data carried through, from and to host service
-    description: Option[String] = None
+    private val description: Option[String] = None
   ) extends FileUpload {
 
     override def isReady: Boolean = true
     override def checksumOpt: Option[String] = Some(checksum)
+
+    final def safeDescription: Option[String] =
+      description.map(HtmlCleaner.cleanSimpleText)
   }
 
   /** Status when the file has failed verification and may not be used. */

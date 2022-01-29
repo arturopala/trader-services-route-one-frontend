@@ -59,7 +59,7 @@ object FileVerificationStatus {
           fileName = Some(f.fileName),
           fileSize = Some(f.fileSize),
           previewUrl = Some(s"${filePreviewUrl(f.reference, f.fileName).url}"),
-          description = f.description
+          description = f.safeDescription
         )
 
       case f: FileUpload.Failed =>

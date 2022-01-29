@@ -20,11 +20,12 @@ import play.api.libs.json.Format
 import play.api.libs.json.Json
 
 import CustomizedServiceContent._
+import uk.gov.hmrc.uploaddocuments.support.HtmlCleaner
 
 final case class CustomizedServiceContent(
   serviceName: Option[String] = None,
   title: Option[String] = None,
-  descriptionHtml: Option[String] = None,
+  private val descriptionHtml: Option[String] = None,
   serviceUrl: Option[String] = None,
   accessibilityStatementUrl: Option[String] = None,
   phaseBanner: Option[PhaseBanner] = None,
@@ -38,7 +39,13 @@ final case class CustomizedServiceContent(
   showLanguageSelection: Option[Boolean] = None,
   pageTitleClasses: Option[String] = None,
   allowedFilesTypesHint: Option[String] = None
-)
+) {
+
+  def safeDescriptionHtml: Option[String] =
+    descriptionHtml
+      .map(html => HtmlCleaner.cleanBlock(html))
+
+}
 
 object CustomizedServiceContent {
 
@@ -51,4 +58,5 @@ object CustomizedServiceContent {
 
   implicit val format: Format[CustomizedServiceContent] =
     Json.format[CustomizedServiceContent]
+
 }

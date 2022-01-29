@@ -59,7 +59,7 @@
 
     @if(fileUploads.isEmpty){
 
-      @serviceContent.descriptionHtml.map(d => Html(d)).getOrElse {
+      @serviceContent.safeDescriptionHtml.map(d => Html(d)).getOrElse {
         @html.p{ @messages("view.upload-file.line1", maxFileUploadsNumber, maximumFileSizeBytes) }
         @html.p{ @messages("view.upload-file.line2", maxFileUploadsNumber, maximumFileSizeBytes) }
       }

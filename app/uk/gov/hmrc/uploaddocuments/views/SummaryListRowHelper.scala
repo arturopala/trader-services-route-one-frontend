@@ -19,7 +19,7 @@ package uk.gov.hmrc.uploaddocuments.views
 import uk.gov.hmrc.govukfrontend.views.viewmodels.summarylist.SummaryListRow
 import uk.gov.hmrc.govukfrontend.views.viewmodels.summarylist.{Key, Value}
 import play.api.mvc.Call
-import uk.gov.hmrc.govukfrontend.views.viewmodels.content.Text
+import uk.gov.hmrc.govukfrontend.views.viewmodels.content.{Empty, Text}
 import uk.gov.hmrc.govukfrontend.views.viewmodels.content.HtmlContent
 import uk.gov.hmrc.govukfrontend.views.viewmodels.summarylist.Actions
 import uk.gov.hmrc.govukfrontend.views.viewmodels.summarylist.ActionItem
@@ -47,11 +47,11 @@ trait SummaryListRowHelper {
       value = Value(
         content = HtmlContent(
           s"""${if (url.nonEmpty)
-            s"<a class='govuk-link' href='${url.get}' target='_blank' rel='noopener noreferrer'>${if (escape) HtmlFormat.escape(value)
+            s"<a class='govuk-link file-upload__file-preview' href='${url.get}' target='_blank' rel='noopener noreferrer'>${if (escape) HtmlFormat.escape(value)
             else value}</a>"
           else
             s"${if (escape) HtmlFormat.escape(value) else value}"} 
-          ${line2.getOrElse("")}
+          ${line2.getOrElse(Empty)}
           """
         ),
         classes = valueClasses.getOrElse("govuk-!-width-two-thirds")

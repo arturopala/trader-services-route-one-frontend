@@ -24,8 +24,8 @@ class MongoDBCachedFileUploadJourneyServiceSpec extends AppISpec {
       FileUploadSessionConfig(
         Nonce.random,
         "http://localhost:1111/foo",
-        "https://localhost/bar",
-        "https://tax.service.gov.uk/zoo"
+        "https://tax.service.gov.uk/bar",
+        "https://service.public.mdtp/zoo"
       )
     )
   val request =

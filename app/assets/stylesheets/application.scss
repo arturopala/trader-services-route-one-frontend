@@ -15,6 +15,7 @@ $hmrc-assets-path: "/upload-documents/assets/lib/hmrc-frontend/hmrc/";
 @import "components/action-buttons";
 @import "components/contents-list";
 @import "components/multi-file-upload";
+@import "components/file-upload";
 
 .js-enabled #confirmation-heading-no-js{display: none;}
 .js-enabled #confirmation-heading{display: inline-block;}
