@@ -185,7 +185,7 @@ class FileUploadJourneyController @Inject() (
       .bindForm(UpscanUploadErrorForm)
       .apply(Transitions.markUploadAsRejected)
 
-  // POST /new/file-rejected
+  // POST /file-rejected
   final val markFileUploadAsRejectedAsync: Action[AnyContent] =
     whenAuthenticated
       .bindForm(UpscanUploadErrorForm)
@@ -222,14 +222,14 @@ class FileUploadJourneyController @Inject() (
       Created.withHeaders(HeaderNames.ACCESS_CONTROL_ALLOW_ORIGIN -> "*")
     }
 
-  // GET /new/journey/:journeyId/file-posted
+  // GET /journey/:journeyId/file-posted
   final def asyncMarkFileUploadAsPosted(journeyId: String): Action[AnyContent] =
     actions
       .bindForm(UpscanUploadSuccessForm)
       .apply(Transitions.markUploadAsPosted)
       .displayUsing(acknowledgeFileUploadRedirect)
 
-  // POST /journey/:journeyId/callback-from-upscan/:nonce
+  // POST /callback-from-upscan/journey/:journeyId/:nonce
   final def callbackFromUpscan(journeyId: String, nonce: String): Action[AnyContent] =
     actions
       .parseJsonWithFallback[UpscanNotification](BadRequest)

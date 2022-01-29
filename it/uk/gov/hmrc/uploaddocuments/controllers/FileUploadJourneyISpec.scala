@@ -221,7 +221,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
         givenAuthorisedForEnrolment(Enrolment("HMRC-XYZ", "EORINumber", "foo"))
 
         val callbackUrl =
-          appConfig.baseInternalCallbackUrl + s"/upload-documents/journey/${SHA256.compute(journeyId.value)}/callback-from-upscan"
+          appConfig.baseInternalCallbackUrl + s"/upload-documents/callback-from-upscan/journey/${SHA256.compute(journeyId.value)}"
         givenUpscanInitiateSucceeds(callbackUrl, hostUserAgent)
 
         val result = await(request("/").get())
@@ -263,7 +263,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
         givenAuthorisedForEnrolment(Enrolment("HMRC-XYZ", "EORINumber", "foo"))
 
         val callbackUrl =
-          appConfig.baseInternalCallbackUrl + s"/upload-documents/journey/${SHA256.compute(journeyId.value)}/callback-from-upscan"
+          appConfig.baseInternalCallbackUrl + s"/upload-documents/callback-from-upscan/journey/${SHA256.compute(journeyId.value)}"
         givenUpscanInitiateSucceeds(callbackUrl, hostUserAgent)
 
         val result = await(request("/choose-files").get())
@@ -342,7 +342,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
         journey.setState(state)
         givenAuthorisedForEnrolment(Enrolment("HMRC-XYZ", "EORINumber", "foo"))
         val callbackUrl =
-          appConfig.baseInternalCallbackUrl + s"/upload-documents/journey/${SHA256.compute(journeyId.value)}/callback-from-upscan"
+          appConfig.baseInternalCallbackUrl + s"/upload-documents/callback-from-upscan/journey/${SHA256.compute(journeyId.value)}"
         givenUpscanInitiateSucceeds(callbackUrl, hostUserAgent)
 
         val result = await(request("/initialize-upscan/001").post(""))
@@ -412,7 +412,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
         journey.setState(state)
         givenAuthorisedForEnrolment(Enrolment("HMRC-XYZ", "EORINumber", "foo"))
         val callbackUrl =
-          appConfig.baseInternalCallbackUrl + s"/upload-documents/journey/${SHA256.compute(journeyId.value)}/callback-from-upscan"
+          appConfig.baseInternalCallbackUrl + s"/upload-documents/callback-from-upscan/journey/${SHA256.compute(journeyId.value)}"
         givenUpscanInitiateSucceeds(callbackUrl, hostUserAgent)
 
         val result = await(request("/initialize-upscan/002").post(""))
@@ -480,7 +480,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
         journey.setState(state)
         givenAuthorisedForEnrolment(Enrolment("HMRC-XYZ", "EORINumber", "foo"))
         val callbackUrl =
-          appConfig.baseInternalCallbackUrl + s"/upload-documents/journey/${SHA256.compute(journeyId.value)}/callback-from-upscan"
+          appConfig.baseInternalCallbackUrl + s"/upload-documents/callback-from-upscan/journey/${SHA256.compute(journeyId.value)}"
         givenUpscanInitiateSucceeds(callbackUrl, hostUserAgent)
 
         val result = await(request("/choose-file").get())
@@ -536,7 +536,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
         journey.setState(state)
         givenAuthorisedForEnrolment(Enrolment("HMRC-XYZ", "EORINumber", "foo"))
         val callbackUrl =
-          appConfig.baseInternalCallbackUrl + s"/upload-documents/journey/${SHA256.compute(journeyId.value)}/callback-from-upscan"
+          appConfig.baseInternalCallbackUrl + s"/upload-documents/callback-from-upscan/journey/${SHA256.compute(journeyId.value)}"
         givenUpscanInitiateSucceeds(callbackUrl, hostUserAgent)
 
         val result = await(request("/choose-file").get())
@@ -598,7 +598,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
         journey.setState(state)
         givenAuthorisedForEnrolment(Enrolment("HMRC-XYZ", "EORINumber", "foo"))
         val callbackUrl =
-          appConfig.baseInternalCallbackUrl + s"/upload-documents/journey/${SHA256.compute(journeyId.value)}/callback-from-upscan"
+          appConfig.baseInternalCallbackUrl + s"/upload-documents/callback-from-upscan/journey/${SHA256.compute(journeyId.value)}"
         givenUpscanInitiateSucceeds(callbackUrl, hostUserAgent)
 
         val result = await(request("/choose-file").get())
@@ -960,7 +960,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
         journey.setState(state)
         givenAuthorisedForEnrolment(Enrolment("HMRC-XYZ", "EORINumber", "foo"))
         val callbackUrl =
-          appConfig.baseInternalCallbackUrl + s"/upload-documents/journey/${SHA256.compute(journeyId.value)}/callback-from-upscan"
+          appConfig.baseInternalCallbackUrl + s"/upload-documents/callback-from-upscan/journey/${SHA256.compute(journeyId.value)}"
         givenUpscanInitiateSucceeds(callbackUrl, hostUserAgent)
 
         val result = await(
@@ -1007,7 +1007,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
         journey.setState(state)
         givenAuthorisedForEnrolment(Enrolment("HMRC-XYZ", "EORINumber", "foo"))
         val callbackUrl =
-          appConfig.baseInternalCallbackUrl + s"/upload-documents/journey/${SHA256.compute(journeyId.value)}/callback-from-upscan"
+          appConfig.baseInternalCallbackUrl + s"/upload-documents/callback-from-upscan/journey/${SHA256.compute(journeyId.value)}"
         givenUpscanInitiateSucceeds(callbackUrl, hostUserAgent)
 
         val result = await(
@@ -1513,7 +1513,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
       }
     }
 
-    "POST /journey/:journeyId/callback-from-upscan" should {
+    "POST /callback-from-upscan/journey/:journeyId" should {
       "return 400 if callback body invalid" in {
         val nonce = Nonce.random
         journey.setState(
@@ -1529,7 +1529,9 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
         )
         val result =
           await(
-            requestWithoutSessionId(s"/journey/${SHA256.compute(journeyId.value)}/callback-from-upscan/$nonce")
+            requestWithoutSessionId(
+              s"/callback-from-upscan/journey/${SHA256.compute(journeyId.value)}/$nonce"
+            )
               .withHttpHeaders(HeaderNames.CONTENT_TYPE -> MimeTypes.JSON)
               .post(
                 Json.obj(
@@ -1617,7 +1619,9 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
         )
         val result =
           await(
-            requestWithoutSessionId(s"/journey/${SHA256.compute(journeyId.value)}/callback-from-upscan/$nonce")
+            requestWithoutSessionId(
+              s"/callback-from-upscan/journey/${SHA256.compute(journeyId.value)}/$nonce"
+            )
               .withHttpHeaders(HeaderNames.CONTENT_TYPE -> MimeTypes.JSON)
               .post(
                 Json.obj(
@@ -1699,7 +1703,9 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
         )
         val result =
           await(
-            requestWithoutSessionId(s"/journey/${SHA256.compute(journeyId.value)}/callback-from-upscan/$nonce")
+            requestWithoutSessionId(
+              s"/callback-from-upscan/journey/${SHA256.compute(journeyId.value)}/$nonce"
+            )
               .withHttpHeaders(HeaderNames.CONTENT_TYPE -> MimeTypes.JSON)
               .post(
                 Json.obj(
@@ -1759,7 +1765,7 @@ class FileUploadJourneyISpec extends FileUploadJourneyISpecSetup with ExternalAp
         )
         val result =
           await(
-            requestWithoutSessionId(s"/journey/${SHA256.compute(journeyId.value)}/callback-from-upscan/${Nonce.random}")
+            requestWithoutSessionId(s"/callback-from-upscan/journey/${SHA256.compute(journeyId.value)}/${Nonce.random}")
               .withHttpHeaders(HeaderNames.CONTENT_TYPE -> MimeTypes.JSON)
               .post(
                 Json.obj(

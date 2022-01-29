@@ -27,8 +27,10 @@ OPTIONS    /journey/:journeyId/file-posted                          @uk.gov.hmrc
 GET        /journey/:journeyId/file-rejected                        @uk.gov.hmrc.uploaddocuments.controllers.FileUploadJourneyController.asyncMarkFileUploadAsRejected(journeyId: String)
 OPTIONS    /journey/:journeyId/file-rejected                        @uk.gov.hmrc.uploaddocuments.controllers.FileUploadJourneyController.preflightUpload(journeyId: String)
 GET        /journey/:journeyId/file-verification                    @uk.gov.hmrc.uploaddocuments.controllers.FileUploadJourneyController.asyncWaitingForFileVerification(journeyId: String)
+
+# backchannel endpoint to receive upscan notification
 + nocsrf
-POST       /journey/:journeyId/callback-from-upscan/:nonce          @uk.gov.hmrc.uploaddocuments.controllers.FileUploadJourneyController.callbackFromUpscan(journeyId: String, nonce: String)
+POST       /callback-from-upscan/journey/:journeyId/:nonce          @uk.gov.hmrc.uploaddocuments.controllers.FileUploadJourneyController.callbackFromUpscan(journeyId: String, nonce: String)
 
 GET        /file-verification                                       @uk.gov.hmrc.uploaddocuments.controllers.FileUploadJourneyController.showWaitingForFileVerification
 GET        /file-verification/:reference/status                     @uk.gov.hmrc.uploaddocuments.controllers.FileUploadJourneyController.checkFileVerificationStatus(reference: String)
